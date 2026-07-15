@@ -8,7 +8,7 @@
 <meta name="keywords" content="拼豆,拼豆图纸,像素画,拼豆设计">
 <title>豆猫 - 在线拼豆图纸工具</title>
 <style>
-/* ===== CSS Variables ===== */
+/* ===== CSS 变量 ===== */
 :root{
   --primary:#0058BC;--primary-rgb:0,88,188;--primary-light:#e8f0fa;--primary-dark:#004a9e;
   --bg:#f3f4f6;--surface:#fff;--surface2:#f8fafc;--surface3:#f1f5f9;
@@ -28,12 +28,12 @@ a{color:inherit;text-decoration:none}
 input,textarea{font-size:14px;color:var(--text)}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
-/* ===== App Shell ===== */
+/* ===== 应用外壳 ===== */
 #app{display:flex;flex-direction:column;height:100%}
 .page{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
 .page.active{display:flex}
 
-/* ===== Topbar ===== */
+/* ===== 顶栏 ===== */
 .topbar{display:flex;align-items:center;gap:8px;height:var(--nav-h);padding:0 12px;background:var(--surface);border-bottom:1px solid var(--border);z-index:100;flex-shrink:0}
 .topbar .logo{font-size:20px;cursor:pointer}
 .topbar .brand{font-size:15px;font-weight:700;color:var(--primary);cursor:pointer}
@@ -41,7 +41,7 @@ input,textarea{font-size:14px;color:var(--text)}
 .topbar .nav-link{font-size:12px;font-weight:600;color:var(--text2);padding:4px 8px;border-radius:6px;transition:all .12s}
 .topbar .nav-link:hover,.topbar .nav-link.active{color:var(--primary);background:var(--primary-light)}
 
-/* ===== Buttons ===== */
+/* ===== 按钮 ===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:34px;padding:0 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;transition:all .12s;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text)}
 .btn:hover{background:var(--surface2)}
 .btn:active{transform:scale(.96)}
@@ -54,7 +54,7 @@ input,textarea{font-size:14px;color:var(--text)}
 .btn-icon{width:34px;height:34px;padding:0;font-size:16px;border-color:transparent}
 .btn-icon.active{background:var(--primary-light);color:var(--primary)}
 
-/* ===== Auth Page ===== */
+/* ===== 登录页 ===== */
 .auth-page{display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#e8f0fa 0%,#f3f4f6 50%,#e8f0fa 100%)}
 .auth-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:32px 28px;width:100%;max-width:380px}
 .auth-card h2{font-size:22px;font-weight:800;margin-bottom:4px;text-align:center}
@@ -67,7 +67,7 @@ input,textarea{font-size:14px;color:var(--text)}
 .auth-card .switch{text-align:center;margin-top:16px;font-size:12px;color:var(--text2)}
 .auth-card .switch a{color:var(--primary);font-weight:600;cursor:pointer}
 
-/* ===== Home Page ===== */
+/* ===== 发现页 ===== */
 .home-page{overflow-y:auto;padding:16px 20px}
 .home-tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--surface2);border-radius:var(--radius-full);padding:3px;width:fit-content}
 .home-tab{padding:6px 16px;border-radius:var(--radius-full);font-size:12px;font-weight:600;color:var(--text2);transition:all .12s;cursor:pointer}
@@ -77,12 +77,11 @@ input,textarea{font-size:14px;color:var(--text)}
 .design-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 .design-card .thumb{width:100%;aspect-ratio:1;background:var(--surface3);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
 .design-card .thumb canvas{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-.design-card .thumb .placeholder{font-size:40px;color:var(--text3)}
 .design-card .info{padding:8px 10px}
 .design-card .title{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .design-card .meta{font-size:10px;color:var(--text3);margin-top:2px;display:flex;gap:8px}
 
-/* ===== Warehouse ===== */
+/* ===== 仓库页 ===== */
 .warehouse-page{display:flex;overflow:hidden;flex:1}
 .warehouse-sidebar{width:200px;min-width:200px;background:var(--surface);border-right:1px solid var(--border);padding:12px;overflow-y:auto}
 .warehouse-sidebar h3{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px}
@@ -98,7 +97,7 @@ input,textarea{font-size:14px;color:var(--text)}
 .empty-state .icon{font-size:48px;margin-bottom:12px}
 .empty-state p{font-size:14px;margin-bottom:16px}
 
-/* ===== Detail Page ===== */
+/* ===== 详情页 ===== */
 .detail-page{overflow-y:auto;padding:16px 20px;max-width:900px;margin:0 auto;width:100%}
 .detail-header{display:flex;gap:16px;margin-bottom:20px}
 .detail-preview{width:160px;height:160px;background:var(--surface3);border-radius:var(--radius);overflow:hidden;flex-shrink:0}
@@ -114,7 +113,7 @@ input,textarea{font-size:14px;color:var(--text)}
 .color-chip{display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:var(--radius-full);padding:4px 10px 4px 4px;font-size:11px;color:var(--text2)}
 .color-chip .dot{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
 
-/* ===== Profile Page ===== */
+/* ===== 个人页 ===== */
 .profile-page{overflow-y:auto;padding:16px 20px;max-width:600px;margin:0 auto;width:100%}
 .profile-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
 .profile-avatar{width:64px;height:64px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--primary);overflow:hidden}
@@ -126,7 +125,7 @@ input,textarea{font-size:14px;color:var(--text)}
 .profile-stat .num{font-size:20px;font-weight:700}
 .profile-stat .label{font-size:11px;color:var(--text3)}
 
-/* ===== Editor Page ===== */
+/* ===== 编辑器页 ===== */
 .editor-page{flex-direction:row}
 .editor-toolbar{display:flex;flex-direction:column;gap:4px;padding:8px 4px;background:var(--surface);border-right:1px solid var(--border);width:44px;min-width:44px;overflow-y:auto}
 .editor-tool{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:16px;color:var(--text2);transition:all .12s;position:relative}
@@ -138,30 +137,27 @@ input,textarea{font-size:14px;color:var(--text)}
 .editor-canvas-wrap canvas.ref-overlay{pointer-events:none}
 .editor-panel{width:220px;min-width:220px;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;padding:8px}
 
-/* ===== Search Page ===== */
+/* ===== 搜索页 ===== */
 .search-page{overflow-y:auto;padding:16px 20px}
 .search-input-wrap{position:relative;max-width:400px;margin:0 auto 20px}
 .search-input-wrap input{width:100%;height:42px;border:1px solid var(--border);border-radius:var(--radius-full);padding:0 44px 0 18px;font-size:14px}
 .search-input-wrap .search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text3)}
 
-/* ===== Toast ===== */
+/* ===== 提示条 ===== */
 .toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:8px 20px;border-radius:var(--radius-full);font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 
-/* ===== Modal ===== */
+/* ===== 模态框 ===== */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:500;display:flex;align-items:center;justify-content:center}
 .modal-overlay.hidden{display:none}
 .modal-box{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:24px;max-width:420px;width:90%;max-height:80vh;overflow-y:auto}
 .modal-box h3{font-size:18px;font-weight:700;margin-bottom:12px}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 
-/* ===== Responsive ===== */
+/* ===== 移动端适配 ===== */
 @media(max-width:768px){
-  .topbar{gap:4px;padding:0 6px}
-  .topbar .brand{font-size:13px}
-  .topbar .nav-link{font-size:10px;padding:3px 6px}
-  .btn{font-size:11px;height:28px;padding:0 8px}
-  .btn-sm{height:24px;font-size:10px}
+  .topbar{gap:4px;padding:0 6px}.topbar .brand{font-size:13px}.topbar .nav-link{font-size:10px;padding:3px 6px}
+  .btn{font-size:11px;height:28px;padding:0 8px}.btn-sm{height:24px;font-size:10px}
   .design-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
   .warehouse-sidebar{display:none}
   .editor-panel{position:fixed;right:0;top:var(--nav-h);bottom:var(--bottom-h);width:240px;transform:translateX(100%);transition:transform .25s;z-index:50;box-shadow:var(--shadow-lg)}
@@ -172,8 +168,9 @@ input,textarea{font-size:14px;color:var(--text)}
 </head>
 <body>
 
+<!-- ===== 应用根节点 ===== -->
 <div id="app">
-  <!-- Topbar -->
+  <!-- 顶栏：Logo、导航、用户按钮 -->
   <div class="topbar" id="topbar">
     <span class="logo" onclick="navigate('home')">🧩</span>
     <span class="brand" onclick="navigate('home')">豆猫</span>
@@ -186,7 +183,7 @@ input,textarea{font-size:14px;color:var(--text)}
     <button class="btn btn-ghost btn-sm" id="btnProfile" style="display:none" onclick="navigate('profile')">👤</button>
   </div>
 
-  <!-- PAGE: Home / Explore -->
+  <!-- 页面：发现广场 -->
   <div class="page active" id="page-home">
     <div class="home-page">
       <div class="home-tabs" id="homeTabs">
@@ -199,12 +196,12 @@ input,textarea{font-size:14px;color:var(--text)}
     </div>
   </div>
 
-  <!-- PAGE: Login / Register -->
+  <!-- 页面：登录/注册 -->
   <div class="page auth-page" id="page-login">
     <div class="auth-card" id="authCard"></div>
   </div>
 
-  <!-- PAGE: Editor -->
+  <!-- 页面：编辑器 -->
   <div class="page editor-page" id="page-editor">
     <div class="editor-toolbar" id="editorToolbar">
       <button class="editor-tool active" data-tool="brush">✏️</button>
@@ -215,11 +212,13 @@ input,textarea{font-size:14px;color:var(--text)}
       <div style="flex:1"></div>
       <button class="editor-tool" onclick="toggleEditorPanel()">🎨</button>
     </div>
+    <!-- 三层画布：参考图 → 珠子 → 网格线 -->
     <div class="editor-canvas-wrap" id="editorCanvasWrap">
       <canvas id="refCanvas"></canvas>
       <canvas id="mainCanvas" class="grid-overlay"></canvas>
       <canvas id="gridCanvas" class="grid-overlay"></canvas>
     </div>
+    <!-- 右侧面板：调色板 + 操作按钮 -->
     <div class="editor-panel" id="editorPanel">
       <div style="margin-bottom:8px">
         <select id="editorBrand" style="width:100%;height:32px;border:1px solid var(--border);border-radius:6px;font-size:12px;margin-bottom:4px"></select>
@@ -248,39 +247,30 @@ input,textarea{font-size:14px;color:var(--text)}
     </div>
   </div>
 
-  <!-- PAGE: Warehouse -->
+  <!-- 页面：我的仓库 -->
   <div class="page warehouse-page" id="page-warehouse">
     <div class="warehouse-sidebar" id="warehouseSidebar">
       <h3>📁 文件夹</h3>
-      <ul class="folder-list" id="folderList">
-        <li class="folder-item active" data-folder="">📋 全部</li>
-      </ul>
+      <ul class="folder-list" id="folderList"><li class="folder-item active" data-folder="">📋 全部</li></ul>
       <button class="btn btn-sm btn-ghost" id="btnNewFolder" style="margin-top:8px;width:100%">+ 新建文件夹</button>
     </div>
     <div class="warehouse-content" id="warehouseContent">
-      <div class="warehouse-header">
-        <h2>我的图纸</h2>
-      </div>
+      <div class="warehouse-header"><h2>我的图纸</h2></div>
       <div class="design-grid" id="warehouseGrid"></div>
       <div class="empty-state hidden" id="warehouseEmpty">
-        <div class="icon">📭</div>
-        <p>还没有图纸，去创作一个吧！</p>
+        <div class="icon">📭</div><p>还没有图纸，去创作一个吧！</p>
         <button class="btn btn-primary" onclick="navigate('editor')">开始创作</button>
       </div>
     </div>
   </div>
 
-  <!-- PAGE: Detail -->
-  <div class="page" id="page-detail">
-    <div class="detail-page" id="detailContent"></div>
-  </div>
+  <!-- 页面：设计详情 -->
+  <div class="page" id="page-detail"><div class="detail-page" id="detailContent"></div></div>
 
-  <!-- PAGE: Profile -->
-  <div class="page" id="page-profile">
-    <div class="profile-page" id="profileContent"></div>
-  </div>
+  <!-- 页面：个人主页 -->
+  <div class="page" id="page-profile"><div class="profile-page" id="profileContent"></div></div>
 
-  <!-- PAGE: Search -->
+  <!-- 页面：搜索 -->
   <div class="page" id="page-search">
     <div class="search-page">
       <div class="search-input-wrap">
@@ -288,24 +278,25 @@ input,textarea{font-size:14px;color:var(--text)}
         <span class="search-icon">🔍</span>
       </div>
       <div class="design-grid" id="searchGrid"></div>
-      <div class="empty-state hidden" id="searchEmpty">
-        <div class="icon">🔍</div>
-        <p>输入关键词搜索图纸</p>
-      </div>
+      <div class="empty-state hidden" id="searchEmpty"><div class="icon">🔍</div><p>输入关键词搜索图纸</p></div>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
+<!-- 提示条 -->
 <div class="toast" id="toast"></div>
 
 <script>
 // ============================================================
-// 豆猫 SPA — API, Auth, Router, Pages
+//  豆猫 SPA 前端 — API 客户端、认证、路由、全部页面
+//  使用原生 JavaScript，基于 hash 的单页路由
 // ============================================================
 
-// ---- API Client ----
+// ============================================
+//  1. API 客户端：封装所有后端请求
+// ============================================
 const API = {
+  // 通用请求方法：自动附加 JWT 认证头
   async request(method, url, body, auth = true) {
     const opts = { method, headers: { 'Content-Type': 'application/json' } };
     if (auth && AUTH.token) opts.headers['Authorization'] = 'Bearer ' + AUTH.token;
@@ -321,17 +312,22 @@ const API = {
   del(url, auth = true) { return this.request('DELETE', url, null, auth); },
 };
 
-// ---- Auth ----
+// ============================================
+//  2. 用户认证：JWT token 管理 + localStorage 持久化
+// ============================================
 const AUTH = {
-  token: localStorage.getItem('doumao_token'),
+  token: localStorage.getItem('doumao_token'),       // 从本地存储恢复登录态
   user: JSON.parse(localStorage.getItem('doumao_user') || 'null'),
 
+  // 登录成功：保存 token 和用户信息
   set(token, user) {
     this.token = token; this.user = user;
     localStorage.setItem('doumao_token', token);
     localStorage.setItem('doumao_user', JSON.stringify(user));
     updateTopbar();
   },
+
+  // 退出登录：清除本地数据
   logout() {
     this.token = null; this.user = null;
     localStorage.removeItem('doumao_token');
@@ -339,21 +335,27 @@ const AUTH = {
     updateTopbar();
     navigate('home');
   },
+
   get isLoggedIn() { return !!this.token && !!this.user; }
 };
 
+// 根据登录状态更新顶栏按钮的显示/隐藏
 function updateTopbar() {
   const loggedIn = AUTH.isLoggedIn;
   document.getElementById('btnLogin').style.display = loggedIn ? 'none' : '';
   document.getElementById('btnProfile').style.display = loggedIn ? '' : 'none';
   document.getElementById('navWarehouse').style.display = loggedIn ? '' : 'none';
-  document.getElementById('btnProfile').textContent = loggedIn ? (AUTH.user.nickname || AUTH.user.username).charAt(0).toUpperCase() : '👤';
+  document.getElementById('btnProfile').textContent = loggedIn
+    ? (AUTH.user.nickname || AUTH.user.username).charAt(0).toUpperCase() : '👤';
 }
 
-// ---- Router ----
-let currentPage = 'home';
-let pageParams = {};
+// ============================================
+//  3. 路由系统：基于 URL hash 的单页路由
+// ============================================
+let currentPage = 'home';       // 当前页面名称
+let pageParams = {};            // 页面参数（如设计 ID）
 
+// 导航到指定页面
 function navigate(page, params = {}) {
   currentPage = page;
   pageParams = params;
@@ -361,17 +363,19 @@ function navigate(page, params = {}) {
   showPage(page);
 }
 
+// 切换页面显示，并触发对应渲染函数
 function showPage(page) {
+  // 隐藏所有页面，显示目标页面
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const el = document.getElementById('page-' + page);
   if (el) el.classList.add('active');
 
-  // Update nav
+  // 更新导航高亮
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   const nav = document.querySelector(`[data-nav="${page}"]`);
   if (nav) nav.classList.add('active');
 
-  // Render page
+  // 根据页面类型调用不同的渲染函数
   switch (page) {
     case 'home': renderHome(); break;
     case 'login': renderAuth(); break;
@@ -383,6 +387,7 @@ function showPage(page) {
   }
 }
 
+// 监听浏览器前进/后退
 window.addEventListener('hashchange', () => {
   const hash = window.location.hash.replace('#', '') || 'home';
   const parts = hash.split('/');
@@ -391,7 +396,9 @@ window.addEventListener('hashchange', () => {
   showPage(currentPage);
 });
 
-// ---- Toast ----
+// ============================================
+//  4. 提示条组件
+// ============================================
 let toastTimer;
 function toast(msg) {
   clearTimeout(toastTimer);
@@ -401,9 +408,75 @@ function toast(msg) {
 }
 
 // ============================================
-//  PAGE: AUTH (Login / Register)
+//  5. 工具函数
 // ============================================
-let authMode = 'login';
+
+// HTML 转义：防止 XSS
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// 生成设计卡片 HTML（发现页、仓库页、个人页共用）
+function designCard(d) {
+  return `
+    <div class="design-card">
+      <div class="thumb">
+        ${d.thumbnail
+          ? `<img src="${d.thumbnail}" alt="${esc(d.title)}">`
+          : `<canvas class="design-thumb-canvas" data-grid='${JSON.stringify((d.gridData || []).slice(0,80)).replace(/'/g,"&#39;")}'></canvas>`}
+      </div>
+      <div class="info">
+        <div class="title">${esc(d.title)}</div>
+        <div class="meta">
+          <span>${d.gridWidth}×${d.gridHeight}</span>
+          <span>${d.beadCount || 0}颗</span>
+          <span>❤ ${d.likesCount || 0}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// 渲染页面上所有设计卡片的缩略图（从内嵌的 grid data 生成 canvas 预览）
+function renderThumbnails() {
+  document.querySelectorAll('.design-thumb-canvas').forEach(canvas => {
+    if (canvas.dataset.rendered) return;  // 避免重复渲染
+    canvas.dataset.rendered = '1';
+    try {
+      const grid = JSON.parse(canvas.dataset.grid);
+      const size = Math.min(80, grid.length || 30);
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const img = ctx.createImageData(size, size);
+      for (let r = 0; r < size && r < grid.length; r++) {
+        const row = grid[r] || [];
+        for (let c = 0; c < size && c < row.length; c++) {
+          const cell = row[c];
+          const idx = (r * size + c) * 4;
+          if (cell && cell.hex) {
+            const h = cell.hex.replace('#', '');
+            img.data[idx] = parseInt(h.substring(0,2), 16);
+            img.data[idx+1] = parseInt(h.substring(2,4), 16);
+            img.data[idx+2] = parseInt(h.substring(4,6), 16);
+            img.data[idx+3] = 255;
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    } catch(e) { /* 忽略缩略图渲染错误 */ }
+  });
+}
+
+// 设计卡片点击事件绑定（在 renderXxx 函数中调用）
+function bindCardClicks(containerId, designs) {
+  document.querySelectorAll('#' + containerId + ' .design-card').forEach((el, i) => {
+    el.onclick = () => navigate('detail', { id: designs[i].id });
+  });
+}
+
+// ============================================
+//  6. 登录/注册页
+// ============================================
+let authMode = 'login';  // 当前是登录还是注册模式
 
 function renderAuth() {
   const card = document.getElementById('authCard');
@@ -420,10 +493,14 @@ function renderAuth() {
   `;
 
   document.getElementById('authSubmit').onclick = handleAuth;
-  document.getElementById('authSwitch').onclick = () => { authMode = isLogin ? 'register' : 'login'; renderAuth(); };
+  document.getElementById('authSwitch').onclick = () => {
+    authMode = isLogin ? 'register' : 'login';
+    renderAuth();
+  };
   document.getElementById('authSkip').onclick = () => navigate('home');
 }
 
+// 处理登录/注册表单提交
 async function handleAuth() {
   const username = document.getElementById('authUsername').value.trim();
   const password = document.getElementById('authPassword').value;
@@ -445,10 +522,11 @@ async function handleAuth() {
 }
 
 // ============================================
-//  PAGE: HOME / EXPLORE
+//  7. 发现广场页（首页）
 // ============================================
-let homeSort = 'latest';
+let homeSort = 'latest';  // 当前排序方式
 
+// 排序标签点击切换
 document.getElementById('homeTabs').addEventListener('click', (e) => {
   const tab = e.target.closest('.home-tab');
   if (!tab) return;
@@ -458,6 +536,7 @@ document.getElementById('homeTabs').addEventListener('click', (e) => {
   renderHome();
 });
 
+// 加载并渲染发现页的公开设计
 async function renderHome() {
   try {
     document.getElementById('exploreLoading').style.display = 'block';
@@ -465,82 +544,31 @@ async function renderHome() {
     const list = res.data.list || [];
     document.getElementById('exploreGrid').innerHTML = list.map(d => designCard(d)).join('');
     document.getElementById('exploreLoading').style.display = 'none';
-    // Attach click handlers
-    document.querySelectorAll('#exploreGrid .design-card').forEach((el, i) => {
-      el.onclick = () => navigate('detail', { id: list[i].id });
-    });
+    bindCardClicks('exploreGrid', list);
+    // 延迟渲染 canvas 缩略图
+    setTimeout(renderThumbnails, 200);
   } catch (e) {
-    document.getElementById('exploreLoading').textContent = '加载失败';
+    document.getElementById('exploreLoading').textContent = '加载失败，请刷新重试';
   }
 }
 
-function designCard(d) {
-  const authorName = d.author ? (d.author.nickname || d.author.username) : '匿名';
-  return `
-    <div class="design-card">
-      <div class="thumb">
-        ${d.thumbnail
-          ? `<img src="${d.thumbnail}" alt="${esc(d.title)}">`
-          : `<canvas class="design-thumb-canvas" data-grid='${JSON.stringify((d.gridData || []).slice(0,80)).replace(/'/g,"&#39;")}'></canvas>`}
-      </div>
-      <div class="info">
-        <div class="title">${esc(d.title)}</div>
-        <div class="meta">
-          <span>${d.gridWidth}×${d.gridHeight}</span>
-          <span>${d.beadCount || 0}颗</span>
-          <span>❤ ${d.likesCount || 0}</span>
-        </div>
-      </div>
-    </div>`;
-}
-
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-// Render design thumbnails from grid data
-setTimeout(() => {
-  document.querySelectorAll('.design-thumb-canvas').forEach(canvas => {
-    try {
-      const grid = JSON.parse(canvas.dataset.grid);
-      const size = Math.min(80, grid.length || 30);
-      canvas.width = size; canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      const img = ctx.createImageData(size, size);
-      for (let r = 0; r < size && r < grid.length; r++) {
-        const row = grid[r] || [];
-        for (let c = 0; c < size && c < row.length; c++) {
-          const cell = row[c];
-          const idx = (r * size + c) * 4;
-          if (cell && cell.hex) {
-            const hex = cell.hex.replace('#', '');
-            img.data[idx] = parseInt(hex.substring(0,2), 16);
-            img.data[idx+1] = parseInt(hex.substring(2,4), 16);
-            img.data[idx+2] = parseInt(hex.substring(4,6), 16);
-            img.data[idx+3] = 255;
-          } else {
-            img.data[idx+3] = 0;
-          }
-        }
-      }
-      ctx.putImageData(img, 0, 0);
-    } catch(e) { /* ignore */ }
-  });
-}, 200);
-
 // ============================================
-//  PAGE: WAREHOUSE
+//  8. 我的仓库页
 // ============================================
-let warehouseFolder = '';
-let warehouseDesigns = [];
+let warehouseFolder = '';         // 当前选中的文件夹 ID（空 = 全部）
+let warehouseDesigns = [];        // 当前显示的设计列表
 
 async function renderWarehouse() {
   if (!AUTH.isLoggedIn) return navigate('login');
+
   try {
+    // 并行加载文件夹列表和设计列表
     const [foldersRes, designsRes] = await Promise.all([
       API.get('/api/folders'),
       API.get(`/api/designs${warehouseFolder ? '?folder_id=' + warehouseFolder : ''}`)
     ]);
 
-    // Render folders
+    // 渲染文件夹侧边栏
     const folderList = document.getElementById('folderList');
     folderList.innerHTML = `
       <li class="folder-item ${warehouseFolder === '' ? 'active' : ''}" data-folder="">📋 全部</li>
@@ -553,7 +581,7 @@ async function renderWarehouse() {
       li.onclick = () => { warehouseFolder = li.dataset.folder; renderWarehouse(); };
     });
 
-    // Render designs
+    // 渲染设计列表
     warehouseDesigns = designsRes.data.list || [];
     const grid = document.getElementById('warehouseGrid');
     const empty = document.getElementById('warehouseEmpty');
@@ -563,37 +591,34 @@ async function renderWarehouse() {
     } else {
       empty.classList.add('hidden');
       grid.innerHTML = warehouseDesigns.map(d => designCard(d)).join('');
-      grid.querySelectorAll('.design-card').forEach((el, i) => {
-        el.onclick = (e) => {
-          if (e.target.closest('.btn')) return;
-          navigate('detail', { id: warehouseDesigns[i].id });
-        };
-      });
+      bindCardClicks('warehouseGrid', warehouseDesigns);
+      setTimeout(renderThumbnails, 200);
     }
   } catch (e) {
     toast(e.message);
   }
 }
 
+// 新建文件夹按钮
 document.getElementById('btnNewFolder').addEventListener('click', async () => {
   const name = prompt('文件夹名称：');
   if (!name) return;
-  try {
-    await API.post('/api/folders', { name });
-    renderWarehouse();
-  } catch (e) { toast(e.message); }
+  try { await API.post('/api/folders', { name }); renderWarehouse(); }
+  catch (e) { toast(e.message); }
 });
 
 // ============================================
-//  PAGE: DETAIL
+//  9. 设计详情页
 // ============================================
 async function renderDetail(id) {
   if (!id) return navigate('home');
+
   try {
     const res = await API.get('/api/designs/' + id, AUTH.isLoggedIn);
     const d = res.data;
     const content = document.getElementById('detailContent');
     const author = d.author || {};
+    // 统计使用的颜色及其数量
     const colors = getUniqueColors(d.gridData);
 
     content.innerHTML = `
@@ -601,9 +626,11 @@ async function renderDetail(id) {
         <div class="detail-preview"><canvas id="detailCanvas"></canvas></div>
         <div class="detail-info">
           <h1>${esc(d.title)}</h1>
-          <div class="author">by <span onclick="navigate('profile',{id:${author.id}})">${esc(author.nickname || author.username || '匿名')}</span></div>
+          <div class="author">作者 <span onclick="navigate('profile',{id:${author.id}})">${esc(author.nickname || author.username || '匿名')}</span></div>
           <div class="desc">${esc(d.description || '暂无描述')}</div>
-          <div class="stats">📐 ${d.gridWidth}×${d.gridHeight} · 🧩 ${d.beadCount || 0}颗 · 🎨 ${d.colorCount || 0}色 · ❤ ${d.likesCount || 0} · 👁 ${(d.viewsCount || 0) + 1}</div>
+          <div class="stats">
+            📐 ${d.gridWidth}×${d.gridHeight} · 🧩 ${d.beadCount || 0}颗 · 🎨 ${d.colorCount || 0}色 · ❤ ${d.likesCount || 0} · 👁 ${(d.viewsCount || 0) + 1}
+          </div>
           <div class="actions">
             <button class="btn btn-sm btn-primary" id="detailLike">${d.liked ? '❤️ 已赞' : '🤍 点赞'}</button>
             ${AUTH.user && AUTH.user.id === d.userId ? `
@@ -611,11 +638,13 @@ async function renderDetail(id) {
               <button class="btn btn-sm btn-danger" id="detailDelete">🗑 删除</button>
             ` : ''}
           </div>
-          <div class="color-list">${colors.map(c => `<span class="color-chip"><span class="dot" style="background:${c.hex}"></span>${esc(c.name)} ×${c.count}</span>`).join('')}</div>
+          <div class="color-list">
+            ${colors.map(c => `<span class="color-chip"><span class="dot" style="background:${c.hex}"></span>${esc(c.name)} ×${c.count}</span>`).join('')}
+          </div>
         </div>
       </div>`;
 
-    // Render preview
+    // 渲染设计预览 canvas
     setTimeout(() => {
       const canvas = document.getElementById('detailCanvas');
       if (!canvas) return;
@@ -636,7 +665,7 @@ async function renderDetail(id) {
       }
     }, 100);
 
-    // Event handlers
+    // 绑定交互按钮事件
     setTimeout(() => {
       document.getElementById('detailLike')?.addEventListener('click', async () => {
         if (!AUTH.isLoggedIn) return navigate('login');
@@ -649,19 +678,17 @@ async function renderDetail(id) {
       document.getElementById('detailEdit')?.addEventListener('click', () => navigate('editor', { editId: id }));
       document.getElementById('detailDelete')?.addEventListener('click', async () => {
         if (confirm('确定删除这个图纸吗？此操作不可撤销。')) {
-          try {
-            await API.del('/api/designs/' + id);
-            toast('已删除');
-            navigate('warehouse');
-          } catch (e) { toast(e.message); }
+          try { await API.del('/api/designs/' + id); toast('已删除'); navigate('warehouse'); }
+          catch (e) { toast(e.message); }
         }
       });
     }, 200);
   } catch (e) {
-    document.getElementById('detailContent').innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${e.message}</p></div>`;
+    document.getElementById('detailContent').innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>${esc(e.message)}</p></div>`;
   }
 }
 
+// 统计 gridData 中各颜色出现次数（用于详情页颜色列表）
 function getUniqueColors(gridData) {
   const map = {};
   const grid = Array.isArray(gridData) ? gridData : [];
@@ -678,7 +705,7 @@ function getUniqueColors(gridData) {
 }
 
 // ============================================
-//  PAGE: PROFILE
+//  10. 个人主页
 // ============================================
 async function renderProfile(uid) {
   if (!AUTH.isLoggedIn && !uid) return navigate('login');
@@ -689,6 +716,8 @@ async function renderProfile(uid) {
     const res = await API.get('/api/user/' + userId, AUTH.isLoggedIn);
     const u = res.data;
     const content = document.getElementById('profileContent');
+    const isOwner = AUTH.user && AUTH.user.id === u.id;
+
     content.innerHTML = `
       <div class="profile-header">
         <div class="profile-avatar">${u.avatar ? `<img src="${u.avatar}" alt="">` : (u.nickname || u.username).charAt(0).toUpperCase()}</div>
@@ -702,7 +731,7 @@ async function renderProfile(uid) {
         ${u.isVip ? '<div class="profile-stat"><div class="num">👑</div><div class="label">VIP</div></div>' : ''}
       </div>
       ${u.bio ? `<p style="color:var(--text2);margin-bottom:16px">${esc(u.bio)}</p>` : ''}
-      ${AUTH.user && AUTH.user.id === u.id ? `
+      ${isOwner ? `
         <div style="display:flex;gap:8px;margin-bottom:16px">
           <button class="btn btn-sm" id="profileEditBtn">✏️ 编辑资料</button>
           <button class="btn btn-sm btn-ghost" id="profileLogoutBtn">🚪 退出登录</button>
@@ -711,10 +740,9 @@ async function renderProfile(uid) {
       <div class="design-grid">${(u.designs || []).map(d => designCard(d)).join('')}</div>
     `;
 
-    content.querySelectorAll('.design-card').forEach((el, i) => {
-      el.onclick = () => navigate('detail', { id: u.designs[i].id });
-    });
+    bindCardClicksFromHTML(content, u.designs || []);
 
+    // 编辑资料按钮
     document.getElementById('profileEditBtn')?.addEventListener('click', () => {
       const nickname = prompt('昵称：', u.nickname || '');
       const bio = prompt('简介：', u.bio || '');
@@ -727,111 +755,146 @@ async function renderProfile(uid) {
         }).catch(e => toast(e.message));
       }
     });
+
+    // 退出登录按钮
     document.getElementById('profileLogoutBtn')?.addEventListener('click', () => {
       AUTH.logout();
       navigate('home');
     });
+
+    setTimeout(renderThumbnails, 200);
   } catch (e) {
-    document.getElementById('profileContent').innerHTML = `<div class="empty-state"><p>${e.message}</p></div>`;
+    document.getElementById('profileContent').innerHTML = `<div class="empty-state"><p>${esc(e.message)}</p></div>`;
   }
 }
 
+// 为个人页的设计卡片绑定点击事件
+function bindCardClicksFromHTML(container, designs) {
+  container.querySelectorAll('.design-card').forEach((el, i) => {
+    el.onclick = () => navigate('detail', { id: designs[i].id });
+  });
+}
+
 // ============================================
-//  PAGE: SEARCH
+//  11. 搜索页
 // ============================================
 let searchTimer;
 document.getElementById('searchInput').addEventListener('input', function() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(renderSearch, 300);
+  searchTimer = setTimeout(renderSearch, 300);  // 300ms 防抖
 });
 
 async function renderSearch() {
   const q = document.getElementById('searchInput').value.trim();
   const grid = document.getElementById('searchGrid');
   const empty = document.getElementById('searchEmpty');
+
   if (!q) {
     grid.innerHTML = '';
     empty.classList.remove('hidden');
+    empty.querySelector('p').textContent = '输入关键词搜索图纸';
     return;
   }
+
   try {
     const res = await API.get('/api/search?q=' + encodeURIComponent(q), false);
     const list = res.data.list || [];
     if (list.length === 0) {
       grid.innerHTML = '';
       empty.classList.remove('hidden');
-      empty.querySelector('p').textContent = `未找到 "${q}" 相关图纸`;
+      empty.querySelector('p').textContent = `未找到 "${esc(q)}" 相关图纸`;
     } else {
       empty.classList.add('hidden');
       grid.innerHTML = list.map(d => designCard(d)).join('');
-      grid.querySelectorAll('.design-card').forEach((el, i) => {
-        el.onclick = () => navigate('detail', { id: list[i].id });
-      });
+      bindCardClicks('searchGrid', list);
+      setTimeout(renderThumbnails, 200);
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) { /* 搜索失败静默处理 */ }
 }
 
 // ============================================
-//  PAGE: EDITOR
+//  12. 编辑器引擎
 // ============================================
-// ---- Editor State ----
+
+// ---- 编辑器状态 ----
 const ES = {
-  gridW: 58, gridH: 58, grid: [], zoom: 1, panX: 0, panY: 0,
-  tool: 'brush', brushSize: 1, eraserSize: 1,
-  curColor: null,
-  mirrorH: false, mirrorV: false, showGrid: true,
-  history: [], historyIdx: -1, maxHistory: 200,
-  isDrawing: false, lastCell: null,
-  refPixels: null, refW: 0, refH: 0, refOpacity: 0.3,
-  editId: null, // if editing an existing design
-  beadData: [], // all bead colors from API
+  gridW: 58, gridH: 58,           // 画板尺寸（宽×高，单位：珠子数）
+  grid: [],                        // 二维数组 grid[row][col] = {name,hex,brand,series}|null
+  zoom: 1, panX: 0, panY: 0,      // 缩放级别和画布平移偏移
+  tool: 'brush',                   // 当前工具：brush/eraser/fill/picker/move
+  brushSize: 1, eraserSize: 1,    // 画笔和橡皮的大小
+  curColor: null,                  // 当前选中的珠子颜色
+  mirrorH: false, mirrorV: false,  // 水平/垂直镜像绘制
+  showGrid: true,                  // 是否显示网格线
+  history: [], historyIdx: -1,     // 撤销历史（存储画板快照）
+  maxHistory: 200,                 // 最多保留 200 步历史
+  isDrawing: false, lastCell: null, // 绘制状态跟踪
+  refPixels: null, refW: 0, refH: 0, refOpacity: 0.3,  // 参考图数据
+  editId: null,                    // 编辑已有设计时的 ID
+  beadData: [],                    // 从 API 加载的珠子颜色列表
 };
 
-let mCanvas, mCtx, gCanvas, gCtx, rCanvas, rCtx;
+// 画布引用
+let mCanvas, mCtx;   // 主画布：渲染珠子网格
+let gCanvas, gCtx;   // 网格画布：渲染网格线
+let rCanvas, rCtx;   // 参考图画布：渲染导入的参考图
 
+// ---- 编辑器初始化 ----
 async function initEditor() {
   const editId = pageParams.editId;
   ES.editId = editId;
 
-  // Load bead data
+  // 从 API 加载珠子颜色数据
   try {
     const res = await API.get('/api/beads/colors', false);
     ES.beadData = res.data || [];
-    ES.curColor = ES.beadData.find(c => c.hex === '#1A1A1A') || ES.beadData[0] || { name: 'Black', hex: '#1A1A1A', brand: 'Hama' };
+    ES.curColor = ES.beadData.find(c => c.hex === '#1A1A1A') || ES.beadData[0]
+      || { name: 'Black', hex: '#1A1A1A', brand: 'Hama' };
   } catch (e) {
     ES.beadData = [];
     ES.curColor = { name: 'Black', hex: '#1A1A1A', brand: 'Hama' };
   }
 
+  // 如果是编辑已有设计，加载其数据
   if (editId) {
     try {
       const res = await API.get('/api/designs/' + editId);
       const d = res.data;
       ES.gridW = d.gridWidth; ES.gridH = d.gridHeight;
-      ES.grid = (Array.isArray(d.gridData) ? d.gridData : []).map(row =>
-        (Array.isArray(row) ? row : []).map(cell => cell ? { ...cell } : null)
-      );
-      // Pad/crop to correct size
-      while (ES.grid.length < ES.gridH) ES.grid.push(Array(ES.gridW).fill(null));
-      ES.grid = ES.grid.slice(0, ES.gridH).map(r => { while (r.length < ES.gridW) r.push(null); return r.slice(0, ES.gridW); });
+      ES.grid = normalizeGrid(d.gridData, d.gridWidth, d.gridHeight);
     } catch (e) {
-      ES.grid = createGrid(ES.gridW, ES.gridH);
+      ES.grid = createEmptyGrid(ES.gridW, ES.gridH);
     }
   } else {
-    ES.grid = createGrid(ES.gridW, ES.gridH);
+    ES.grid = createEmptyGrid(ES.gridW, ES.gridH);
   }
 
+  // 初始化状态
   ES.history = []; ES.historyIdx = -1;
-  saveEditorSnapshot();
-  setupEditorCanvas();
-  buildEditorPalette();
-  bindEditorEvents();
-  renderEditorAll();
-  updateEditorStatus();
+  saveEditorSnapshot();        // 保存初始状态到历史
+  setupEditorCanvas();         // 设置三层画布
+  buildEditorPalette();        // 构建调色板 UI
+  bindEditorEvents();          // 绑定画布交互事件
+  renderEditorAll();           // 首次渲染
+  updateEditorStatus();        // 更新状态栏
 }
 
-function createGrid(w, h) { return Array.from({ length: h }, () => Array(w).fill(null)); }
+// 创建空画板
+function createEmptyGrid(w, h) {
+  return Array.from({ length: h }, () => Array(w).fill(null));
+}
 
+// 规范化 grid 数据：补齐/裁剪到目标尺寸
+function normalizeGrid(gridData, w, h) {
+  let grid = (Array.isArray(gridData) ? gridData : []).map(row =>
+    (Array.isArray(row) ? row : []).map(cell => cell ? { ...cell } : null)
+  );
+  while (grid.length < h) grid.push(Array(w).fill(null));
+  grid = grid.slice(0, h).map(r => { while (r.length < w) r.push(null); return r.slice(0, w); });
+  return grid;
+}
+
+// ---- 画布设置 ----
 function setupEditorCanvas() {
   mCanvas = document.getElementById('mainCanvas');
   mCtx = mCanvas.getContext('2d', { willReadFrequently: true });
@@ -842,6 +905,7 @@ function setupEditorCanvas() {
   updateEditorCanvasSize();
 }
 
+// 更新画布尺寸：内部分辨率 = grid × devicePixelRatio，CSS 尺寸 = grid × zoom
 function updateEditorCanvasSize() {
   const dpr = window.devicePixelRatio || 1;
   const iw = ES.gridW * dpr, ih = ES.gridH * dpr;
@@ -852,17 +916,29 @@ function updateEditorCanvasSize() {
   positionEditorCanvases();
 }
 
+// 将画布定位到容器中心，并应用平移偏移
 function positionEditorCanvases() {
   const ct = document.getElementById('editorCanvasWrap');
   const cx = ct.clientWidth / 2 + ES.panX - ES.gridW * ES.zoom / 2;
   const cy = ct.clientHeight / 2 + ES.panY - ES.gridH * ES.zoom / 2;
   const w = ES.gridW * ES.zoom, h = ES.gridH * ES.zoom;
-  [mCanvas, gCanvas, rCanvas].forEach(c => { c.style.left = cx + 'px'; c.style.top = cy + 'px'; c.style.width = w + 'px'; c.style.height = h + 'px'; });
+  [mCanvas, gCanvas, rCanvas].forEach(c => {
+    c.style.left = cx + 'px'; c.style.top = cy + 'px';
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+  });
 }
 
+// ---- 编辑器渲染 ----
 function renderEditorAll() {
-  // Render grid
-  mCtx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+  renderMainGrid();       // 珠子网格
+  renderGridOverlay();    // 网格线
+  renderRefOverlay();     // 参考图
+}
+
+// 渲染珠子网格：每个珠子 = 1 像素，使用 ImageData 高效写入
+function renderMainGrid() {
+  const dpr = window.devicePixelRatio || 1;
+  mCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   mCtx.clearRect(0, 0, ES.gridW, ES.gridH);
   const imgData = mCtx.createImageData(ES.gridW, ES.gridH);
   for (let r = 0; r < ES.gridH; r++) {
@@ -879,43 +955,56 @@ function renderEditorAll() {
     }
   }
   mCtx.putImageData(imgData, 0, 0);
+}
 
-  // Grid overlay
+// 渲染网格线叠加层
+function renderGridOverlay() {
+  const dpr = window.devicePixelRatio || 1;
+  gCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   gCtx.clearRect(0, 0, ES.gridW, ES.gridH);
-  if (ES.showGrid) {
-    gCtx.strokeStyle = 'rgba(0,0,0,0.25)';
-    gCtx.lineWidth = 0.5;
-    for (let r = 0; r <= ES.gridH; r++) { gCtx.beginPath(); gCtx.moveTo(0, r); gCtx.lineTo(ES.gridW, r); gCtx.stroke(); }
-    for (let c = 0; c <= ES.gridW; c++) { gCtx.beginPath(); gCtx.moveTo(c, 0); gCtx.lineTo(c, ES.gridH); gCtx.stroke(); }
+  if (!ES.showGrid) return;
+  gCtx.strokeStyle = 'rgba(0,0,0,0.25)';
+  gCtx.lineWidth = 0.5;
+  for (let r = 0; r <= ES.gridH; r++) {
+    gCtx.beginPath(); gCtx.moveTo(0, r); gCtx.lineTo(ES.gridW, r); gCtx.stroke();
   }
-
-  // Ref overlay
-  rCtx.clearRect(0, 0, ES.gridW, ES.gridH);
-  if (ES.refPixels) {
-    const refImg = rCtx.createImageData(ES.gridW, ES.gridH);
-    for (let r = 0; r < Math.min(ES.gridH, ES.refH); r++) {
-      for (let c = 0; c < Math.min(ES.gridW, ES.refW); c++) {
-        const px = ES.refPixels[r] ? ES.refPixels[r][c] : null;
-        if (!px) continue;
-        const idx = (r * ES.gridW + c) * 4;
-        refImg.data[idx] = px.r; refImg.data[idx + 1] = px.g; refImg.data[idx + 2] = px.b;
-        refImg.data[idx + 3] = Math.round(ES.refOpacity * 255);
-      }
-    }
-    rCtx.putImageData(refImg, 0, 0);
+  for (let c = 0; c <= ES.gridW; c++) {
+    gCtx.beginPath(); gCtx.moveTo(c, 0); gCtx.lineTo(c, ES.gridH); gCtx.stroke();
   }
 }
 
+// 渲染参考图叠加层（图片导入后显示）
+function renderRefOverlay() {
+  const dpr = window.devicePixelRatio || 1;
+  rCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  rCtx.clearRect(0, 0, ES.gridW, ES.gridH);
+  if (!ES.refPixels) return;
+  const refImg = rCtx.createImageData(ES.gridW, ES.gridH);
+  for (let r = 0; r < Math.min(ES.gridH, ES.refH); r++) {
+    for (let c = 0; c < Math.min(ES.gridW, ES.refW); c++) {
+      const px = ES.refPixels[r] ? ES.refPixels[r][c] : null;
+      if (!px) continue;
+      const idx = (r * ES.gridW + c) * 4;
+      refImg.data[idx] = px.r; refImg.data[idx + 1] = px.g; refImg.data[idx + 2] = px.b;
+      refImg.data[idx + 3] = Math.round(ES.refOpacity * 255);
+    }
+  }
+  rCtx.putImageData(refImg, 0, 0);
+}
+
+// 更新状态栏：画板尺寸 + 珠子数量
 function updateEditorStatus() {
-  let placed = 0; const colors = new Set();
-  for (let r = 0; r < ES.gridH; r++) for (let c = 0; c < ES.gridW; c++) {
-    const cell = ES.grid[r][c]; if (cell && cell.hex) { placed++; colors.add(cell.hex); }
+  let placed = 0;
+  for (let r = 0; r < ES.gridH; r++) {
+    for (let c = 0; c < ES.gridW; c++) {
+      if (ES.grid[r][c] && ES.grid[r][c].hex) placed++;
+    }
   }
   document.getElementById('editorStatSize').textContent = `${ES.gridW}×${ES.gridH}`;
   document.getElementById('editorStatBeads').textContent = placed;
 }
 
-// Editor history
+// ---- 撤销/重做系统 ----
 function saveEditorSnapshot() {
   const snap = ES.grid.map(r => r.map(c => c ? { ...c } : null));
   ES.history = ES.history.slice(0, ES.historyIdx + 1);
@@ -944,7 +1033,7 @@ function restoreEditorSnapshot(snap) {
   updateEditorStatus();
 }
 
-// Editor drawing
+// ---- 画布像素坐标 → 珠子坐标 ----
 function getEditorCell(ex, ey) {
   const rect = mCanvas.getBoundingClientRect();
   const col = Math.floor((ex - rect.left) / ES.zoom);
@@ -953,39 +1042,51 @@ function getEditorCell(ex, ey) {
   return { row, col };
 }
 
+// 设置单个珠子
 function setEditorCell(r, c, color) {
   if (r < 0 || r >= ES.gridH || c < 0 || c >= ES.gridW) return;
   const old = ES.grid[r][c];
-  if (old && color && old.hex === color.hex) return;
-  if (!old && !color) return;
+  if (old && color && old.hex === color.hex) return;  // 颜色相同，跳过
+  if (!old && !color) return;                          // 都是空，跳过
   ES.grid[r][c] = color ? { ...color } : null;
 }
 
+// 在指定位置绘制（根据当前工具和参数）
 function editorDrawAt(row, col) {
   let changed = false;
+
   if (ES.tool === 'brush' && ES.curColor) {
+    // 画笔：在 brushSize × brushSize 范围内绘制，支持镜像
     const bs = ES.brushSize;
-    for (let dr = -bs + 1; dr < bs; dr++) for (let dc = -bs + 1; dc < bs; dc++) {
-      const r = row + dr, c = col + dc;
-      if (r < 0 || r >= ES.gridH || c < 0 || c >= ES.gridW) continue;
-      const old = ES.grid[r] ? ES.grid[r][c] : null;
-      if (old && old.hex === ES.curColor.hex) continue;
-      setEditorCell(r, c, ES.curColor); changed = true;
-      if (ES.mirrorH) { const mc = ES.gridW - 1 - c; if (mc >= 0 && mc < ES.gridW) setEditorCell(r, mc, ES.curColor); }
-      if (ES.mirrorV) { const mr = ES.gridH - 1 - r; if (mr >= 0 && mr < ES.gridH) setEditorCell(mr, c, ES.curColor); }
-      if (ES.mirrorH && ES.mirrorV) { setEditorCell(ES.gridH - 1 - r, ES.gridW - 1 - c, ES.curColor); }
+    for (let dr = -bs + 1; dr < bs; dr++) {
+      for (let dc = -bs + 1; dc < bs; dc++) {
+        const r = row + dr, c = col + dc;
+        if (r < 0 || r >= ES.gridH || c < 0 || c >= ES.gridW) continue;
+        const old = ES.grid[r] ? ES.grid[r][c] : null;
+        if (old && old.hex === ES.curColor.hex) continue;
+        setEditorCell(r, c, ES.curColor); changed = true;
+        // 应用镜像
+        if (ES.mirrorH) { const mc = ES.gridW - 1 - c; if (mc >= 0 && mc < ES.gridW) setEditorCell(r, mc, ES.curColor); }
+        if (ES.mirrorV) { const mr = ES.gridH - 1 - r; if (mr >= 0 && mr < ES.gridH) setEditorCell(mr, c, ES.curColor); }
+        if (ES.mirrorH && ES.mirrorV) { setEditorCell(ES.gridH - 1 - r, ES.gridW - 1 - c, ES.curColor); }
+      }
     }
   } else if (ES.tool === 'eraser') {
+    // 橡皮：在 eraserSize × eraserSize 范围内清除
     const es = ES.eraserSize;
-    for (let dr = -es + 1; dr < es; dr++) for (let dc = -es + 1; dc < es; dc++) {
-      const r = row + dr, c = col + dc;
-      if (r < 0 || r >= ES.gridH || c < 0 || c >= ES.gridW) continue;
-      if (!ES.grid[r] || !ES.grid[r][c]) continue;
-      setEditorCell(r, c, null); changed = true;
+    for (let dr = -es + 1; dr < es; dr++) {
+      for (let dc = -es + 1; dc < es; dc++) {
+        const r = row + dr, c = col + dc;
+        if (r < 0 || r >= ES.gridH || c < 0 || c >= ES.gridW) continue;
+        if (!ES.grid[r] || !ES.grid[r][c]) continue;
+        setEditorCell(r, c, null); changed = true;
+      }
     }
   } else if (ES.tool === 'fill') {
+    // 填充：泛洪算法
     changed = editorFloodFill(row, col);
   } else if (ES.tool === 'picker') {
+    // 吸色：获取该位置颜色并切换到画笔
     const cell = ES.grid[row] ? ES.grid[row][col] : null;
     if (cell) { ES.curColor = cell; setEditorTool('brush'); buildEditorPalette(); }
     return false;
@@ -993,11 +1094,13 @@ function editorDrawAt(row, col) {
   return changed;
 }
 
+// 泛洪填充：从起点开始填充所有相连的同色区域
 function editorFloodFill(sr, sc) {
   const target = ES.grid[sr] ? ES.grid[sr][sc] : null;
   const tHex = target ? target.hex : null;
   const fill = ES.curColor;
   if (!fill || tHex === fill.hex) return false;
+
   const stack = [[sr, sc]], visited = new Set();
   let changed = false;
   while (stack.length) {
@@ -1014,56 +1117,74 @@ function editorFloodFill(sr, sc) {
   return changed;
 }
 
-// Editor palette
+// ---- 调色板 UI ----
 function buildEditorPalette() {
-  // Build brand select
+  // 品牌下拉框
   const brands = [...new Set(ES.beadData.map(c => c.brand))];
   const bs = document.getElementById('editorBrand');
   bs.innerHTML = brands.map(b => `<option value="${b}">${b}</option>`).join('');
   bs.value = ES.curColor ? (ES.curColor.brand || brands[0]) : brands[0];
   bs.onchange = buildEditorPalette;
 
+  // 系列标签
   const brand = bs.value;
   const brandColors = ES.beadData.filter(c => c.brand === brand);
   const series = [...new Set(brandColors.map(c => c.series))];
 
-  // Series tabs
   const st = document.getElementById('editorSeriesTabs');
-  st.innerHTML = series.map((s, i) => `<button class="btn btn-sm ${i === 0 ? '' : 'btn-ghost'}" data-series="${s}" style="font-size:10px;height:24px;padding:0 8px">${s}</button>`).join('');
+  st.innerHTML = series.map((s, i) =>
+    `<button class="btn btn-sm ${i === 0 ? '' : 'btn-ghost'}" data-series="${esc(s)}"
+      style="font-size:10px;height:24px;padding:0 8px">${esc(s)}</button>`).join('');
+
   st.querySelectorAll('button').forEach(btn => {
     btn.onclick = () => {
-      st.querySelectorAll('button').forEach(b => { b.className = 'btn btn-sm btn-ghost'; b.style.cssText = 'font-size:10px;height:24px;padding:0 8px'; });
-      btn.className = 'btn btn-sm'; btn.style.cssText = 'font-size:10px;height:24px;padding:0 8px;background:var(--primary-light);color:var(--primary);border-color:var(--primary)';
+      st.querySelectorAll('button').forEach(b => {
+        b.className = 'btn btn-sm btn-ghost';
+        b.style.cssText = 'font-size:10px;height:24px;padding:0 8px';
+      });
+      btn.className = 'btn btn-sm';
+      btn.style.cssText = 'font-size:10px;height:24px;padding:0 8px;background:var(--primary-light);color:var(--primary);border-color:var(--primary)';
       renderEditorColorGrid(btn.dataset.series);
     };
   });
+
   if (series.length > 0) renderEditorColorGrid(series[0]);
 }
 
+// 渲染选中系列的颜色网格
 function renderEditorColorGrid(seriesName) {
-  const colors = ES.beadData.filter(c => c.brand === document.getElementById('editorBrand').value && c.series === seriesName);
+  const brand = document.getElementById('editorBrand').value;
+  const colors = ES.beadData.filter(c => c.brand === brand && c.series === seriesName);
   const grid = document.getElementById('editorColorGrid');
+
   grid.innerHTML = colors.map(c => `
-    <div style="width:26px;height:26px;border-radius:50%;background:${c.hex};cursor:pointer;border:2px solid ${ES.curColor && ES.curColor.hex === c.hex ? 'var(--primary)' : 'transparent'};box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);transition:all .12s;flex-shrink:0"
-      data-hex="${c.hex}" data-name="${c.name}" data-brand="${c.brand}" data-series="${c.series}"
-      title="${c.name} ${c.hex}"
+    <div style="width:26px;height:26px;border-radius:50%;background:${c.hex};cursor:pointer;
+      border:2px solid ${ES.curColor && ES.curColor.hex === c.hex ? 'var(--primary)' : 'transparent'};
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);transition:all .12s;flex-shrink:0"
+      data-hex="${c.hex}" data-name="${esc(c.name)}" data-brand="${esc(c.brand)}" data-series="${esc(c.series)}"
+      title="${esc(c.name)} ${c.hex}"
       onmouseover="this.style.transform='scale(1.2)';this.style.zIndex='2'"
       onmouseout="this.style.transform='';this.style.zIndex=''"
     ></div>`).join('');
 
   grid.querySelectorAll('div').forEach(dot => {
     dot.onclick = function() {
-      ES.curColor = { name: this.dataset.name, hex: this.dataset.hex, brand: this.dataset.brand, series: this.dataset.series };
+      ES.curColor = {
+        name: this.dataset.name, hex: this.dataset.hex,
+        brand: this.dataset.brand, series: this.dataset.series
+      };
       if (ES.tool === 'eraser') setEditorTool('brush');
       buildEditorPalette();
     };
   });
 }
 
-// Editor tools
+// ---- 工具切换 ----
 function setEditorTool(tool) {
   ES.tool = tool;
-  document.querySelectorAll('#editorToolbar .editor-tool').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
+  document.querySelectorAll('#editorToolbar .editor-tool').forEach(b => {
+    b.classList.toggle('active', b.dataset.tool === tool);
+  });
 }
 
 document.querySelectorAll('#editorToolbar .editor-tool').forEach(b => {
@@ -1074,24 +1195,46 @@ function toggleEditorPanel() {
   document.getElementById('editorPanel').classList.toggle('open');
 }
 
-// Editor button handlers
+// ---- 编辑器按钮事件 ----
 document.getElementById('editorBtnUndo').addEventListener('click', editorUndo);
 document.getElementById('editorBtnRedo').addEventListener('click', editorRedo);
-document.getElementById('editorBtnMirrorH').addEventListener('click', function() { ES.mirrorH = !ES.mirrorH; this.style.background = ES.mirrorH ? 'var(--primary-light)' : ''; });
-document.getElementById('editorBtnMirrorV').addEventListener('click', function() { ES.mirrorV = !ES.mirrorV; this.style.background = ES.mirrorV ? 'var(--primary-light)' : ''; });
-document.getElementById('editorBtnGrid').addEventListener('click', function() { ES.showGrid = !ES.showGrid; renderEditorAll(); });
+document.getElementById('editorBtnMirrorH').addEventListener('click', function() {
+  ES.mirrorH = !ES.mirrorH;
+  this.style.background = ES.mirrorH ? 'var(--primary-light)' : '';
+});
+document.getElementById('editorBtnMirrorV').addEventListener('click', function() {
+  ES.mirrorV = !ES.mirrorV;
+  this.style.background = ES.mirrorV ? 'var(--primary-light)' : '';
+});
+document.getElementById('editorBtnGrid').addEventListener('click', function() {
+  ES.showGrid = !ES.showGrid;
+  renderEditorAll();
+});
 
-document.getElementById('editorBtnImport').addEventListener('click', () => document.getElementById('editorImportFile').click());
+// 导入图片按钮
+document.getElementById('editorBtnImport').addEventListener('click', () => {
+  document.getElementById('editorImportFile').click();
+});
 document.getElementById('editorImportFile').addEventListener('change', async function() {
   if (!this.files[0]) return;
   const form = new FormData();
   form.append('file', this.files[0]);
   form.append('targetWidth', ES.gridW);
   try {
-    const res = await fetch('/api/image-to-grid', { method: 'POST', body: form, headers: AUTH.token ? { 'Authorization': 'Bearer ' + AUTH.token } : {} });
+    const res = await fetch('/api/image-to-grid', {
+      method: 'POST', body: form,
+      headers: AUTH.token ? { 'Authorization': 'Bearer ' + AUTH.token } : {}
+    });
     const data = await res.json();
     if (data.code === 200) {
-      ES.refPixels = data.data.grid.map(row => row.map(cell => cell ? { r: parseInt(cell.hex.substring(1,3), 16), g: parseInt(cell.hex.substring(3,5), 16), b: parseInt(cell.hex.substring(5,7), 16) } : null));
+      // 将返回的网格数据转为参考图像素
+      ES.refPixels = data.data.grid.map(row =>
+        row.map(cell => cell ? {
+          r: parseInt(cell.hex.substring(1, 3), 16),
+          g: parseInt(cell.hex.substring(3, 5), 16),
+          b: parseInt(cell.hex.substring(5, 7), 16)
+        } : null)
+      );
       ES.refW = data.data.gridWidth; ES.refH = data.data.gridHeight;
       renderEditorAll();
       toast(`参考图已生成 (${data.data.gridWidth}×${data.data.gridHeight})`);
@@ -1100,29 +1243,46 @@ document.getElementById('editorImportFile').addEventListener('change', async fun
   this.value = '';
 });
 
+// 导出 PNG 按钮
 document.getElementById('editorBtnExport').addEventListener('click', () => {
-  const scale = 4;
-  const ec = document.createElement('canvas'); ec.width = ES.gridW * scale; ec.height = ES.gridH * scale;
+  const scale = 4;  // 每个珠子 = 4×4 像素
+  const ec = document.createElement('canvas');
+  ec.width = ES.gridW * scale; ec.height = ES.gridH * scale;
   const ectx = ec.getContext('2d'); ectx.imageSmoothingEnabled = false;
-  for (let r = 0; r < ES.gridH; r++) for (let c = 0; c < ES.gridW; c++) {
-    const cell = ES.grid[r] ? ES.grid[r][c] : null;
-    const cx = c * scale + scale / 2, cy = r * scale + scale / 2, rad = scale * 0.45;
-    ectx.beginPath(); ectx.arc(cx, cy, rad, 0, Math.PI * 2);
-    ectx.fillStyle = cell ? cell.hex : '#f0f0f0'; ectx.fill();
-    if (cell) { ectx.strokeStyle = 'rgba(0,0,0,.15)'; ectx.lineWidth = 0.5; ectx.stroke(); }
+
+  for (let r = 0; r < ES.gridH; r++) {
+    for (let c = 0; c < ES.gridW; c++) {
+      const cell = ES.grid[r] ? ES.grid[r][c] : null;
+      const cx = c * scale + scale / 2, cy = r * scale + scale / 2, rad = scale * 0.45;
+      ectx.beginPath(); ectx.arc(cx, cy, rad, 0, Math.PI * 2);
+      ectx.fillStyle = cell ? cell.hex : '#f0f0f0'; ectx.fill();
+      if (cell) { ectx.strokeStyle = 'rgba(0,0,0,.15)'; ectx.lineWidth = 0.5; ectx.stroke(); }
+    }
   }
-  const a = document.createElement('a'); a.download = `拼豆_${ES.gridW}x${ES.gridH}.png`; a.href = ec.toDataURL(); a.click();
+
+  const a = document.createElement('a');
+  a.download = `拼豆_${ES.gridW}x${ES.gridH}.png`;
+  a.href = ec.toDataURL(); a.click();
   toast('已导出 PNG');
 });
 
+// 保存设计按钮
 document.getElementById('editorBtnSave').addEventListener('click', async () => {
   if (!AUTH.isLoggedIn) { navigate('login'); return toast('请先登录'); }
+
   const title = prompt('图纸名称：', ES.editId ? '更新图纸' : '我的拼豆设计');
   if (!title) return;
 
-  const gridData = ES.grid.map(row => row.map(cell => cell ? { id: cell.id, name: cell.name, hex: cell.hex, brand: cell.brand, series: cell.series } : null));
+  // 序列化画板数据
+  const gridData = ES.grid.map(row =>
+    row.map(cell => cell ? {
+      id: cell.id, name: cell.name, hex: cell.hex, brand: cell.brand, series: cell.series
+    } : null)
+  );
+
   const body = {
-    title, gridWidth: ES.gridW, gridHeight: ES.gridH,
+    title,
+    gridWidth: ES.gridW, gridHeight: ES.gridH,
     gridData: JSON.stringify(gridData),
     isPublic: confirm('是否公开发布？'),
     brand: ES.curColor ? ES.curColor.brand : 'Hama',
@@ -1140,34 +1300,70 @@ document.getElementById('editorBtnSave').addEventListener('click', async () => {
   } catch (e) { toast('保存失败: ' + e.message); }
 });
 
-// Editor canvas events
+// ---- 画布交互事件 ----
 function bindEditorEvents() {
   const ct = document.getElementById('editorCanvasWrap');
-  let dragPanStart = null;
+  let dragPanStart = null;  // 平移工具的起始位置
 
+  // 鼠标/触摸按下
   ct.onpointerdown = function(e) {
-    if (e.button === 2) { e.preventDefault(); const cell = getEditorCell(e.clientX, e.clientY); if (cell && ES.grid[cell.row] && ES.grid[cell.row][cell.col]) { setEditorCell(cell.row, cell.col, null); saveEditorSnapshot(); renderEditorAll(); } return; }
+    // 右键：快速擦除
+    if (e.button === 2) {
+      e.preventDefault();
+      const cell = getEditorCell(e.clientX, e.clientY);
+      if (cell && ES.grid[cell.row] && ES.grid[cell.row][cell.col]) {
+        setEditorCell(cell.row, cell.col, null);
+        saveEditorSnapshot(); renderEditorAll();
+      }
+      return;
+    }
     if (e.button !== 0) return;
-    if (ES.tool === 'move') { dragPanStart = { x: e.clientX - ES.panX, y: e.clientY - ES.panY }; return; }
+
+    // 移动工具：记录起始平移位置
+    if (ES.tool === 'move') {
+      dragPanStart = { x: e.clientX - ES.panX, y: e.clientY - ES.panY };
+      return;
+    }
+
     const cell = getEditorCell(e.clientX, e.clientY);
     if (!cell) return;
     ES.isDrawing = true; ES.lastCell = cell;
-    if (editorDrawAt(cell.row, cell.col)) { saveEditorSnapshot(); renderEditorAll(); updateEditorStatus(); }
+    if (editorDrawAt(cell.row, cell.col)) {
+      saveEditorSnapshot(); renderEditorAll(); updateEditorStatus();
+    }
   };
 
+  // 鼠标/触摸移动
   ct.onpointermove = function(e) {
-    if (ES.tool === 'move' && dragPanStart) { ES.panX = e.clientX - dragPanStart.x; ES.panY = e.clientY - dragPanStart.y; positionEditorCanvases(); return; }
+    // 移动工具拖拽平移
+    if (ES.tool === 'move' && dragPanStart) {
+      ES.panX = e.clientX - dragPanStart.x;
+      ES.panY = e.clientY - dragPanStart.y;
+      positionEditorCanvases(); return;
+    }
     if (!ES.isDrawing) return;
+
     const cell = getEditorCell(e.clientX, e.clientY);
+    // 防止重复绘制同一格
     if (!cell || (ES.lastCell && ES.lastCell.row === cell.row && ES.lastCell.col === cell.col)) return;
     ES.lastCell = cell;
     if (editorDrawAt(cell.row, cell.col)) { saveEditorSnapshot(); renderEditorAll(); }
   };
 
-  ct.onpointerup = function() { ES.isDrawing = false; ES.lastCell = null; dragPanStart = null; updateEditorStatus(); };
-  ct.onpointerleave = function() { ES.isDrawing = false; ES.lastCell = null; dragPanStart = null; updateEditorStatus(); };
+  // 松开：结束绘制
+  ct.onpointerup = function() {
+    ES.isDrawing = false; ES.lastCell = null; dragPanStart = null;
+    updateEditorStatus();
+  };
+  ct.onpointerleave = function() {
+    ES.isDrawing = false; ES.lastCell = null; dragPanStart = null;
+    updateEditorStatus();
+  };
+
+  // 禁用右键菜单
   ct.oncontextmenu = e => e.preventDefault();
 
+  // 滚轮缩放（以鼠标位置为中心）
   ct.onwheel = function(e) {
     e.preventDefault();
     const rect = ct.getBoundingClientRect();
@@ -1175,6 +1371,7 @@ function bindEditorEvents() {
     const my = e.clientY - rect.top - ct.clientHeight / 2;
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     const newZ = Math.max(0.1, Math.min(30, ES.zoom * delta));
+    // 调整平移偏移以保持鼠标下的点不动
     ES.panX -= mx * (newZ / ES.zoom - 1);
     ES.panY -= my * (newZ / ES.zoom - 1);
     ES.zoom = newZ;
@@ -1182,7 +1379,7 @@ function bindEditorEvents() {
     renderEditorAll();
   };
 
-  // Touch
+  // 触摸事件（移动端）
   ct.addEventListener('touchstart', e => {
     if (e.touches.length === 1) {
       const t = e.touches[0];
@@ -1200,14 +1397,20 @@ function bindEditorEvents() {
   ct.addEventListener('touchend', ct.onpointerup);
 }
 
-// Keyboard shortcuts
+// ---- 键盘快捷键（仅在编辑器页面生效）----
 document.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (currentPage !== 'editor') return;
   const ctrl = e.ctrlKey || e.metaKey;
+
+  // Ctrl+Z：撤销
   if (ctrl && e.key === 'z') { e.preventDefault(); editorUndo(); }
+  // Ctrl+Y / Ctrl+Shift+Z：重做
   if (ctrl && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); editorRedo(); }
+  // Ctrl+S：保存
   if (ctrl && e.key === 's') { e.preventDefault(); document.getElementById('editorBtnSave').click(); }
+
+  // 单键工具切换
   switch (e.key.toLowerCase()) {
     case 'b': setEditorTool('brush'); break;
     case 'e': setEditorTool('eraser'); break;
@@ -1218,17 +1421,19 @@ document.addEventListener('keydown', e => {
 });
 
 // ============================================
-//  INIT
+//  13. 应用启动
 // ============================================
 function init() {
   updateTopbar();
+
+  // 根据 URL hash 初始化页面
   const hash = window.location.hash.replace('#', '') || 'home';
   const parts = hash.split('/');
   currentPage = parts[0];
   pageParams = { id: parts[1] };
   showPage(currentPage);
 
-  // Topbar create button
+  // 顶栏快捷按钮
   document.getElementById('btnCreate').onclick = () => navigate('editor');
   document.getElementById('btnLogin').onclick = () => navigate('login');
 }
