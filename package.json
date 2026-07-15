@@ -1,0 +1,23 @@
+{
+  "name": "doumao",
+  "version": "1.0.0",
+  "description": "豆猫 - 在线拼豆图纸工具 (dmao.cloud clone)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.33.0",
+    "uuid": "^10.0.0"
+  },
+  "allowScripts": {
+    "better-sqlite3@11.10.0": true,
+    "sharp@0.33.5": true
+  }
+}
