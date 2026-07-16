@@ -147,11 +147,17 @@
                 {{ s.style_name }}
               </button>
             </div>
-            <!-- 选中风格描述 -->
-            <div v-if="selectedStyle" class="mt-2 p-2 bg-blue-50 rounded-lg text-[10px] text-slate-600 leading-relaxed">
-              <span class="font-semibold text-primary">{{ selectedStyle.style_name }}</span>：
-              {{ selectedStyle.description }}<br/>
-              <span class="text-slate-400">推荐 {{ selectedStyle.recommend_size[0] }}×{{ selectedStyle.recommend_size[1] }} · {{ selectedStyle.difficulty }} · 约{{ selectedStyle.estimate_beads }}颗 · 标签：{{ selectedStyle.tags.join('、') }}</span>
+            <!-- 选中风格预览 -->
+            <div v-if="selectedStyle" class="mt-2 p-2 bg-blue-50 rounded-lg text-[10px] text-slate-600 leading-relaxed space-y-1">
+              <div class="flex items-center gap-2">
+                <div class="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-2xl shadow-sm">
+                  {{ {q_big_head:'👶',cute_sticker:'🪄',simple_line:'🎨',pet_cute:'🐱',couple_double:'💑'}[selectedStyle.style_id] || '✨' }}
+                </div>
+                <div class="flex-1">
+                  <span class="font-semibold text-primary">{{ selectedStyle.style_name }}</span>：{{ selectedStyle.description }}
+                </div>
+              </div>
+              <div class="text-slate-400">{{ selectedStyle.recommend_size[0] }}×{{ selectedStyle.recommend_size[1] }} · {{ selectedStyle.difficulty }} · 约{{ selectedStyle.estimate_beads }}颗 · {{ selectedStyle.tags.join('、') }}</div>
             </div>
           </section>
 

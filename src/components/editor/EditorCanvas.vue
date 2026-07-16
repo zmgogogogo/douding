@@ -77,9 +77,16 @@
       ({{ crossCol + 1 }}, {{ crossRow + 1 }})
     </div>
 
-    <!-- 画笔大小预览 -->
-    <div v-if="showBrushPreview" class="absolute pointer-events-none border-2 border-slate-700/50 rounded-sm"
-      :style="brushPreviewStyle" />
+    <!-- 画笔大小预览 — 网格点阵 -->
+    <div v-if="showBrushPreview" class="absolute pointer-events-none z-20"
+      :style="{ left: brushLeft + 'px', top: brushTop + 'px', width: brushSize * zoom + 'px', height: brushSize * zoom + 'px' }">
+      <div class="w-full h-full grid"
+        :style="{ gridTemplateColumns: `repeat(${brushSize}, 1fr)`, gridTemplateRows: `repeat(${brushSize}, 1fr)` }">
+        <div v-for="i in brushSize * brushSize" :key="i"
+          class="border border-slate-700/30"
+          :style="{ background: curColor?.hex ? curColor.hex + '40' : 'transparent' }" />
+      </div>
+    </div>
 
     <!-- 施工引导栏 -->
     <EditorGuideBar v-if="guideMode"
@@ -281,14 +288,23 @@ function posToGrid(e) {
 const showBrushPreview = computed(() =>
   (props.tool === 'brush' || props.tool === 'eraser') && !props.guideMode
 )
-const brushPreviewStyle = computed(() => {
-  const size = props.brushSize * props.zoom
-  return {
-    width: `${size}px`, height: `${size}px`,
-    left: `${mousePos.value.x - size / 2}px`,
-    top: `${mousePos.value.y - size / 2}px`
-  }
+const brushLeft = computed(() => {
+  const { row, col } = posToGridFromMouse()
+  if (col < 0 || row < 0) return -100
+  return gridLeft.value + col * props.zoom
 })
+const brushTop = computed(() => {
+  const { row, col } = posToGridFromMouse()
+  if (col < 0 || row < 0) return -100
+  return gridTop.value + row * props.zoom
+})
+function posToGridFromMouse() {
+  if (!canvasWrap.value) return { row: -1, col: -1 }
+  const rect = canvasWrap.value.getBoundingClientRect()
+  const x = mousePos.value.x - gridLeft.value
+  const y = mousePos.value.y - gridTop.value
+  return { row: Math.floor(y / props.zoom), col: Math.floor(x / props.zoom) }
+}
 
 // ---- 指针事件 ----
 let longPressTimer = null
