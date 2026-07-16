@@ -8,7 +8,9 @@ import { ref, computed, reactive } from 'vue'
 // ---- 单例状态（模块级，全局共享） ----
 const gridW = ref(58)
 const gridH = ref(58)
-const grid = ref([])            // grid[r][c] = {name, hex, brand, series} | null
+const grid = ref([])            // 当前活动层的 grid（兼容旧代码）
+const layers = ref([])          // [{id, name, visible, opacity, grid}]
+const currentLayerId = ref(null)
 const zoom = ref(10)
 const panX = ref(0)
 const panY = ref(0)
@@ -193,7 +195,79 @@ const brushPreviewStyle = computed(() => {
 function initGrid(w, h) {
   gridW.value = w
   gridH.value = h
-  grid.value = Array.from({ length: h }, () => Array(w).fill(null))
+  const newGrid = Array.from({ length: h }, () => Array(w).fill(null))
+  grid.value = newGrid
+  layers.value = [{ id: 'l1', name: '图层 1', visible: true, opacity: 1, grid: newGrid }]
+  currentLayerId.value = 'l1'
+}
+
+// ---- 图层管理 ----
+function addLayer(name) {
+  const id = 'l' + Date.now()
+  const newGrid = Array.from({ length: gridH.value }, () => Array(gridW.value).fill(null))
+  layers.value.push({ id, name: name || `图层 ${layers.value.length + 1}`, visible: true, opacity: 1, grid: newGrid })
+  currentLayerId.value = id
+  grid.value = newGrid
+}
+
+function removeLayer(id) {
+  if (layers.value.length <= 1) return
+  const idx = layers.value.findIndex(l => l.id === id)
+  if (idx < 0) return
+  layers.value.splice(idx, 1)
+  const newIdx = Math.min(idx, layers.value.length - 1)
+  currentLayerId.value = layers.value[newIdx].id
+  grid.value = layers.value[newIdx].grid
+}
+
+function selectLayer(id) {
+  const layer = layers.value.find(l => l.id === id)
+  if (!layer) return
+  currentLayerId.value = id
+  grid.value = layer.grid
+}
+
+function toggleLayerVisibility(id) {
+  const layer = layers.value.find(l => l.id === id)
+  if (layer) layer.visible = !layer.visible
+}
+
+function setLayerOpacity(id, opacity) {
+  const layer = layers.value.find(l => l.id === id)
+  if (layer) layer.opacity = Math.max(0, Math.min(1, opacity))
+}
+
+function mergeLayerDown(id) {
+  const idx = layers.value.findIndex(l => l.id === id)
+  if (idx <= 0) return // 不能合并最底层
+  const upper = layers.value[idx]
+  const lower = layers.value[idx - 1]
+  for (let r = 0; r < gridH.value; r++) {
+    for (let c = 0; c < gridW.value; c++) {
+      if (upper.grid[r]?.[c] && !lower.grid[r]?.[c]) {
+        lower.grid[r][c] = { ...upper.grid[r][c] }
+      }
+    }
+  }
+  layers.value.splice(idx, 1)
+  selectLayer(lower.id)
+  saveSnapshot()
+}
+
+// 获取合成后的完整 grid（所有可见层合并）
+function getCompositeGrid() {
+  const result = Array.from({ length: gridH.value }, () => Array(gridW.value).fill(null))
+  for (const layer of layers.value) {
+    if (!layer.visible) continue
+    for (let r = 0; r < gridH.value; r++) {
+      for (let c = 0; c < gridW.value; c++) {
+        if (layer.grid[r]?.[c] && !result[r][c]) {
+          result[r][c] = { ...layer.grid[r][c] }
+        }
+      }
+    }
+  }
+  return result
 }
 
 function getCell(r, c) {
@@ -221,6 +295,11 @@ function getSymmetryCells(r, c) {
 function saveSnapshot() {
   const snapshot = {
     grid: grid.value.map(r => r ? r.map(c => c ? { ...c } : null) : []),
+    layers: layers.value.map(l => ({
+      ...l,
+      grid: l.grid.map(r => r ? r.map(c => c ? { ...c } : null) : [])
+    })),
+    currentLayerId: currentLayerId.value,
     w: gridW.value,
     h: gridH.value
   }
@@ -249,6 +328,13 @@ function restoreSnapshot(snapshot) {
   gridW.value = snapshot.w
   gridH.value = snapshot.h
   grid.value = snapshot.grid.map(r => r ? r.map(c => c ? { ...c } : null) : [])
+  if (snapshot.layers) {
+    layers.value = snapshot.layers.map(l => ({
+      ...l,
+      grid: l.grid.map(r => r ? r.map(c => c ? { ...c } : null) : [])
+    }))
+    currentLayerId.value = snapshot.currentLayerId || layers.value[0]?.id
+  }
 }
 
 // ---- 对称模式 ----
@@ -424,6 +510,11 @@ export function useEditor() {
     initGrid, getCell, setCell,
     getSymmetryCells,
     saveSnapshot, undo, redo, restoreSnapshot,
+    // 图层
+    layers, currentLayerId,
+    addLayer, removeLayer, selectLayer,
+    toggleLayerVisibility, setLayerOpacity, mergeLayerDown, getCompositeGrid,
+    // 对称
     cycleSymmetry,
     cycleRefOpacity, setRefOpacity, toggleRefLock,
     toggleGuideMode, guidePrev, guideNext,

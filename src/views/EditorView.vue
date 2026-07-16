@@ -200,8 +200,17 @@
       />
 
       <!-- 中间画布区 -->
+      <!-- 图层面板 -->
+      <EditorLayerPanel
+        :layers="layers" :currentLayerId="currentLayerId"
+        @addLayer="addLayer('新图层')"
+        @removeLayer="removeLayer"
+        @selectLayer="selectLayer"
+        @toggleVisibility="toggleLayerVisibility"
+        @mergeDown="mergeLayerDown" />
+
       <EditorCanvas ref="editorCanvasRef"
-        :gridW="gridW" :gridH="gridH" :grid="grid"
+        :gridW="gridW" :gridH="gridH" :grid="compositeGrid"
         :zoom="zoom" :panX="panX" :panY="panY"
         :tool="tool" :brushSize="brushSize" :curColor="curColor"
         :highlightHex="highlightHex" :symmetryMode="symmetryMode"
@@ -329,6 +338,9 @@ import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import EditorCanvas from '@/components/editor/EditorCanvas.vue'
 import EditorRightPanel from '@/components/editor/EditorRightPanel.vue'
 import EditorFocusMode from '@/components/editor/EditorFocusMode.vue'
+import EditorLayerPanel from '@/components/editor/EditorLayerPanel.vue'
+
+const compositeGrid = computed(() => getCompositeGrid())
 
 const route = useRoute()
 const router = useRouter()
@@ -357,6 +369,8 @@ const {
   beadCount, gridColorStats,
   brandColorCounts, totalColorCount, seriesColorCount,
   brushPreviewStyle, colorSearch, recentColors, addRecentColor,
+  layers, currentLayerId, addLayer, removeLayer, selectLayer,
+  toggleLayerVisibility, setLayerOpacity, mergeLayerDown, getCompositeGrid,
   initGrid, getCell, setCell,
   saveSnapshot, undo, redo,
   cycleSymmetry, cycleRefOpacity, setRefOpacity, toggleRefLock,
