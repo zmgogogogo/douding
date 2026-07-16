@@ -13,11 +13,20 @@
 
     <AppToast :message="toastMessage" :visible="toastVisible" />
     <AppDialog ref="dialogRef" />
+
+    <!-- PWA 安装提示 -->
+    <div v-if="showInstall" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[200] bg-white rounded-2xl shadow-xl
+                border border-[var(--ui-border)] px-4 py-3 flex items-center gap-3 animate-slide-up">
+      <span class="text-sm font-medium text-slate-700">📱 安装豆丁到桌面</span>
+      <button class="px-3 py-1 rounded-lg bg-primary text-white text-xs font-medium"
+        @click="installApp">安装</button>
+      <button class="text-xs text-slate-400 hover:text-slate-600" @click="showInstall = false">稍后</button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, provide } from 'vue'
+import { ref, provide, onMounted } from 'vue'
 import AppSidebar from './components/AppSidebar.vue'
 import AppToast from './components/AppToast.vue'
 import AppDialog from './components/AppDialog.vue'
@@ -29,4 +38,23 @@ const { message: toastMessage, visible: toastVisible } = useToast()
 // 全局对话框注入
 const dialogRef = ref(null)
 provide(DIALOG_KEY, dialogRef)
+
+// PWA 安装提示
+const showInstall = ref(false)
+let installEvent = null
+
+onMounted(() => {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    installEvent = e
+    showInstall.value = true
+  })
+})
+
+function installApp() {
+  if (installEvent) {
+    installEvent.prompt()
+    installEvent.userChoice.then(() => { showInstall.value = false; installEvent = null })
+  }
+}
 </script>

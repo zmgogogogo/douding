@@ -200,6 +200,8 @@ const isDrawing = ref(false)
 const lastCell = ref(null)
 const strokeCells = new Set()
 const spaceHeld = ref(false)  // 空格键拖拽平移
+const shiftHeld = ref(false)  // Shift 画直线
+const lineStartCell = ref(null) // 直线起点
 
 // ---- 原点锚定坐标计算 ----
 // 原点 (0,0) = 拼豆有效范围左上角
@@ -420,7 +422,34 @@ function onPointerUp(e) {
   }
 }
 
+// 画直线（Shift 吸附）
+function drawLine(r1, c1, r2, c2) {
+  const dr = Math.abs(r2 - r1), dc = Math.abs(c2 - c1)
+  const steps = Math.max(dr, dc)
+  for (let i = 0; i <= steps; i++) {
+    const t = steps === 0 ? 0 : i / steps
+    const r = Math.round(r1 + (r2 - r1) * t)
+    const c = Math.round(c1 + (c2 - c1) * t)
+    drawSingleCell(r, c)
+  }
+}
+
 function drawAt(row, col) {
+  if (row < 0 || row >= props.gridH || col < 0 || col >= props.gridW) return
+  // Shift 画直线
+  if (shiftHeld.value && lineStartCell.value) {
+    strokeCells.clear()
+    drawLine(lineStartCell.value.row, lineStartCell.value.col, row, col)
+    return
+  }
+  const cells = getSymmetryCells(row, col)
+  for (const [r, c] of cells) {
+    drawSingleCell(r, c)
+  }
+  emit('scheduleRender')
+}
+
+function drawSingleCell(row, col) {
   if (row < 0 || row >= props.gridH || col < 0 || col >= props.gridW) return
   const cells = getSymmetryCells(row, col)
   for (const [r, c] of cells) {
@@ -464,15 +493,19 @@ function onDoubleClick() { emit('zoomTo1x') }
 
 function onKeyDown(e) {
   if (e.code === 'Space') {
-    e.preventDefault()
-    spaceHeld.value = true
+    e.preventDefault(); spaceHeld.value = true
     canvasWrap.value.style.cursor = 'grab'
+  }
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+    shiftHeld.value = true
+    canvasWrap.value.style.cursor = 'crosshair'
   }
 }
 
 function onKeyUp(e) {
-  if (e.code === 'Space') {
-    spaceHeld.value = false
+  if (e.code === 'Space') { spaceHeld.value = false; canvasWrap.value.style.cursor = '' }
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+    shiftHeld.value = false; lineStartCell.value = null
     canvasWrap.value.style.cursor = ''
   }
 }
