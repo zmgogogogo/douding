@@ -192,17 +192,6 @@ export class CanvasRenderer {
     this.ctx.lineWidth = 1.5 / dpr
     this.ctx.strokeRect(0, 0, w, h)
 
-    // ---- 十字定位线（红色虚线风格） ----
-    if (crossCol >= 0 && crossCol < w && crossRow >= 0 && crossRow < h) {
-      this.ctx.strokeStyle = '#FF4444'
-      this.ctx.lineWidth = 1 / dpr
-      this.ctx.beginPath()
-      this.ctx.moveTo(crossCol + 0.5, 0)
-      this.ctx.lineTo(crossCol + 0.5, h)
-      this.ctx.moveTo(0, crossRow + 0.5)
-      this.ctx.lineTo(w, crossRow + 0.5)
-      this.ctx.stroke()
-    }
   }
 
   /**

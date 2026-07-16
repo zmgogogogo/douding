@@ -69,14 +69,6 @@
       </div>
     </div>
 
-    <!-- 坐标悬停提示 -->
-    <div v-if="showGrid && crossCol >= 0 && crossRow >= 0"
-      class="absolute bottom-16 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md rounded-full
-             px-3 py-1 shadow-md border border-slate-200 text-[11px] font-mono font-semibold
-             text-slate-600 z-10 select-none pointer-events-none">
-      ({{ crossCol + 1 }}, {{ crossRow + 1 }})
-    </div>
-
     <!-- 画笔大小预览 — 网格点阵 -->
     <div v-if="showBrushPreview" class="absolute pointer-events-none z-20"
       :style="{ left: brushLeft + 'px', top: brushTop + 'px', width: brushSize * zoom + 'px', height: brushSize * zoom + 'px' }">

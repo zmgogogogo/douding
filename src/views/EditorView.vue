@@ -210,7 +210,7 @@
         @mergeDown="mergeLayerDown" />
 
       <EditorCanvas ref="editorCanvasRef"
-        :gridW="gridW" :gridH="gridH" :grid="compositeGrid"
+        :gridW="gridW" :gridH="gridH" :grid="grid"
         :zoom="zoom" :panX="panX" :panY="panY"
         :tool="tool" :brushSize="brushSize" :curColor="curColor"
         :highlightHex="highlightHex" :symmetryMode="symmetryMode"
