@@ -15,14 +15,16 @@ router.get('/public/announcement', (req, res) => {
 
 // AI 状态检查
 router.get('/public/ai-status', (req, res) => {
-  const hasAI = !!process.env.ALIYUN_API_KEY
+  const replicate = !!process.env.REPLICATE_API_KEY
+  const aliyun = !!process.env.ALIYUN_API_KEY
+  const hasAI = replicate || aliyun
   res.json({
     code: 200,
     data: {
       cartoonEnabled: hasAI,
-      provider: hasAI ? '阿里云通义万相' : '本地处理（效果有限）',
-      tip: hasAI ? 'AI Q版卡通化已就绪' : '配置 ALIYUN_API_KEY 环境变量以启用 AI 增强效果',
-      setupGuide: hasAI ? null : 'https://dashscope.console.aliyun.com/apiKey'
+      provider: replicate ? 'Replicate (retro-diffusion)' : aliyun ? '阿里云通义万相' : '本地处理',
+      tip: hasAI ? 'AI Q版卡通化已就绪' : '配置 REPLICATE_API_KEY 或 ALIYUN_API_KEY 以启用 AI',
+      setupGuide: hasAI ? null : 'https://replicate.com/account/api-tokens'
     }
   })
 })

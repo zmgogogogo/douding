@@ -80,21 +80,79 @@ async function generateEdges(inputPath, w, h, strength) {
 }
 
 // ============================================
-//  AI API（通义万相）
+//  AI API（Replicate 优先，通义万相备选）
 // ============================================
 
 async function tryAiCartoonize(inputPath, style, w, h) {
-  const apiKey = process.env.ALIYUN_API_KEY
-  if (!apiKey) return null
-  try {
-    return await tongyiWanxiang(inputPath, style, w, h, apiKey)
-  } catch (e) {
-    console.warn('AI 卡通化失败，降级本地:', e.message)
-    return null
+  // 方案A：Replicate（免费额度，像素画专用模型）
+  const replicateKey = process.env.REPLICATE_API_KEY
+  if (replicateKey) {
+    try {
+      return await replicateCartoon(inputPath, style, w, h, replicateKey)
+    } catch (e) { console.warn('Replicate 失败，尝试备选:', e.message) }
   }
+
+  // 方案B：通义万相
+  const aliKey = process.env.ALIYUN_API_KEY
+  if (aliKey) {
+    try {
+      return await tongyiCartoon(inputPath, style, w, h, aliKey)
+    } catch (e) { console.warn('通义万相失败:', e.message) }
+  }
+
+  return null
 }
 
-async function tongyiWanxiang(inputPath, style, w, h, apiKey) {
+/**
+ * Replicate API — retro-diffusion 像素画专用模型
+ * 新用户有免费额度，$0.002-0.005/张
+ */
+async function replicateCartoon(inputPath, style, w, h, apiKey) {
+  const fs = await import('fs')
+  const imgBase64 = fs.readFileSync(inputPath).toString('base64')
+  const dataUrl = `data:image/jpeg;base64,${imgBase64}`
+
+  const prompts = {
+    q_big_head: 'chibi cartoon portrait, big head small body 1:1 ratio, cute big eyes, black outline, flat color blocks, no shading, clean white background, pixel art style',
+    cute_sticker: 'sticker style cartoon, thick black outline, bright saturated flat colors, no shadows, white background, simple cute design, pixel art',
+    simple_line: 'minimalist flat illustration, muted pastel colors, thin lines, large solid color areas, simple elegant, pixel art style',
+    pet_cute: 'chibi cute pet, round face big eyes, simplified fur, black outline, flat colors, pixel art style',
+    couple_double: 'chibi couple cartoon, two characters, big heads small bodies, cute interaction, black outlines, flat colors, simple background, pixel art'
+  }
+
+  // 使用 Replicate 的 retro-diffusion 模型
+  const Replicate = (await import('replicate')).default
+  const replicate = new Replicate({ auth: apiKey })
+
+  const output = await replicate.run(
+    'catacolabs/retro-diffusion:378394eb258bccf1b0ba3067ea90dc10178f43f274fe33e9f20f2265ab1989f0',
+    {
+      input: {
+        prompt: prompts[style] || prompts.q_big_head,
+        negative_prompt: 'realistic, photo, complex background, gradient, shadows, blur, noise, ugly, deformed, complex textures',
+        image: dataUrl,
+        width: w,
+        height: h,
+        num_outputs: 1,
+        num_inference_steps: 25,
+        guidance_scale: 7.5
+      }
+    }
+  )
+
+  // output 是图片 URL 数组
+  const imgUrl = Array.isArray(output) ? output[0] : output
+  if (imgUrl) {
+    const imgRes = await fetch(imgUrl)
+    return Buffer.from(await imgRes.arrayBuffer())
+  }
+  return null
+}
+
+/**
+ * 通义万相（备选）
+ */
+async function tongyiCartoon(inputPath, style, w, h, apiKey) {
   const fs = await import('fs')
   const imgBase64 = fs.readFileSync(inputPath).toString('base64')
 
