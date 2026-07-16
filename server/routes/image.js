@@ -14,6 +14,7 @@ import { postProcessGrid } from '../services/gridPostProcess.js'
 import { rgbToOklab, oklabDist } from '../utils/colorSpace.js'
 import { unsharpMask } from '../services/unsharpMask.js'
 import { getStyleList, buildImageOptionsFromStyle, getStyleById } from '../services/qStyleTemplates.js'
+import { photoToCartoon } from '../services/cartoonizer.js'
 
 const router = Router()
 
@@ -41,6 +42,23 @@ router.get('/image/qstyle/:id', (req, res) => {
   res.json({ code: 200, data: style })
 })
 
+// POST /api/image/qcartoon — 照片 Q 版卡通化（返回处理后的图片）
+router.post('/image/qcartoon', authOptional, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ code: 400, message: '请选择图片' })
+  try {
+    const style = req.body.qStyle || 'q_big_head'
+    const tw = parseInt(req.body.targetWidth) || 512
+    const th = parseInt(req.body.targetHeight) || 512
+
+    const cartoonBuffer = await photoToCartoon(req.file.path, { style, targetW: tw, targetH: th })
+    res.setHeader('Content-Type', 'image/png')
+    res.send(cartoonBuffer)
+  } catch (e) {
+    console.error('Q版卡通化失败:', e)
+    res.status(500).json({ code: 500, message: '卡通化失败: ' + e.message })
+  }
+})
+
 router.post('/image-to-grid', authOptional, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ code: 400, message: '请选择图片' })
 
@@ -60,6 +78,18 @@ router.post('/image-to-grid', authOptional, upload.single('file'), async (req, r
       if (!req.body.crisp) req.body.crisp = qStyleOptions.crisp
       if (!req.body.dither && qStyleOptions.dither) req.body.dither = qStyleOptions.dither
       if (!req.body.segmentation) req.body.segmentation = qStyleOptions.segmentation
+    }
+  }
+
+  // Q 版风格：先卡通化处理，用卡通图替代原图进入拼豆管道
+  if (qStyle) {
+    try {
+      const fs = await import('fs')
+      const cartoonBuffer = await photoToCartoon(req.file.path, { style: qStyle, targetW: 512, targetH: 512 })
+      fs.writeFileSync(req.file.path, cartoonBuffer) // 替换原图
+      console.log('Q版卡通化完成，风格:', qStyle)
+    } catch (e) {
+      console.warn('Q版卡通化预处理失败，使用原图继续:', e.message)
     }
   }
 
