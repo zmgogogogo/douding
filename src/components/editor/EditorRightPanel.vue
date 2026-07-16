@@ -45,11 +45,16 @@
       <div class="grid grid-cols-7 gap-1">
         <button v-for="c in colors" :key="c.hex"
           class="aspect-square rounded-lg transition-all duration-100 relative
-                 hover:scale-125 hover:z-10 hover:shadow-md"
+                 hover:scale-125 hover:z-10 hover:shadow-md flex items-end justify-center"
           :class="curColor?.hex === c.hex ? 'ring-2 ring-primary ring-offset-1' : 'ring-1 ring-black/5'"
           :style="{ background: c.hex }"
           :title="c.name + ' ' + c.hex + (inventory[c.id] != null ? ' 库存:' + inventory[c.id] : '')"
           @click="$emit('selectColor', c)">
+          <!-- 色卡编号标签 -->
+          <span class="text-[7px] font-semibold text-white/90 bg-black/25 rounded-sm px-0.5 leading-tight mb-0.5 select-none"
+            style="text-shadow: 0 1px 2px rgba(0,0,0,0.4);letter-spacing:-0.3px;">
+            {{ c.name.length > 4 ? c.name.slice(0,4) : c.name }}
+          </span>
           <!-- 库存标记 -->
           <span v-if="inventory[c.id] != null && inventory[c.id] <= 0"
             class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-400 ring-1 ring-white shadow-sm" />
