@@ -130,6 +130,31 @@
             </p>
           </section>
 
+          <!-- Q 版风格选择 -->
+          <section>
+            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+              ✨ Q版风格 <span class="text-primary font-normal normal-case tracking-normal ml-1">— 可选</span>
+            </h3>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                :class="!qStyle ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+                @click="qStyle = null">无（标准转换）</button>
+              <button v-for="s in qStyles" :key="s.style_id"
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors relative"
+                :class="qStyle === s.style_id ? 'bg-primary/10 text-primary ring-1 ring-primary' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+                @click="selectQStyle(s)">
+                {{ s.style_name }}
+              </button>
+            </div>
+            <!-- 选中风格描述 -->
+            <div v-if="selectedStyle" class="mt-2 p-2 bg-blue-50 rounded-lg text-[10px] text-slate-600 leading-relaxed">
+              <span class="font-semibold text-primary">{{ selectedStyle.style_name }}</span>：
+              {{ selectedStyle.description }}<br/>
+              <span class="text-slate-400">推荐 {{ selectedStyle.recommend_size[0] }}×{{ selectedStyle.recommend_size[1] }} · {{ selectedStyle.difficulty }} · 约{{ selectedStyle.estimate_beads }}颗 · 标签：{{ selectedStyle.tags.join('、') }}</span>
+            </div>
+          </section>
+
           <!-- 预览效果 -->
           <section v-if="gridPreview.length">
             <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">预览</h3>
@@ -186,6 +211,11 @@ const cropX = ref(0), cropY = ref(0), cropW = ref(0), cropH = ref(0)
 // 缩放旋转
 const scale = ref(1), rotation = ref(0)
 
+// Q版风格
+const qStyle = ref(null)
+const qStyles = ref([])
+const selectedStyle = computed(() => qStyles.value.find(s => s.style_id === qStyle.value) || null)
+
 // 参数
 const targetW = ref(58), targetH = ref(58)
 const brand = ref('全部')
@@ -228,7 +258,22 @@ const handles = computed(() => {
   ]
 })
 
+// Q版风格
+function selectQStyle(s) {
+  qStyle.value = s.style_id
+  targetW.value = s.recommend_size[0]
+  targetH.value = s.recommend_size[1]
+}
+
+async function loadQStyles() {
+  try {
+    const res = await API.get('/api/image/qstyles', false)
+    if (res.code === 200) qStyles.value = res.data || []
+  } catch (_) {}
+}
+
 onMounted(async () => {
+  loadQStyles()
   try {
     const res = await API.get('/api/beads/colors', false)
     allColors.value = res.data || []
@@ -352,6 +397,7 @@ async function generate() {
     form.append('cropH', String(sh))
     form.append('brand', brand.value)
     if (rawMode.value) form.append('raw', 'true')
+    if (qStyle.value) form.append('qStyle', qStyle.value)
 
     const res = await API.upload('/api/image-to-grid', form, auth.isLoggedIn.value)
     if (res.code === 200) {

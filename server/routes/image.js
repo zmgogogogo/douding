@@ -1,17 +1,5 @@
 // ============================================
-//  图片处理路由 — 上传 + 图片转拼豆图纸
-//
-//  算法管道（严格按五阶段顺序执行）：
-//    一、引导滤波保边平滑（r=4, ε=0.02，在中间分辨率上）
-//    二、语义分区掩码生成（HSV 5类区域 + 连通域分析）
-//    三、分区约束纯色量化（各区域独立K值 K-Means，无抖动）
-//    四、边缘对齐最近邻像素化（Canny + 网格偏移 + NN下采样）
-//    五、后处理（连通域净化 + 轮廓补强 + 形态学开运算）
-//
-//  三条铁则：
-//    ❌ 禁用所有抖动（Floyd-Steinberg 等）
-//    ❌ 禁用双线性/双三次/Lanczos（会产生过渡杂色）
-//    ✅ 最近邻 + 边缘对齐 + 纯色硬量化
+//  图片处理路由 — 上传 + 图片转拼豆图纸 + Q版转换
 // ============================================
 import { Router } from 'express'
 import { upload } from '../middleware/upload.js'
@@ -25,6 +13,7 @@ import { regionConstrainedQuantize } from '../services/regionQuantize.js'
 import { postProcessGrid } from '../services/gridPostProcess.js'
 import { rgbToOklab, oklabDist } from '../utils/colorSpace.js'
 import { unsharpMask } from '../services/unsharpMask.js'
+import { getStyleList, buildImageOptionsFromStyle, getStyleById } from '../services/qStyleTemplates.js'
 
 const router = Router()
 
@@ -40,11 +29,39 @@ router.post('/upload', authRequired, upload.single('file'), async (req, res) => 
 //  图片转拼豆网格（核心端点）
 //  严格按五阶段顺序执行
 // ============================================
+// GET /api/image/qstyles — 获取 Q 版风格列表
+router.get('/image/qstyles', (req, res) => {
+  res.json({ code: 200, data: getStyleList() })
+})
+
+// GET /api/image/qstyle/:id — 获取单个风格详情
+router.get('/image/qstyle/:id', (req, res) => {
+  const style = getStyleById(req.params.id)
+  if (!style) return res.status(404).json({ code: 404, message: '风格不存在' })
+  res.json({ code: 200, data: style })
+})
+
 router.post('/image-to-grid', authOptional, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ code: 400, message: '请选择图片' })
 
-  const targetWidth = parseInt(req.body.targetWidth) || DEFAULT_GRID_SIZE
+  // Q 版风格：自动适配参数
+  const qStyle = req.body.qStyle || null
+  let targetWidth = parseInt(req.body.targetWidth) || DEFAULT_GRID_SIZE
   const brand = req.body.brand || null
+
+  // 如果指定了 Q 版风格，加载预设参数
+  const qStyleOptions = qStyle ? buildImageOptionsFromStyle(qStyle) : null
+  if (qStyleOptions) {
+    const style = getStyleById(qStyle)
+    if (style) {
+      targetWidth = parseInt(req.body.targetWidth) || style.recommend_size[0]
+      // 注入风格参数到请求中
+      if (!req.body.prefilter) req.body.prefilter = qStyleOptions.prefilter
+      if (!req.body.crisp) req.body.crisp = qStyleOptions.crisp
+      if (!req.body.dither && qStyleOptions.dither) req.body.dither = qStyleOptions.dither
+      if (!req.body.segmentation) req.body.segmentation = qStyleOptions.segmentation
+    }
+  }
 
   // 算法控制参数
   const rawMode = req.body.raw === 'true' || req.body.raw === '1'  // 1:1还原，不匹配色卡
