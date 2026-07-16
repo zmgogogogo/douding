@@ -94,6 +94,31 @@
 
       <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
 
+      <!-- 画布尺寸选择弹窗 -->
+      <div v-if="showSizePicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+        @click.self="showSizePicker = false">
+        <div class="bg-white rounded-2xl shadow-xl p-5 w-[340px] max-w-[90vw] space-y-4 animate-bounce-in">
+          <h3 class="font-bold text-slate-800 text-sm">选择画布尺寸</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <button v-for="p in sizePresets" :key="p.label"
+              class="p-3 rounded-xl border border-slate-200 hover:border-primary hover:bg-blue-50 transition-colors text-left"
+              @click="confirmSize(p.w, p.h)">
+              <div class="font-semibold text-sm text-slate-700">{{ p.label }}</div>
+              <div class="text-[10px] text-slate-400">{{ p.w }}×{{ p.h }} · {{ p.desc }}</div>
+            </button>
+          </div>
+          <div class="flex items-center gap-2 pt-1">
+            <input v-model.number="sizeDialogW" type="number" min="10" max="300"
+              class="flex-1 h-9 border border-slate-200 rounded-lg px-3 text-xs text-center" placeholder="宽" />
+            <span class="text-slate-300">×</span>
+            <input v-model.number="sizeDialogH" type="number" min="10" max="300"
+              class="flex-1 h-9 border border-slate-200 rounded-lg px-3 text-xs text-center" placeholder="高" />
+            <button class="h-9 px-3 rounded-lg bg-primary text-white text-xs font-medium"
+              @click="confirmSize(sizeDialogW, sizeDialogH)">确定</button>
+          </div>
+        </div>
+      </div>
+
       <!-- AI 生成弹窗 -->
       <div v-if="showAiPrompt" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
         @click.self="showAiPrompt = false">
@@ -643,9 +668,23 @@ async function onFileChange(e) {
   fileInput.value.value = ''
 }
 
-// ---- 创作入口页方法 ----
+// ---- 画布尺寸预设 ----
+const sizePresets = [
+  { label: '小', w: 29, h: 29, desc: '迷你钥匙扣' },
+  { label: '中', w: 58, h: 58, desc: '标准拼豆板' },
+  { label: '大', w: 87, h: 87, desc: '大幅作品' },
+  { label: '横版', w: 87, h: 58, desc: '横版装饰画' },
+  { label: '竖版', w: 58, h: 87, desc: '竖版挂件' },
+]
+const showSizePicker = ref(false)
+
 function startBlank() {
-  // 全新开始
+  showSizePicker.value = true
+}
+
+function confirmSize(w, h) {
+  gridW.value = w; gridH.value = h
+  showSizePicker.value = false
   inEditor.value = true
   initGrid(gridW.value, gridH.value)
   saveSnapshot()
