@@ -126,11 +126,14 @@
                 shadow-[0_8px_30px_rgba(0,0,0,0.1)] border border-[var(--ui-border)] px-4 py-2 flex items-center gap-3 z-10 select-none">
       <div class="flex flex-col items-start">
         <span class="text-[9px] text-[var(--ui-text-tertiary)] leading-none">{{ editMode ? '编辑模式' : '完成模式' }}</span>
-        <span class="text-[13px] font-bold text-[var(--ui-text-primary)]">{{ gridW }}×{{ gridH }} 个豆子</span>
+        <span class="text-[13px] font-bold text-[var(--ui-text-primary)]">{{ gridW }}×{{ gridH }} · {{ beadCount }}颗</span>
       </div>
       <button class="h-7 px-2.5 rounded-full bg-[var(--ui-bg-tertiary)] text-[10px] text-[var(--ui-text-secondary)]
                    font-medium hover:bg-[var(--ui-border)] transition-colors flex items-center gap-1"
-        @click="$emit('openSizeDialog')"><PencilIcon :size="10" />修改大小</button>
+        @click="$emit('autoFit')" title="根据内容自动调整画布"><MaximizeIcon :size="10" />自适应</button>
+      <button class="h-7 px-2.5 rounded-full bg-[var(--ui-bg-tertiary)] text-[10px] text-[var(--ui-text-secondary)]
+                   font-medium hover:bg-[var(--ui-border)] transition-colors flex items-center gap-1"
+        @click="$emit('openSizeDialog')"><PencilIcon :size="10" />大小</button>
       <button class="h-7 px-2.5 rounded-full text-[10px] font-medium text-white transition-colors flex items-center gap-1"
         :class="guideMode ? 'bg-emerald-500' : 'bg-primary'"
         @click="$emit('toggleGuide')"><Wand2Icon :size="10" />{{ guideMode ? '退出' : '辅助' }}</button>
@@ -156,7 +159,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { PencilIcon, Wand2Icon, EyeIcon } from 'lucide-vue-next'
+import { PencilIcon, Wand2Icon, EyeIcon, MaximizeIcon } from 'lucide-vue-next'
 import { CanvasRenderer } from '@/utils/canvas.js'
 import EditorGuideBar from './EditorGuideBar.vue'
 import EditorZoomControl from './EditorZoomControl.vue'
@@ -181,7 +184,7 @@ const emit = defineEmits([
   'setZoom', 'zoomIn', 'zoomOut', 'zoomToFit', 'zoomTo1x',
   'setRefOpacity', 'refZoomIn', 'refZoomOut', 'refMove', 'refReset',
   'toggleGuide', 'guidePrev', 'guideNext',
-  'openSizeDialog', 'removeNoise',
+  'openSizeDialog', 'removeNoise', 'autoFit',
   'update:crossCol', 'update:crossRow', 'update:mousePos',
   'update:selectionRect', 'deleteSelection', 'copySelection', 'pasteSelection',
   'pickColor',
@@ -225,12 +228,12 @@ const containerStyle = computed(() => {
   const gl = gridLeft.value
   const gt = gridTop.value
   return {
-    backgroundColor: '#F5F8FC',
+    backgroundColor: '#FAFBFC',
     touchAction: 'none',
-    // 全局坐标网格：浅灰蓝细线，1px 线宽
+    // 全局坐标网格：超淡灰细线
     backgroundImage: `
-      linear-gradient(to right, #DCE6F2 1px, transparent 1px),
-      linear-gradient(to bottom, #DCE6F2 1px, transparent 1px)
+      linear-gradient(to right, #E8ECF0 1px, transparent 1px),
+      linear-gradient(to bottom, #E8ECF0 1px, transparent 1px)
     `.replace(/\s+/g, ' ').trim(),
     backgroundSize: `${z}px ${z}px`,
     backgroundPosition: `${gl}px ${gt}px`,

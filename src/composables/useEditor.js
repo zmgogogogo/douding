@@ -201,6 +201,42 @@ function initGrid(w, h) {
   currentLayerId.value = 'l1'
 }
 
+// 根据内容自动扩展画布尺寸
+function autoFitGrid(padding = 4) {
+  let minR = gridH.value, maxR = 0, minC = gridW.value, maxC = 0
+  const comp = getCompositeGrid()
+  for (let r = 0; r < gridH.value; r++) {
+    for (let c = 0; c < gridW.value; c++) {
+      if (comp[r]?.[c]?.hex) {
+        minR = Math.min(minR, r); maxR = Math.max(maxR, r)
+        minC = Math.min(minC, c); maxC = Math.max(maxC, c)
+      }
+    }
+  }
+  if (maxR < minR) return // 空画布
+
+  const newW = Math.max(10, maxC - minC + 1 + padding * 2)
+  const newH = Math.max(10, maxR - minR + 1 + padding * 2)
+
+  if (newW === gridW.value && newH === gridH.value) return false
+
+  // 裁剪/扩展
+  const newGrid = Array.from({ length: newH }, () => Array(newW).fill(null))
+  for (let r = 0; r < newH; r++) {
+    for (let c = 0; c < newW; c++) {
+      const srcR = r - padding + minR, srcC = c - padding + minC
+      if (srcR >= 0 && srcR < gridH.value && srcC >= 0 && srcC < gridW.value) {
+        newGrid[r][c] = comp[srcR]?.[srcC] ? { ...comp[srcR][srcC] } : null
+      }
+    }
+  }
+  gridW.value = newW; gridH.value = newH
+  layers.value = [{ id: 'l1', name: '图层 1', visible: true, opacity: 1, grid: newGrid }]
+  currentLayerId.value = 'l1'
+  grid.value = newGrid
+  return true
+}
+
 // ---- 图层管理 ----
 function addLayer(name) {
   const id = 'l' + Date.now()
@@ -507,7 +543,7 @@ export function useEditor() {
     brushPreviewStyle,
 
     // 方法
-    initGrid, getCell, setCell,
+    initGrid, getCell, setCell, autoFitGrid,
     getSymmetryCells,
     saveSnapshot, undo, redo, restoreSnapshot,
     // 图层

@@ -100,33 +100,51 @@ export class CanvasRenderer {
         const cg = parseInt(hex.substring(2, 4), 16)
         const cb = parseInt(hex.substring(4, 6), 16)
 
-        // 专注模式：非目标颜色变暗
         const isDimmed = dimHex && cell.hex.toUpperCase() !== dimHex.toUpperCase()
-        // 同色高亮：加亮 30%
         const isHighlighted = highlightHex && cell.hex.toUpperCase() === highlightHex.toUpperCase()
 
-        let fr = cr, fg = cg, fb = cb
-        if (isDimmed) {
-          fr = Math.round(cr * 0.25)
-          fg = Math.round(cg * 0.25)
-          fb = Math.round(cb * 0.25)
-        } else if (isHighlighted) {
-          fr = Math.min(255, cr + Math.round((255 - cr) * 0.3))
-          fg = Math.min(255, cg + Math.round((255 - cg) * 0.3))
-          fb = Math.min(255, cb + Math.round((255 - cb) * 0.3))
-        }
-
-        // 1px 间隙：模拟真实拼豆拼接缝隙
-        // 每个珠子留 1 个内部像素的边距（DPR 级别）
-        const gapPx = dpr > 2 ? 1 : 0  // 仅高清屏保留缝隙
-        for (let dy = gapPx; dy < dpr - gapPx; dy++) {
+        // 立体珠子渲染：每个珠子 = 高光(左上) + 基色(中) + 阴影(右下) + 圆角 + 缝隙
+        for (let dy = 0; dy < dpr; dy++) {
           const baseY = (r * dpr + dy) * iw
-          for (let dx = gapPx; dx < dpr - gapPx; dx++) {
+          for (let dx = 0; dx < dpr; dx++) {
             const idx = (baseY + c * dpr + dx) * 4
+
+            // 缝隙：珠子边缘留空
+            const edgeDist = Math.min(dx, dy, dpr - 1 - dx, dpr - 1 - dy)
+            if (edgeDist < 0.3) continue  // 珠子间缝隙
+
+            // 圆角：四角透明
+            const cx = dpr / 2, cy = dpr / 2
+            const cornerDist = Math.sqrt((dx - cx) ** 2 + (dy - cy) ** 2) / (dpr / 2)
+            if (cornerDist > 1.05) continue
+
+            let fr = cr, fg = cg, fb = cb
+            let alpha = 255
+
+            if (isDimmed) {
+              fr = Math.round(cr * 0.25); fg = Math.round(cg * 0.25); fb = Math.round(cb * 0.25)
+            } else if (isHighlighted) {
+              fr = Math.min(255, cr + Math.round((255 - cr) * 0.3))
+              fg = Math.min(255, cg + Math.round((255 - cg) * 0.3))
+              fb = Math.min(255, cb + Math.round((255 - cb) * 0.3))
+            }
+
+            // 立体光影：左上高光 + 右下阴影
+            const lightFactor = 1 + (1 - (dx + dy) / (dpr * 2)) * 0.25  // 左上亮
+            const shadowFactor = 1 - ((dx + dy) / (dpr * 2)) * 0.15       // 右下暗
+            const factor = lightFactor * shadowFactor
+
+            // 圆角边缘柔化
+            if (cornerDist > 0.85) alpha = Math.round(255 * (1 - (cornerDist - 0.85) / 0.2))
+
+            fr = Math.min(255, Math.max(0, Math.round(fr * factor)))
+            fg = Math.min(255, Math.max(0, Math.round(fg * factor)))
+            fb = Math.min(255, Math.max(0, Math.round(fb * factor)))
+
             imgData.data[idx] = fr
             imgData.data[idx + 1] = fg
             imgData.data[idx + 2] = fb
-            imgData.data[idx + 3] = 255
+            imgData.data[idx + 3] = Math.round(alpha)
           }
         }
       }
@@ -145,9 +163,9 @@ export class CanvasRenderer {
     this.ctx.clearRect(0, 0, w, h)
     if (!show) return
 
-    // ---- 内部基础网格：中度蓝色、1px、每1格 ----
-    this.ctx.strokeStyle = '#8BAAC4'
-    this.ctx.lineWidth = 1 / dpr
+    // ---- 内部基础网格：淡灰、1px、每1格 ----
+    this.ctx.strokeStyle = '#E0E4E8'
+    this.ctx.lineWidth = 0.5 / dpr
     this.ctx.beginPath()
     for (let r = 0; r <= h; r++) {
       this.ctx.moveTo(0, r); this.ctx.lineTo(w, r)
@@ -157,8 +175,8 @@ export class CanvasRenderer {
     }
     this.ctx.stroke()
 
-    // ---- 主分隔线：深蓝色、1px、每10格（与基础网格线宽一致） ----
-    this.ctx.strokeStyle = '#5A8FAF'
+    // ---- 主分隔线：淡灰蓝、每10格 ----
+    this.ctx.strokeStyle = '#CBD5E1'
     this.ctx.lineWidth = 1 / dpr
     this.ctx.beginPath()
     for (let r = 0; r <= h; r += 10) {
@@ -169,9 +187,9 @@ export class CanvasRenderer {
     }
     this.ctx.stroke()
 
-    // ---- 有效范围边界框（正红 #E85555 2px） ----
-    this.ctx.strokeStyle = '#E85555'
-    this.ctx.lineWidth = 2 / dpr
+    // ---- 有效范围边界框（淡红 #F0C0C0 1.5px） ----
+    this.ctx.strokeStyle = '#E8C0C0'
+    this.ctx.lineWidth = 1.5 / dpr
     this.ctx.strokeRect(0, 0, w, h)
 
     // ---- 十字定位线（红色虚线风格） ----

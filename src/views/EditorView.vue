@@ -234,6 +234,7 @@
         @refReset="refScale = 1; refOffsetX = 0; refOffsetY = 0"
         @toggleGuide="toggleGuideMode" @guidePrev="guidePrev" @guideNext="guideNext"
         @openSizeDialog="openSizeDialog" @removeNoise="removeNoise"
+        @autoFit="autoFitGrid() && editorCanvasRef?.initCanvas() && renderAll()"
         @pickColor="onPickColor" @floodFill="onFloodFill"
       />
 
@@ -368,7 +369,7 @@ const {
   brands, series, filteredColors,
   beadCount, gridColorStats,
   brandColorCounts, totalColorCount, seriesColorCount,
-  brushPreviewStyle, colorSearch, recentColors, addRecentColor,
+  brushPreviewStyle, colorSearch, recentColors, addRecentColor, autoFitGrid,
   layers, currentLayerId, addLayer, removeLayer, selectLayer,
   toggleLayerVisibility, setLayerOpacity, mergeLayerDown, getCompositeGrid,
   initGrid, getCell, setCell,
