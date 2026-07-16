@@ -260,8 +260,9 @@ onMounted(async () => {
 async function loadInventory() {
   try {
     const res = await API.get('/api/inventory', true)
-    if (res.code === 200) { inventory.value = res.data.items || []; stats.value = res.data.stats }
-  } catch (_) {}
+    if (res.code === 200) { inventory.value = res.data?.items || []; stats.value = res.data?.stats }
+    else toast.show(res.message || '加载库存失败')
+  } catch (e) { toast.show('加载库存失败: ' + (e.message || '网络错误')) }
 }
 
 async function loadAlerts() {
