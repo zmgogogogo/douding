@@ -37,6 +37,19 @@ const selectionRect = ref(null)      // {r1, c1, r2, c2}
 const selectionDragging = ref(false)
 const clipboard = ref(null)          // {grid, w, h}
 
+// 颜色搜索和最近使用
+const colorSearch = ref('')
+const recentColors = ref([])  // 最近使用的颜色 [{name, hex, brand, series}]
+const MAX_RECENT = 12
+
+function addRecentColor(color) {
+  if (!color?.hex) return
+  recentColors.value = [
+    color,
+    ...recentColors.value.filter(c => c.hex !== color.hex)
+  ].slice(0, MAX_RECENT)
+}
+
 // 替换工具
 const replaceSourceHex = ref(null)
 
@@ -107,13 +120,31 @@ const series = computed(() => {
 })
 
 const filteredColors = computed(() => {
+  let result = beadData.value
+
+  // 品牌/系列筛选
   if (brand.value === '全部') {
     const s = seriesActive.value
-    if (!s) return beadData.value
-    const [b, sn] = s.split(' · ')
-    return beadData.value.filter(c => c.brand === b && c.series === sn)
+    if (s) {
+      const [b, sn] = s.split(' · ')
+      result = result.filter(c => c.brand === b && c.series === sn)
+    }
+  } else {
+    result = result.filter(c => c.brand === brand.value)
+    if (seriesActive.value) result = result.filter(c => c.series === seriesActive.value)
   }
-  return beadData.value.filter(c => c.brand === brand.value && c.series === seriesActive.value)
+
+  // 颜色搜索
+  if (colorSearch.value.trim()) {
+    const q = colorSearch.value.trim().toLowerCase()
+    result = result.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.hex.toLowerCase().includes(q) ||
+      (c.brand && c.brand.toLowerCase().includes(q))
+    )
+  }
+
+  return result
 })
 
 const beadCount = computed(() => {
@@ -376,6 +407,7 @@ export function useEditor() {
     editId, editTitle, hasUnsavedChanges, lastSavedTime, autoSaveKey,
     showInfo, showSizeDialog, sizeDialogW, sizeDialogH,
     showExportMenu, showColorStats,
+    colorSearch, recentColors, addRecentColor,
     mousePos, crossCol, crossRow, isDrawing,
     brand, seriesActive,
 

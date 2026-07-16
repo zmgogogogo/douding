@@ -27,6 +27,33 @@
       <span v-if="seriesList.length === 0" class="text-[10px] text-[var(--ui-text-tertiary)] px-1">全部系列</span>
     </div>
 
+    <!-- 颜色搜索 -->
+    <div class="px-2 py-1.5 border-b border-[var(--ui-border)]">
+      <div class="relative">
+        <SearchIcon :size="12" class="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-tertiary)]" />
+        <input
+          :value="searchText"
+          type="text"
+          placeholder="搜索颜色或色号..."
+          class="w-full h-7 pl-6 pr-2 border border-[var(--ui-border)] rounded-md text-[10px]
+                 bg-[var(--ui-bg-base)] outline-none focus:border-[var(--ui-accent)] transition-colors"
+          @input="$emit('update:searchText', $event.target.value)"
+        />
+      </div>
+    </div>
+
+    <!-- 最近使用颜色 -->
+    <div v-if="recentColors.length" class="px-2 py-1.5 border-b border-[var(--ui-border)]">
+      <div class="text-[9px] text-[var(--ui-text-tertiary)] mb-1">最近使用</div>
+      <div class="flex flex-wrap gap-1">
+        <button v-for="c in recentColors" :key="c.hex"
+          class="w-6 h-6 rounded-md ring-1 ring-black/10 hover:scale-125 hover:z-10 hover:shadow-md transition-all relative"
+          :style="{ background: c.hex }"
+          :title="c.name"
+          @click="$emit('selectColor', c)" />
+      </div>
+    </div>
+
     <!-- 当前筛选色卡数 -->
     <div class="px-2 py-0.5 text-[9px] text-[var(--ui-text-tertiary)] border-b border-[var(--ui-border)] text-center">
       {{ seriesActive || '全部' }} · {{ seriesColorCount }}色
@@ -107,8 +134,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { ChevronRightIcon } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { ChevronRightIcon, SearchIcon } from 'lucide-vue-next'
 import EditorPaletteAdvisor from './EditorPaletteAdvisor.vue'
 
 defineProps({
@@ -124,11 +151,13 @@ defineProps({
   totalColorCount: { type: Number, default: 0 },
   seriesColorCount: { type: Number, default: 0 },
   brandColorCounts: { type: Object, default: () => ({}) },
+  searchText: { type: String, default: '' },
+  recentColors: { type: Array, default: () => [] },
 })
 
 defineEmits([
   'update:brand', 'update:seriesActive', 'update:brushSize',
-  'selectColor', 'highlightColor'
+  'selectColor', 'highlightColor', 'update:searchText'
 ])
 
 const expanded = ref(false)

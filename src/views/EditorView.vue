@@ -212,9 +212,12 @@
         :totalColorCount="totalColorCount"
         :seriesColorCount="seriesColorCount"
         :brandColorCounts="brandColorCounts"
+        :searchText="colorSearch"
+        :recentColors="recentColors"
         @update:brand="onBrandChange"
         @update:seriesActive="seriesActive = $event"
         @update:brushSize="brushSize = $event"
+        @update:searchText="colorSearch = $event"
         @selectColor="onSelectColor"
         @highlightColor="onHighlightColor"
       />
@@ -323,7 +326,7 @@ const {
   brands, series, filteredColors,
   beadCount, gridColorStats,
   brandColorCounts, totalColorCount, seriesColorCount,
-  brushPreviewStyle,
+  brushPreviewStyle, colorSearch, recentColors, addRecentColor,
   initGrid, getCell, setCell,
   saveSnapshot, undo, redo,
   cycleSymmetry, cycleRefOpacity, setRefOpacity, toggleRefLock,
@@ -385,6 +388,7 @@ function onSelectTool(t) {
 }
 
 function onSelectColor(c) {
+  addRecentColor(c)  // 记录最近使用
   if (tool.value === 'replace') {
     if (!replaceSourceHex.value) {
       replaceSourceHex.value = c.hex
