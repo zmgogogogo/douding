@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   ohmybead.cn 设计系统 — CSS 变量主题
+   ============================================ */
+
+:root {
+  /* 背景色 */
+  --ui-bg-base: #f8f9fa;
+  --ui-bg-surface: #ffffff;
+  --ui-bg-surface-glass: rgba(255, 255, 255, 0.92);
+  --ui-bg-primary: var(--ui-bg-surface);
+  --ui-bg-secondary: var(--ui-bg-base);
+  --ui-bg-tertiary: #f3f4f6;
+  --ui-bg-muted: #f8fafc;
+
+  /* 文字色 */
+  --ui-text-primary: #1a1a2e;
+  --ui-text-secondary: #6b7280;
+  --ui-text-tertiary: #9ca3af;
+  --ui-text-quaternary: #cbd5e1;
+
+  /* 边框 */
+  --ui-border: #e5e7eb;
+  --ui-border-strong: #cbd5e1;
+
+  /* 强调色 */
+  --ui-accent: #3b82f6;
+  --ui-accent-hover: #2563eb;
+  --ui-primary: #3b82f6;
+
+  /* 状态色 */
+  --ui-status-success: #10b981;
+  --ui-status-success-bg: rgba(16, 185, 129, 0.1);
+  --ui-status-warning: #f59e0b;
+  --ui-status-warning-bg: rgba(245, 158, 11, 0.1);
+  --ui-status-danger: #f43f5e;
+  --ui-status-danger-bg: rgba(244, 63, 94, 0.1);
+  --ui-status-info: #3b82f6;
+  --ui-status-info-bg: rgba(59, 130, 246, 0.1);
+
+  /* 安全区域 */
+  --omb-safe-top: env(safe-area-inset-top, 0px);
+  --omb-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --omb-safe-left: env(safe-area-inset-left, 0px);
+  --omb-safe-right: env(safe-area-inset-right, 0px);
+}
+
+@layer base {
+  html, body, #app {
+    @apply h-full overflow-hidden;
+  }
+  ::-webkit-scrollbar { display: none; }
+  html, body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+@layer components {
+  /* 设计卡片 */
+  .design-card {
+    @apply bg-white rounded-2xl overflow-hidden cursor-pointer
+           border border-black/[0.04]
+           shadow-[0_1px_3px_rgba(0,0,0,.04),0_1px_2px_rgba(0,0,0,.06)]
+           transition-all duration-200 ease-out;
+  }
+  .design-card:hover {
+    @apply -translate-y-1
+           shadow-[0_12px_32px_rgba(0,0,0,.08),0_2px_6px_rgba(0,0,0,.04)];
+  }
+  .design-card:active { @apply scale-[0.98]; }
+
+  /* 智能工具卡片 */
+  .tool-card {
+    @apply flex items-center gap-3 bg-white rounded-2xl p-3.5 cursor-pointer
+           border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,.03)]
+           hover:shadow-[0_8px_24px_rgba(0,0,0,.06)] hover:-translate-y-0.5
+           active:scale-[0.99] transition-all duration-200;
+  }
+
+  /* Chip 筛选标签 */
+  .chip {
+    @apply inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-[13px] font-medium
+           border border-slate-200 text-slate-500 bg-transparent
+           transition-all duration-150 cursor-pointer whitespace-nowrap;
+  }
+  .chip:hover { @apply bg-slate-100 text-slate-700; }
+  .chip.active {
+    @apply bg-blue-50 text-blue-600 border-blue-200 font-semibold;
+  }
+
+  /* 像素缩略图 */
+  .pixel-thumb {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* 毛玻璃导航栏 */
+  .glass-nav {
+    @apply bg-white/85 backdrop-blur-xl border-b border-slate-100;
+  }
+
+  /* ========== 编辑器工具栏按钮 ========== */
+  .toolbar-btn {
+    @apply w-9 h-9 flex items-center justify-center rounded-xl
+           text-slate-400 hover:bg-slate-100 hover:text-slate-600
+           transition-colors cursor-pointer relative;
+  }
+  .toolbar-btn.active {
+    @apply bg-primary/10 text-primary;
+  }
+
+  /* ========== 安全区域工具类 ========== */
+  .pt-safe-top { padding-top: var(--omb-safe-top); }
+  .pb-safe-bottom { padding-bottom: var(--omb-safe-bottom); }
+  .pl-safe-left { padding-left: var(--omb-safe-left); }
+  .pr-safe-right { padding-right: var(--omb-safe-right); }
+  .mb-safe-bottom { margin-bottom: var(--omb-safe-bottom); }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+}

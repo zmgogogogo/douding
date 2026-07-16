@@ -1,0 +1,18 @@
+{
+  "name": "豆丁 - 拼豆图纸工具",
+  "short_name": "豆丁",
+  "description": "在线拼豆图纸设计工具，图片转图纸，编辑导出",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0058BC",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

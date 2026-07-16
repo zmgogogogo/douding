@@ -1,23 +1,40 @@
 {
-  "name": "doumao",
-  "version": "1.0.0",
-  "description": "豆猫 - 在线拼豆图纸工具 (dmao.cloud clone)",
-  "main": "server.js",
+  "name": "douding",
+  "version": "2.0.0",
+  "private": true,
+  "description": "豆丁 - 在线拼豆图纸工具",
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server/index.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.0.0",
+    "archiver": "^8.0.0",
     "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.0.0",
+    "cheerio": "^1.2.0",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.19.1",
     "sharp": "^0.33.0",
-    "uuid": "^10.0.0"
+    "tesseract.js": "^7.0.0",
+    "uuid": "^10.0.0",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "autoprefixer": "^10.4.17",
+    "lucide-vue-next": "^0.312.0",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "vite": "^5.0.0"
   },
   "allowScripts": {
     "better-sqlite3@11.10.0": true,
+    "esbuild@0.21.5": true,
     "sharp@0.33.5": true
   }
 }

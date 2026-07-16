@@ -1,7 +1,8 @@
 node_modules/
-doumao.db
-doumao.db-shm
-doumao.db-wal
-uploads/*
-!uploads/.gitkeep
+dist/
+douding.db
+douding.db-shm
+douding.db-wal
+public/uploads/*
+!public/uploads/.gitkeep
 .DS_Store
