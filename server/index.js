@@ -1,8 +1,8 @@
 // ============================================================
 //  豆丁 (Douding) — 拼豆图纸工具 后端服务入口
 //  Node.js + Express + SQLite
-//  组装所有中间件、路由、服务模块
 // ============================================================
+import 'dotenv/config'
 import express from 'express'
 import path from 'path'
 import fs from 'fs'
