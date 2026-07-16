@@ -201,6 +201,56 @@ function initGrid(w, h) {
   currentLayerId.value = 'l1'
 }
 
+// 动态扩展画布：画笔超出边界时自动扩大
+// padding: { top, bottom, left, right } — 每边需要增加的格数
+// 返回 { offsetC, offsetR } — 旧内容在新网格中的偏移量
+function expandGridToFit(padding) {
+  const MAX_SIZE = 300
+  const top = padding.top || 0
+  const bottom = padding.bottom || 0
+  const left = padding.left || 0
+  const right = padding.right || 0
+
+  const newW = Math.min(MAX_SIZE, gridW.value + left + right)
+  const newH = Math.min(MAX_SIZE, gridH.value + top + bottom)
+
+  // 已达上限则不再扩展
+  if (newW === gridW.value && newH === gridH.value) return { offsetC: 0, offsetR: 0 }
+
+  // 实际扩展量（可能因上限被截断）
+  const actualLeft = newW - gridW.value - right
+  const actualTop = newH - gridH.value - bottom
+
+  // 创建新网格，将旧内容偏移到正确位置
+  const shiftGrid = (oldGrid) => {
+    const newGrid = Array.from({ length: newH }, () => Array(newW).fill(null))
+    for (let r = 0; r < gridH.value; r++) {
+      const oldRow = oldGrid[r]
+      if (!oldRow) continue
+      for (let c = 0; c < gridW.value; c++) {
+        if (oldRow[c]) {
+          newGrid[r + actualTop][c + actualLeft] = { ...oldRow[c] }
+        }
+      }
+    }
+    return newGrid
+  }
+
+  // 更新所有图层
+  for (const layer of layers.value) {
+    layer.grid = shiftGrid(layer.grid)
+  }
+
+  // 更新当前活动层引用
+  const curLayer = layers.value.find(l => l.id === currentLayerId.value)
+  if (curLayer) grid.value = curLayer.grid
+
+  gridW.value = newW
+  gridH.value = newH
+
+  return { offsetC: actualLeft, offsetR: actualTop }
+}
+
 // 根据内容自动扩展画布尺寸
 function autoFitGrid(padding = 4) {
   let minR = gridH.value, maxR = 0, minC = gridW.value, maxC = 0
@@ -543,7 +593,7 @@ export function useEditor() {
     brushPreviewStyle,
 
     // 方法
-    initGrid, getCell, setCell, autoFitGrid,
+    initGrid, getCell, setCell, autoFitGrid, expandGridToFit,
     getSymmetryCells,
     saveSnapshot, undo, redo, restoreSnapshot,
     // 图层

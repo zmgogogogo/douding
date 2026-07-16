@@ -172,6 +172,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   'setCell', 'saveSnapshot', 'scheduleRender',
+  'expandGrid',
   'update:panX', 'update:panY', 'update:zoom',
   'setZoom', 'zoomIn', 'zoomOut', 'zoomToFit', 'zoomTo1x',
   'setRefOpacity', 'refZoomIn', 'refZoomOut', 'refMove', 'refReset',
@@ -307,6 +308,19 @@ function posToGridFromMouse() {
 let longPressTimer = null
 let crossTimer = null
 
+// 检测画笔是否超出边界，若超出则触发画布动态扩展
+// 返回调整后的 {row, col}（扩展后需重新计算坐标）
+function ensureBrushInBounds(row, col, e) {
+  const bs = props.brushSize
+  if (row >= 0 && row + bs <= props.gridH && col >= 0 && col + bs <= props.gridW) {
+    return { row, col }  // 在边界内，无需扩展
+  }
+  // 触发同步扩展（父组件 expandGridToFit + 调整 pan）
+  emit('expandGrid', { row, col, brushSize: bs })
+  // 扩展后 pan 已调整，需用同一事件重新计算网格坐标
+  return posToGrid(e)
+}
+
 function onPointerDown(e) {
   canvasWrap.value.focus()
   const { row, col, x, y } = posToGrid(e)
@@ -353,8 +367,10 @@ function onPointerDown(e) {
     canvasWrap.value.setPointerCapture(e.pointerId)
     isDrawing.value = true
     strokeCells.clear()
-    drawAt(row, col)
-    lastCell.value = { row, col }
+    // 检测边界，必要时动态扩展画布
+    const adjusted = ensureBrushInBounds(row, col, e)
+    drawAt(adjusted.row, adjusted.col)
+    lastCell.value = { row: adjusted.row, col: adjusted.col }
     longPressTimer = setTimeout(() => {
       if (row >= 0 && row < props.gridH && col >= 0 && col < props.gridW) {
         emit('pickColor', row, col)
@@ -400,9 +416,11 @@ function onPointerMove(e) {
       return
     }
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null }
-    if (row !== lastCell.value?.row || col !== lastCell.value?.col) {
-      drawAt(row, col)
-      lastCell.value = { row, col }
+    // 检测边界，必要时动态扩展画布
+    const adjusted = ensureBrushInBounds(row, col, e)
+    if (adjusted.row !== lastCell.value?.row || adjusted.col !== lastCell.value?.col) {
+      drawAt(adjusted.row, adjusted.col)
+      lastCell.value = { row: adjusted.row, col: adjusted.col }
     }
   }
 }
@@ -430,7 +448,6 @@ function drawLine(r1, c1, r2, c2) {
 }
 
 function drawAt(row, col) {
-  if (row < 0 || row >= props.gridH || col < 0 || col >= props.gridW) return
   // Shift 画直线
   if (shiftHeld.value && lineStartCell.value) {
     strokeCells.clear()
@@ -446,18 +463,14 @@ function drawAt(row, col) {
 
 function drawSingleCell(row, col) {
   if (row < 0 || row >= props.gridH || col < 0 || col >= props.gridW) return
-  const cells = getSymmetryCells(row, col)
-  for (const [r, c] of cells) {
-    if (r < 0 || r >= props.gridH || c < 0 || c >= props.gridW) continue
-    const key = `${r},${c}`
-    if (strokeCells.has(key)) continue
-    strokeCells.add(key)
-    for (let dr = 0; dr < props.brushSize; dr++) {
-      for (let dc = 0; dc < props.brushSize; dc++) {
-        const tr = r + dr, tc = c + dc
-        if (tr >= 0 && tr < props.gridH && tc >= 0 && tc < props.gridW) {
-          emit('setCell', tr, tc, props.tool === 'eraser' ? null : props.curColor)
-        }
+  const key = `${row},${col}`
+  if (strokeCells.has(key)) return
+  strokeCells.add(key)
+  for (let dr = 0; dr < props.brushSize; dr++) {
+    for (let dc = 0; dc < props.brushSize; dc++) {
+      const tr = row + dr, tc = col + dc
+      if (tr >= 0 && tr < props.gridH && tc >= 0 && tc < props.gridW) {
+        emit('setCell', tr, tc, props.tool === 'eraser' ? null : props.curColor)
       }
     }
   }

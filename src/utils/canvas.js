@@ -104,22 +104,38 @@ export class CanvasRenderer {
         const isHighlighted = highlightHex && cell.hex.toUpperCase() === highlightHex.toUpperCase()
 
         // 立体珠子渲染：每个珠子 = 高光(左上) + 基色(中) + 阴影(右下) + 圆角 + 缝隙
+        // 注：立体效果仅在 DPR >= 3 时生效，低 DPR 下直接渲染纯色方块
         for (let dy = 0; dy < dpr; dy++) {
           const baseY = (r * dpr + dy) * iw
           for (let dx = 0; dx < dpr; dx++) {
             const idx = (baseY + c * dpr + dx) * 4
 
-            // 缝隙：珠子边缘留空
-            const edgeDist = Math.min(dx, dy, dpr - 1 - dx, dpr - 1 - dy)
-            if (edgeDist < 0.3) continue  // 珠子间缝隙
-
-            // 圆角：四角透明
-            const cx = dpr / 2, cy = dpr / 2
-            const cornerDist = Math.sqrt((dx - cx) ** 2 + (dy - cy) ** 2) / (dpr / 2)
-            if (cornerDist > 1.05) continue
-
             let fr = cr, fg = cg, fb = cb
             let alpha = 255
+
+            // 立体效果仅在 DPR 足够大时应用（>= 3）
+            if (dpr >= 3) {
+              // 缝隙：珠子边缘留空（占 DPR 的 12%）
+              const edgeDist = Math.min(dx, dy, dpr - 1 - dx, dpr - 1 - dy)
+              if (edgeDist < dpr * 0.12) continue
+
+              // 圆角：四角透明
+              const cx = dpr / 2, cy = dpr / 2
+              const cornerDist = Math.sqrt((dx - cx) ** 2 + (dy - cy) ** 2) / (dpr / 2)
+              if (cornerDist > 1.05) continue
+
+              // 立体光影：左上高光 + 右下阴影
+              const lightFactor = 1 + (1 - (dx + dy) / (dpr * 2)) * 0.25  // 左上亮
+              const shadowFactor = 1 - ((dx + dy) / (dpr * 2)) * 0.15       // 右下暗
+              const factor = lightFactor * shadowFactor
+
+              // 圆角边缘柔化
+              if (cornerDist > 0.85) alpha = Math.round(255 * (1 - (cornerDist - 0.85) / 0.2))
+
+              fr = Math.min(255, Math.max(0, Math.round(fr * factor)))
+              fg = Math.min(255, Math.max(0, Math.round(fg * factor)))
+              fb = Math.min(255, Math.max(0, Math.round(fb * factor)))
+            }
 
             if (isDimmed) {
               fr = Math.round(cr * 0.25); fg = Math.round(cg * 0.25); fb = Math.round(cb * 0.25)
@@ -128,18 +144,6 @@ export class CanvasRenderer {
               fg = Math.min(255, cg + Math.round((255 - cg) * 0.3))
               fb = Math.min(255, cb + Math.round((255 - cb) * 0.3))
             }
-
-            // 立体光影：左上高光 + 右下阴影
-            const lightFactor = 1 + (1 - (dx + dy) / (dpr * 2)) * 0.25  // 左上亮
-            const shadowFactor = 1 - ((dx + dy) / (dpr * 2)) * 0.15       // 右下暗
-            const factor = lightFactor * shadowFactor
-
-            // 圆角边缘柔化
-            if (cornerDist > 0.85) alpha = Math.round(255 * (1 - (cornerDist - 0.85) / 0.2))
-
-            fr = Math.min(255, Math.max(0, Math.round(fr * factor)))
-            fg = Math.min(255, Math.max(0, Math.round(fg * factor)))
-            fb = Math.min(255, Math.max(0, Math.round(fb * factor)))
 
             imgData.data[idx] = fr
             imgData.data[idx + 1] = fg

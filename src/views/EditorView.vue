@@ -224,6 +224,7 @@
         :replaceSourceHex="replaceSourceHex"
         :focusDimHex="focusMode && focusColor ? focusColor.hex : null"
         @setCell="setCellAndRender" @saveSnapshot="saveSnapshot" @scheduleRender="scheduleRender"
+        @expandGrid="onExpandGrid"
         @update:panX="panX = $event" @update:panY="panY = $event"
         @setZoom="setZoom" @zoomIn="zoomIn" @zoomOut="zoomOut"
         @zoomToFit="zoomToFit" @zoomTo1x="zoomTo1x"
@@ -354,7 +355,7 @@ const {
   gridW, gridH, grid, zoom, panX, panY,
   tool, brushSize, curColor, highlightHex,
   symmetryMode, showGrid, refOpacity, refLocked,
-  refPixels, refW, refH, refImage,
+  refPixels, refW, refH, refImage, refOffsetX, refOffsetY, refScale,
   editMode, guideMode, focusMode,
   selectionRect, clipboard,
   replaceSourceHex,
@@ -372,7 +373,7 @@ const {
   brushPreviewStyle, colorSearch, recentColors, addRecentColor, autoFitGrid,
   layers, currentLayerId, addLayer, removeLayer, selectLayer,
   toggleLayerVisibility, setLayerOpacity, mergeLayerDown, getCompositeGrid,
-  initGrid, getCell, setCell,
+  initGrid, getCell, setCell, expandGridToFit,
   saveSnapshot, undo, redo,
   cycleSymmetry, cycleRefOpacity, setRefOpacity, toggleRefLock,
   toggleGuideMode, guidePrev, guideNext,
@@ -417,6 +418,33 @@ let rafId = null
 function setCellAndRender(r, c, color) {
   setCell(r, c, color)
   scheduleRender()
+}
+
+// 画布动态扩展：画笔超出边界时自动扩大画布
+function onExpandGrid({ row, col, brushSize: bs }) {
+  const padding = { top: 0, bottom: 0, left: 0, right: 0 }
+  const EXPAND = 10  // 每次扩展 10 格
+
+  if (row < 0) padding.top = Math.abs(row) + EXPAND
+  if (row + bs > gridH.value) padding.bottom = (row + bs) - gridH.value + EXPAND
+  if (col < 0) padding.left = Math.abs(col) + EXPAND
+  if (col + bs > gridW.value) padding.right = (col + bs) - gridW.value + EXPAND
+
+  if (padding.top === 0 && padding.bottom === 0 && padding.left === 0 && padding.right === 0) return
+
+  const { offsetC, offsetR } = expandGridToFit(padding)
+  if (offsetC === 0 && offsetR === 0) return  // 已达最大尺寸上限
+
+  // 调整平移，保持画布视觉位置不变
+  panX.value -= offsetC * zoom.value
+  panY.value -= offsetR * zoom.value
+
+  // 调整参考图偏移，保持参考图与珠子内容对齐
+  refOffsetX.value += offsetC
+  refOffsetY.value += offsetR
+
+  // 重新初始化画布渲染器以适配新尺寸
+  nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
 }
 
 function scheduleRender() {
