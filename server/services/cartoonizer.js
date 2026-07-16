@@ -113,36 +113,35 @@ async function replicateCartoon(inputPath, style, w, h, apiKey) {
   const dataUrl = `data:image/jpeg;base64,${imgBase64}`
 
   const prompts = {
-    q_big_head: 'chibi cartoon portrait, big head small body 1:1 ratio, cute big eyes, black outline, flat color blocks, no shading, clean white background, pixel art style',
-    cute_sticker: 'sticker style cartoon, thick black outline, bright saturated flat colors, no shadows, white background, simple cute design, pixel art',
-    simple_line: 'minimalist flat illustration, muted pastel colors, thin lines, large solid color areas, simple elegant, pixel art style',
-    pet_cute: 'chibi cute pet, round face big eyes, simplified fur, black outline, flat colors, pixel art style',
-    couple_double: 'chibi couple cartoon, two characters, big heads small bodies, cute interaction, black outlines, flat colors, simple background, pixel art'
+    q_big_head: 'chibi kawaii portrait, 1:1 big head tiny body, huge sparkling eyes, clean black outlines, flat cel-shaded colors, NO shading NO gradient, pure white background, pixel bead art',
+    cute_sticker: 'kawaii sticker, thick black borders, super bright saturated flat colors, simple shapes, white background, no shadows, bead art',
+    simple_line: 'minimalist flat vector art, soft muted pastels, thin clean lines, elegant simple, no texture, bead pixel art',
+    pet_cute: 'kawaii chibi pet, round fluffy face, huge cute eyes, clean black outlines, flat colors, no fur texture, white bg',
+    couple_double: 'kawaii chibi couple, two cute characters, big heads, heart interaction, black outlines, flat colors, simple bg'
   }
 
-  // 使用 Replicate 的 retro-diffusion 模型
+  // 使用更稳定可靠的白模 img2img
   const Replicate = (await import('replicate')).default
   const replicate = new Replicate({ auth: apiKey })
 
+  console.log('Replicate 生成中...', prompts[style]?.slice(0, 50))
+
+  // 使用 SDXL img2img（最稳定的图生图模型）
   const output = await replicate.run(
-    'catacolabs/retro-diffusion:378394eb258bccf1b0ba3067ea90dc10178f43f274fe33e9f20f2265ab1989f0',
+    'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',
     {
       input: {
         prompt: prompts[style] || prompts.q_big_head,
-        negative_prompt: 'realistic, photo, complex background, gradient, shadows, blur, noise, ugly, deformed, complex textures',
+        negative_prompt: 'photorealistic, 3d render, shading, gradient, noise, blur, ugly, deformed, complex background, watermark, text',
         image: dataUrl,
-        width: w,
-        height: h,
-        num_outputs: 1,
-        num_inference_steps: 25,
-        guidance_scale: 7.5
+        strength: 0.55
       }
     }
   )
 
-  // output 是图片 URL 数组
   const imgUrl = Array.isArray(output) ? output[0] : output
   if (imgUrl) {
+    console.log('Replicate 生成完成:', typeof imgUrl === 'string' ? imgUrl.slice(0, 60) : 'buffer')
     const imgRes = await fetch(imgUrl)
     return Buffer.from(await imgRes.arrayBuffer())
   }
