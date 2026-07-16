@@ -23,6 +23,7 @@ import exportRoutes from './routes/export.js'
 import ocrRoutes from './routes/ocr.js'
 import crawlerRoutes from './routes/crawler.js'
 import aiRoutes from './routes/ai.js'
+import paletteRoutes from './routes/palette.js'
 import publicRoutes from './routes/public.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -81,6 +82,9 @@ app.use('/api', crawlerRoutes)
 
 // AI 文字生成图纸
 app.use('/api', aiRoutes)
+
+// AI 智能配色助手
+app.use('/api', paletteRoutes)
 
 // 每日挑战
 import challengeRoutes from './routes/challenges.js'

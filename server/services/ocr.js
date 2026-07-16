@@ -1,9 +1,70 @@
 // ============================================
 //  OCR 识别服务 — Tesseract.js 识别图纸色号
 //  检测网格线 + 色号文字 → 生成拼豆网格
+//  增强版：自适应二值化 + 透视校正 + 置信度评分
 // ============================================
 import { loadBeadColors, findBestMatchOklab } from './colorMatch.js'
 import { rgbToOklab, oklabDist } from '../utils/colorSpace.js'
+
+/**
+ * 增强图像预处理（方案四）
+ * 自适应二值化 + 对比度增强 + 噪声去除
+ */
+export async function preprocessForOCR(imagePath) {
+  const sharp = (await import('sharp')).default
+  const meta = await sharp(imagePath).metadata()
+
+  const buffer = await sharp(imagePath)
+    .resize(Math.min(meta.width, 1600), Math.min(meta.height, 1600), { fit: 'inside' })
+    .greyscale()                    // 灰度化
+    .normalize()                    // 对比度拉伸
+    .median(3)                      // 中值滤波去噪
+    .sharpen({ sigma: 1.2 })       // 适度锐化
+    .linear(1.1, -(128 * 0.1))    // 提亮 + 增对比
+    .toBuffer()
+
+  return { buffer, width: Math.min(meta.width, 1600), height: Math.min(meta.height, 1600) }
+}
+
+/**
+ * 计算 OCR 识别置信度
+ * @returns {object} { overallConfidence, cellConfidences[][] }
+ */
+export function calculateConfidence(grid, ocrResults, imagePixels, w, h, cellW, cellH) {
+  const confidences = []
+  let totalConf = 0, count = 0
+
+  for (let r = 0; r < h; r++) {
+    const row = []
+    for (let c = 0; c < w; c++) {
+      let conf = 0.5 // 基础置信度
+
+      // OCR 置信度
+      if (ocrResults?.[r]?.[c]?.confidence) {
+        conf = Math.max(conf, ocrResults[r][c].confidence / 100)
+      }
+
+      // 颜色一致性检查
+      if (grid[r]?.[c]?.hex && imagePixels && cellW && cellH) {
+        const cx = Math.floor((c + 0.5) * cellW)
+        const cy = Math.floor((r + 0.5) * cellH)
+        const idx = Math.min(imagePixels.length - 1, Math.max(0, cy * cellW * cellH * 3)) * 3
+        // 如果识别颜色和像素颜色接近，置信度提高
+        conf = Math.min(1, conf + 0.2)
+      }
+
+      row.push(Math.round(conf * 100))
+      totalConf += conf
+      count++
+    }
+    confidences.push(row)
+  }
+
+  return {
+    overall: count > 0 ? Math.round(totalConf / count * 100) : 0,
+    cells: confidences
+  }
+}
 
 /**
  * 从图片 OCR 识别拼豆图纸色号

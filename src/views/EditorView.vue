@@ -8,29 +8,31 @@
   <div v-if="!inEditor" class="overflow-y-auto h-full">
     <div class="p-4 md:p-8 max-w-2xl mx-auto space-y-6">
 
-      <!-- 模块1：开始新项目 蓝色横幅 -->
-      <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary via-blue-600 to-blue-800
-                  p-6 md:p-8 cursor-pointer active:scale-[0.99] transition-transform shadow-lg shadow-primary/25"
+      <!-- 模块1：开始新项目 白色卡片 -->
+      <div class="relative overflow-hidden rounded-[2rem] bg-white
+                  p-6 md:p-8 cursor-pointer active:scale-[0.99] transition-all
+                  shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-slate-100
+                  hover:shadow-[0_12px_36px_rgba(0,0,0,0.1)]"
         @click="startBlank">
-        <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/5" />
-        <div class="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5" />
+        <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-blue-50/50" />
+        <div class="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-blue-50/30" />
         <div class="relative z-10 flex items-start justify-between">
           <div class="flex items-start gap-4">
-            <div class="w-11 h-11 rounded-full bg-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-lg">
-              <PlusIcon :size="22" class="text-primary" />
+            <div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md">
+              <PlusIcon :size="22" class="text-white" />
             </div>
             <div>
-              <h2 class="text-xl md:text-2xl font-extrabold text-white mb-1">开始新项目</h2>
-              <p class="text-sm text-white/70">从空白画布开始您的像素艺术之旅</p>
+              <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 mb-1">开始新项目</h2>
+              <p class="text-sm text-slate-400">从空白画布开始您的像素艺术之旅</p>
             </div>
           </div>
-          <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 text-xs text-white/80 flex-shrink-0">
+          <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-xs text-blue-600 font-medium flex-shrink-0">
             <span class="w-1.5 h-1.5 rounded-full bg-green-400" />创作模式
           </div>
         </div>
         <div class="relative z-10 flex justify-end mt-4">
-          <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors">
-            <ArrowRightIcon :size="18" class="text-white" />
+          <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors">
+            <ArrowRightIcon :size="18" class="text-primary" />
           </div>
         </div>
       </div>
@@ -690,7 +692,7 @@ async function generateAi() {
   if (!aiPrompt.value.trim() || aiGenerating.value) return
   aiGenerating.value = true
   try {
-    const res = await API.post('/api/ai/generate', { prompt: aiPrompt.value, brand: aiBrand.value, size: aiSize.value })
+    const res = await API.post('/api/ai/generate', { prompt: aiPrompt.value, brand: aiBrand.value, width: aiSize.value, height: aiSize.value })
     if (res.code === 200 && res.data?.grid) {
       gridW.value = res.data.gridWidth || aiSize.value
       gridH.value = res.data.gridHeight || aiSize.value
@@ -845,8 +847,27 @@ onMounted(async () => {
       }
     } catch (_) { /* 加载失败，显示入口页 */ }
   } else {
+    // 检查是否有从其他页面导入的数据（照片转图纸 / OCR / 链接导入）
+    const importedRaw = sessionStorage.getItem('imported_grid')
+    if (importedRaw) {
+      try {
+        const imported = JSON.parse(importedRaw)
+        sessionStorage.removeItem('imported_grid') // 清除，防止下次重复加载
+        if (imported.grid && imported.gridWidth && imported.gridHeight) {
+          gridW.value = imported.gridWidth
+          gridH.value = imported.gridHeight
+          grid.value = imported.grid
+          editId.value = null
+          editTitle.value = '导入图纸'
+          inEditor.value = true
+          saveSnapshot()
+          nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+          return
+        }
+      } catch (_) { /* 数据异常，继续显示入口页 */ }
+    }
+
     // 显示创作入口页，加载最近设计
-    // 清除旧草稿，确保全新开始
     clearAutoSave()
     initGrid(gridW.value, gridH.value)
     saveSnapshot()

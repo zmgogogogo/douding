@@ -90,12 +90,21 @@
         </div>
       </div>
     </div>
+
+    <!-- AI 配色助手 -->
+    <EditorPaletteAdvisor
+      :gridColorStats="stats"
+      :filteredColors="colors"
+      :gridW="58" :gridH="58"
+      @selectColor="c => $emit('selectColor', c)"
+      @applyFill="grid => $emit('applyFill', grid)" />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { ChevronRightIcon } from 'lucide-vue-next'
+import EditorPaletteAdvisor from './EditorPaletteAdvisor.vue'
 
 defineProps({
   brand: { type: String, default: '全部' },
