@@ -223,7 +223,7 @@
         :beadCount="beadCount"
         :replaceSourceHex="replaceSourceHex"
         :focusDimHex="focusMode && focusColor ? focusColor.hex : null"
-        @setCell="setCell" @saveSnapshot="saveSnapshot" @scheduleRender="scheduleRender"
+        @setCell="setCellAndRender" @saveSnapshot="saveSnapshot" @scheduleRender="scheduleRender"
         @update:panX="panX = $event" @update:panY="panY = $event"
         @setZoom="setZoom" @zoomIn="zoomIn" @zoomOut="zoomOut"
         @zoomToFit="zoomToFit" @zoomTo1x="zoomTo1x"
@@ -413,6 +413,12 @@ const autoSaveTimer = ref(null)
 
 // 渲染调度
 let rafId = null
+// 包装 setCell：修改网格后强制触发渲染
+function setCellAndRender(r, c, color) {
+  setCell(r, c, color)
+  scheduleRender()
+}
+
 function scheduleRender() {
   if (rafId) return
   rafId = requestAnimationFrame(() => {
