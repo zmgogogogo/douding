@@ -31,6 +31,9 @@ const refPixels = ref(null)     // ImageData 或像素数组
 const refW = ref(0)
 const refH = ref(0)
 const refImage = ref(null)      // 原始参考图 URL
+const refOffsetX = ref(0)       // 参考图水平偏移（网格单位）
+const refOffsetY = ref(0)       // 参考图垂直偏移
+const refScale = ref(1)         // 参考图缩放
 
 // 选区工具
 const selectionRect = ref(null)      // {r1, c1, r2, c2}
@@ -397,7 +400,7 @@ export function useEditor() {
     gridW, gridH, grid, zoom, panX, panY,
     tool, brushSize, curColor, highlightHex,
     symmetryMode, showGrid, showMinorGrid, showMajorGrid,
-    refOpacity, refLocked, refPixels, refW, refH, refImage,
+    refOpacity, refLocked, refPixels, refW, refH, refImage, refOffsetX, refOffsetY, refScale,
     editMode, guideMode, focusMode,
     selectionRect, selectionDragging, clipboard,
     replaceSourceHex,

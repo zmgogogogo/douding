@@ -190,14 +190,20 @@ export class CanvasRenderer {
   /**
    * 渲染参考图叠加层（半透明，保持硬像素边界）
    */
-  renderRefOverlay(refPixels, refW, refH, opacity = 0.3) {
+  renderRefOverlay(refPixels, refW, refH, opacity = 0.3, offsetX = 0, offsetY = 0, scale = 1) {
     if (!refPixels) { this.ctx.clearRect(0, 0, this.gridW, this.gridH); return }
     const w = this.gridW, h = this.gridH
+    this.ctx.clearRect(0, 0, w, h)
     const imgData = this.ctx.createImageData(w * this.dpr, h * this.dpr)
     const alpha = Math.round(Math.max(0, Math.min(1, opacity)) * 255)
-    for (let r = 0; r < Math.min(h, refH); r++) {
-      for (let c = 0; c < Math.min(w, refW); c++) {
-        const px = refPixels[r] ? refPixels[r][c] : null
+
+    for (let r = 0; r < h; r++) {
+      for (let c = 0; c < w; c++) {
+        // 应用偏移和缩放来计算源像素位置
+        const srcR = Math.floor((r - offsetY) / scale)
+        const srcC = Math.floor((c - offsetX) / scale)
+        const px = (srcR >= 0 && srcR < refH && srcC >= 0 && srcC < refW)
+          ? refPixels[srcR]?.[srcC] : null
         if (!px) continue
         for (let dy = 0; dy < this.dpr; dy++) {
           for (let dx = 0; dx < this.dpr; dx++) {

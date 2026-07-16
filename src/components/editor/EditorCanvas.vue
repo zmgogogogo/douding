@@ -88,14 +88,30 @@
       :hasPrev="guideColorIdx > 0"
       @prev="$emit('guidePrev')" @next="$emit('guideNext')" @exit="$emit('toggleGuide')" />
 
-    <!-- 参考图透明度滑块 -->
+    <!-- 参考图控制面板 -->
     <div v-if="refOpacity > 0 && refPixels" class="absolute top-10 right-3 bg-white/85 backdrop-blur rounded-xl
-                shadow-sm border border-[var(--ui-border)] px-2.5 py-1.5 flex items-center gap-2 z-10 select-none">
-      <EyeIcon :size="12" class="text-[var(--ui-text-tertiary)]" />
-      <input type="range" min="0.05" max="0.7" step="0.05" :value="refOpacity"
-        class="w-16 h-1 accent-primary cursor-pointer"
-        @input="$emit('setRefOpacity', parseFloat($event.target.value))" />
-      <span class="text-[10px] text-[var(--ui-text-tertiary)] w-7 text-right">{{ Math.round(refOpacity * 100) }}%</span>
+                shadow-sm border border-[var(--ui-border)] px-2.5 py-1.5 flex flex-col gap-1 z-10 select-none"
+                style="min-width:150px">
+      <div class="flex items-center gap-1.5">
+        <EyeIcon :size="11" class="text-[var(--ui-text-tertiary)]" />
+        <input type="range" min="0.05" max="0.7" step="0.05" :value="refOpacity"
+          class="w-12 h-1 accent-primary cursor-pointer"
+          @input="$emit('setRefOpacity', parseFloat($event.target.value))" />
+        <span class="text-[10px] font-mono text-[var(--ui-text-tertiary)] w-7">{{ Math.round(refOpacity*100) }}%</span>
+        <button class="text-[9px] text-slate-400 hover:text-primary ml-auto" @click="$emit('refReset')" title="重置参考图">↺</button>
+      </div>
+      <div class="flex items-center gap-1">
+        <span class="text-[8px] text-slate-400 w-7">缩放</span>
+        <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refZoomOut')">−</button>
+        <span class="text-[9px] font-mono w-7 text-center text-slate-500">{{ Math.round((refScale||1)*100) }}%</span>
+        <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refZoomIn')">+</button>
+        <div class="flex gap-0.5 ml-1">
+          <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refMove',0,-1)">↑</button>
+          <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refMove',-1,0)">←</button>
+          <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refMove',1,0)">→</button>
+          <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refMove',0,1)">↓</button>
+        </div>
+      </div>
     </div>
 
     <!-- 底部信息卡 -->
@@ -145,6 +161,7 @@ const props = defineProps({
   highlightHex: String, symmetryMode: String,
   showGrid: Boolean, editMode: Boolean, guideMode: Boolean,
   refOpacity: Number, refPixels: Array, refW: Number, refH: Number,
+  refOffsetX: Number, refOffsetY: Number, refScale: Number,
   guideCurrentColor: Object, guideProgress: Number, guideColorIdx: Number,
   selectionRect: Object,
   beadCount: Number, hasSelection: Boolean,
@@ -155,7 +172,8 @@ const emit = defineEmits([
   'setCell', 'saveSnapshot', 'scheduleRender',
   'update:panX', 'update:panY', 'update:zoom',
   'setZoom', 'zoomIn', 'zoomOut', 'zoomToFit', 'zoomTo1x',
-  'setRefOpacity', 'toggleGuide', 'guidePrev', 'guideNext',
+  'setRefOpacity', 'refZoomIn', 'refZoomOut', 'refMove', 'refReset',
+  'toggleGuide', 'guidePrev', 'guideNext',
   'openSizeDialog', 'removeNoise',
   'update:crossCol', 'update:crossRow', 'update:mousePos',
   'update:selectionRect', 'deleteSelection', 'copySelection', 'pasteSelection',
@@ -456,7 +474,7 @@ function renderAll() {
   gridRenderer.renderGridLines(props.showGrid, crossCol.value, crossRow.value)
 
   if (props.refPixels) {
-    refRenderer.renderRefOverlay(props.refPixels, props.refW, props.refH, props.refOpacity)
+    refRenderer.renderRefOverlay(props.refPixels, props.refW, props.refH, props.refOpacity, props.refOffsetX || 0, props.refOffsetY || 0, props.refScale || 1)
   } else {
     refRenderer.ctx.clearRect(0, 0, props.gridW, props.gridH)
   }
