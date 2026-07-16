@@ -14,6 +14,7 @@
 
     <!-- ====== 📦 库存管理 ====== -->
     <div v-if="activeTab === 'inventory'" class="flex-1 overflow-y-auto p-4">
+      <div id="scan-reader" v-show="scanning" class="max-w-sm mx-auto mb-3 rounded-xl overflow-hidden" />
       <!-- 顶部操作栏 -->
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
@@ -24,9 +25,14 @@
           </span>
         </div>
         <div class="flex gap-2">
+          <button class="btn-sm-outline" @click="startScan">📷 扫码</button>
           <button class="btn-sm-outline" @click="showAddDialog = true">+ 入库</button>
-          <button class="btn-sm-outline" @click="loadInventory">🔄 刷新</button>
+          <button class="btn-sm-outline" @click="exportCSV">📥 CSV</button>
+          <button class="btn-sm-outline" @click="loadInventory">🔄</button>
         </div>
+        <!-- 扫码状态 -->
+        <div v-if="scanning" class="text-[10px] text-blue-500 mt-1">📷 对准条形码...</div>
+        <div v-if="scanResult" class="text-[10px] text-emerald-500 mt-1">✅ {{ scanResult }}</div>
       </div>
 
       <!-- 预警提示条 -->
@@ -209,13 +215,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import API from '@/api/index.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useToast } from '@/composables/useToast.js'
 import { useDialog } from '@/composables/useDialog.js'
 import DesignCard from '@/components/DesignCard.vue'
+
+let html5QrCode = null
 
 const router = useRouter()
 const auth = useAuth()
@@ -251,6 +259,77 @@ const purchaseLists = ref([])
 
 // 统计
 const statsData = ref(null)
+
+// 扫码
+const scanning = ref(false)
+const scanResult = ref('')
+
+async function startScan() {
+  if (scanning.value) { stopScan(); return }
+  try {
+    const { Html5Qrcode } = await import('html5-qrcode')
+    html5QrCode = new Html5Qrcode('scan-reader')
+    scanning.value = true
+    await html5QrCode.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: 250 },
+      async (decodedText) => {
+        // 解析条形码：假设格式为 "品牌-色号" 或纯数字
+        const code = decodedText.trim()
+        const match = code.match(/([A-Za-z]+\d+)/)
+        const searchTerm = match ? match[1] : code
+        // 在所有颜色中搜索
+        const res = await API.get('/api/beads/colors', false)
+        const colors = res.data || []
+        const found = colors.find(c =>
+          c.name?.toUpperCase() === searchTerm.toUpperCase() ||
+          c.hex?.toUpperCase() === searchTerm.toUpperCase()
+        )
+        if (found) {
+          await API.post('/api/inventory', { colorId: found.id, quantity: 100, note: '扫码入库' }, true)
+          scanResult.value = `已入库: ${found.name} +100颗`
+          await loadInventory()
+          setTimeout(() => { scanResult.value = '' }, 2000)
+        } else {
+          scanResult.value = `未找到色号: ${searchTerm}`
+          setTimeout(() => { scanResult.value = '' }, 2000)
+        }
+      },
+      (err) => { /* 扫描中 */ }
+    )
+  } catch (e) {
+    scanning.value = false
+    toast.show('扫码启动失败，请检查摄像头权限')
+  }
+}
+
+function stopScan() {
+  if (html5QrCode) {
+    try { html5QrCode.stop() } catch (_) {}
+    html5QrCode = null
+  }
+  scanning.value = false
+}
+
+async function exportCSV() {
+  try {
+    const token = auth.token?.value
+    if (!token) { toast.show('请先登录'); return }
+    const a = document.createElement('a')
+    a.href = '/api/inventory/export-csv'
+    // 添加认证头通过 URL 参数或直接 fetch
+    const resp = await fetch('/api/inventory/export-csv', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const blob = await resp.blob()
+    const url = URL.createObjectURL(blob)
+    a.href = url; a.download = '拼豆库存.csv'; a.click()
+    URL.revokeObjectURL(url)
+    toast.show('CSV 导出成功')
+  } catch (e) { toast.show('导出失败') }
+}
+
+onUnmounted(() => { stopScan() })
 
 onMounted(async () => {
   if (!auth.isLoggedIn.value) return

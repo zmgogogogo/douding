@@ -224,6 +224,33 @@ router.get('/inventory/stats', authRequired, (req, res) => {
   }
 })
 
+// GET /api/inventory/export-csv — 导出库存CSV
+router.get('/inventory/export-csv', authRequired, (req, res) => {
+  try {
+    const items = db.prepare(`
+      SELECT c.name, c.hex, s.name as series, b.name as brand,
+        i.quantity, i.min_threshold, i.transit_quantity
+      FROM user_bead_inventory i
+      JOIN bead_colors c ON i.color_id=c.id
+      JOIN bead_series s ON c.series_id=s.id
+      JOIN bead_brands b ON s.brand_id=b.id
+      WHERE i.user_id=? ORDER BY b.name, s.name, c.sort_order
+    `).all(req.user.id)
+
+    const header = '品牌,系列,色号,颜色名,库存,预警阈值,运输中'
+    const rows = items.map(i =>
+      `"${i.brand}","${i.series}","${i.name}","${i.hex}",${i.quantity},${i.min_threshold||0},${i.transit_quantity||0}`
+    )
+    const csv = '﻿' + header + '\n' + rows.join('\n')
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader('Content-Disposition', 'attachment; filename="拼豆库存.csv"')
+    res.send(csv)
+  } catch (e) {
+    res.status(500).json({ code: 500, message: e.message })
+  }
+})
+
 // ============================================
 //  用户公开主页
 // ============================================
