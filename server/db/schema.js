@@ -163,4 +163,15 @@ export function initDB() {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `)
+
+  // 数据库迁移：为旧表安全添加新列（忽略已存在列的错误）
+  const migrations = [
+    'ALTER TABLE user_bead_inventory ADD COLUMN min_threshold INTEGER DEFAULT 0',
+    'ALTER TABLE user_bead_inventory ADD COLUMN transit_quantity INTEGER DEFAULT 0',
+  ]
+  for (const sql of migrations) {
+    try { db.exec(sql) } catch (e) {
+      if (!e.message.includes('duplicate column')) console.warn('迁移跳过:', e.message)
+    }
+  }
 }

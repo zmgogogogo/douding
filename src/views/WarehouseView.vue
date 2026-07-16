@@ -303,19 +303,24 @@ async function addStock(colorId, qty, event) {
 }
 
 async function doAddStock() {
-  if (!addForm.value.colorId || !addForm.value.quantity) { toast.show('请选择颜色和数量'); return }
+  if (!addForm.value.colorId) { toast.show('请选择颜色'); return }
+  if (!addForm.value.quantity || addForm.value.quantity <= 0) { toast.show('请输入有效数量'); return }
   try {
-    await API.post('/api/inventory', {
-      colorId: addForm.value.colorId,
-      quantity: addForm.value.quantity,
+    const res = await API.post('/api/inventory', {
+      colorId: parseInt(addForm.value.colorId),
+      quantity: parseInt(addForm.value.quantity),
       minThreshold: addForm.value.threshold || 0,
       note: addForm.value.note || ''
     }, true)
-    toast.show(`入库 ${addForm.value.quantity} 颗`)
-    showAddDialog.value = false
-    addForm.value = { colorId: null, quantity: 10, threshold: 0, note: '' }
-    await loadInventory()
-  } catch (e) { toast.show(e.message) }
+    if (res.code === 200) {
+      toast.show(`入库 ${addForm.value.quantity} 颗`)
+      showAddDialog.value = false
+      addForm.value = { colorId: null, quantity: 10, threshold: 0, note: '' }
+      await loadInventory()
+    } else {
+      toast.show(res.message || '入库失败')
+    }
+  } catch (e) { toast.show(e.message || '入库失败，请稍后重试') }
 }
 
 async function setThreshold(colorId, value) {
