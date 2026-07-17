@@ -4,7 +4,7 @@
   使用 CSS 即时 tooltip 替代原生 title（零延迟）
 ============================================ -->
 <template>
-  <div class="flex flex-col items-center gap-0.5 w-11 bg-[var(--ui-bg-surface)] border-r border-[var(--ui-border)] py-2 flex-shrink-0 select-none">
+  <div class="flex flex-col items-center gap-0.5 w-11 bg-[var(--ui-bg-surface)] border-r border-[var(--ui-border)] py-2 flex-shrink-0 select-none relative z-20">
     <!-- 绘制工具组 -->
     <button v-for="t in drawTools" :key="t.name"
       class="toolbar-btn group" :class="{ active: currentTool === t.name }"
@@ -33,11 +33,14 @@
       <UnlockIcon v-else :size="16" />
       <span class="tooltip">锁定参考图 (Ctrl+L)</span>
     </button>
-    <button class="toolbar-btn group" :class="symmetryMode !== 'none' && 'text-primary'"
-      @click="$emit('cycleSymmetry')">
-      <SymmetryIcon :size="18" />
+    <div class="relative group">
+      <button class="toolbar-btn" :class="{ active: symmetryMode !== 'none' }"
+        @pointerdown.prevent="$emit('cycleSymmetry')" @dblclick.prevent="$emit('cycleSymmetry')">
+        <SymmetryIcon :size="18" />
+        <span v-if="symmetryMode !== 'none'" class="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
+      </button>
       <span class="tooltip">镜像 (K): {{ symmetryLabels[symmetryMode] }}</span>
-    </button>
+    </div>
 
     <div class="w-8 border-t border-[var(--ui-border)] my-1" />
 
