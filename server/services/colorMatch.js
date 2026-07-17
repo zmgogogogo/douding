@@ -31,9 +31,10 @@ export function loadBeadColors(brand) {
   }
 
   return colors.map(c => {
-    const r = parseInt(c.hex.substring(1, 3), 16)
-    const g = parseInt(c.hex.substring(3, 5), 16)
-    const b = parseInt(c.hex.substring(5, 7), 16)
+    const hex = c.hex.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
     return {
       ...c,
       lab: rgbToLab(r, g, b),
@@ -80,9 +81,10 @@ export function findBestMatchOklab(pixelOklab, beadColors) {
  * @returns {{color: object|null, deltaE: number}} 替代色及其色差值
  */
 export function findCrossBrandAlternative(hex, targetBrand, allColors = null) {
-  const r = parseInt(hex.substring(1, 3), 16)
-  const g = parseInt(hex.substring(3, 5), 16)
-  const b = parseInt(hex.substring(5, 7), 16)
+  const h = hex.replace('#', '')
+  const r = parseInt(h.substring(0, 2), 16)
+  const g = parseInt(h.substring(2, 4), 16)
+  const b = parseInt(h.substring(4, 6), 16)
   const lab = rgbToLab(r, g, b)
 
   const targetColors = allColors

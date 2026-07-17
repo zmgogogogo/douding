@@ -41,6 +41,36 @@
   --ui-status-info: #3b82f6;
   --ui-status-info-bg: rgba(59, 130, 246, 0.1);
 
+  /* ====== 阴影系统（5级） ====== */
+  --ui-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ui-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --ui-shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08), 0 1px 4px rgba(15, 23, 42, 0.04);
+  --ui-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.04);
+  --ui-shadow-xl: 0 24px 64px rgba(15, 23, 42, 0.14), 0 4px 12px rgba(15, 23, 42, 0.06);
+
+  /* ====== 装饰性光晕 ====== */
+  --ui-glow-warm: rgba(255, 214, 102, 0.35);
+  --ui-glow-sky: rgba(125, 211, 252, 0.38);
+  --ui-glow-rose: rgba(244, 114, 182, 0.24);
+
+  /* ====== 画布区背景 ====== */
+  --ui-bg-canvas: #e8eaed;
+  --ui-bg-canvas-dark: #d5d8dd;
+
+  /* ====== 毛玻璃等级 ====== */
+  --ui-bg-glass-strong: rgba(255, 255, 255, 0.95);
+  --ui-bg-glass-light: rgba(255, 255, 255, 0.88);
+
+  /* ====== 毛玻璃边框 ====== */
+  --ui-border-glass: rgba(229, 231, 235, 0.6);
+
+  /* ====== 棋盘格透明指示 ====== */
+  --ui-checkerboard: repeating-conic-gradient(#e5e7eb 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+
+  /* ====== 缓动曲线 ====== */
+  --ui-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ui-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
   /* 安全区域 */
   --omb-safe-top: env(safe-area-inset-top, 0px);
   --omb-safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -123,6 +153,33 @@
   .pl-safe-left { padding-left: var(--omb-safe-left); }
   .pr-safe-right { padding-right: var(--omb-safe-right); }
   .mb-safe-bottom { margin-bottom: var(--omb-safe-bottom); }
+
+  /* ========== 毛玻璃面板（统一组件类） ========== */
+  .glass-panel {
+    @apply bg-white/95 backdrop-blur-xl border border-[var(--ui-border-glass)];
+    box-shadow: var(--ui-shadow-md);
+  }
+  .glass-panel-strong {
+    @apply bg-[var(--ui-bg-glass-strong)] backdrop-blur-xl border-b border-[var(--ui-border-glass)];
+  }
+
+  /* ========== 按钮按压反馈 ========== */
+  .btn-press {
+    @apply active:scale-[0.97] active:translate-y-[1px] transition-all duration-150;
+  }
+
+  /* ========== 棋盘格透明指示背景 ========== */
+  .checkerboard-bg {
+    background: var(--ui-checkerboard);
+  }
+
+  /* ========== 装饰性径向渐变光斑背景 ========== */
+  .decorative-glow {
+    background:
+      radial-gradient(circle at 22% 18%, rgba(180,185,195,0.25), transparent 18%),
+      radial-gradient(circle at 82% 20%, rgba(200,205,212,0.22), transparent 20%),
+      radial-gradient(circle at 78% 82%, rgba(170,175,185,0.20), transparent 22%);
+  }
 }
 
 @layer utilities {
@@ -131,4 +188,11 @@
     scrollbar-width: none;
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  .transition-smooth {
+    transition: all 0.2s var(--ui-ease-out-expo);
+  }
+  .transition-bounce {
+    transition: all 0.3s var(--ui-ease-spring);
+  }
 }

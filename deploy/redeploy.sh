@@ -23,6 +23,13 @@ echo "==> 安装依赖并构建..."
 npm ci
 npm run build
 
+echo "==> 检查色卡数据..."
+COLOR_COUNT=$(node -e "const Database=require('better-sqlite3');const c=new Database('douding.db').prepare('SELECT COUNT(*) c FROM bead_colors').get().c;console.log(c)")
+if [ "$COLOR_COUNT" -lt 2000 ]; then
+  echo "色卡数据过旧（${COLOR_COUNT} 色），重新导入..."
+  npm run reseed-beads
+fi
+
 echo "==> 重启应用..."
 set -a
 [ -f .env ] && . ./.env

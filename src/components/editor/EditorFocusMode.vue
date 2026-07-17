@@ -5,12 +5,11 @@
 <template>
   <div v-if="focusColor" class="fixed inset-0 z-[140] flex flex-col items-center pointer-events-none select-none">
     <!-- 半透明遮罩（画布区域） -->
-    <div class="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+    <div class="absolute inset-0 bg-black/45 backdrop-blur-md" />
 
     <!-- 顶部颜色名称 -->
-    <div class="relative z-10 mt-20 pointer-events-auto">
-      <div class="flex items-center gap-3 bg-white/95 backdrop-blur-md rounded-2xl
-                  shadow-[0_24px_64px_rgba(15,23,42,0.18)] px-5 py-3">
+    <div class="relative z-10 mt-20 pointer-events-auto animate-scale-in">
+      <div class="flex items-center gap-3 glass-panel rounded-2xl px-5 py-3" style="box-shadow: var(--ui-shadow-xl)">
         <div class="w-8 h-8 rounded-full ring-2 ring-white shadow-md"
           :style="{ background: focusColor.hex }" />
         <div>

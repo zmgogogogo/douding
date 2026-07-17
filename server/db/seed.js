@@ -7,10 +7,26 @@
 // ============================================
 import db from './connection.js'
 
+/** 清空色卡表并重新导入（会清除用户库存等关联数据） */
+export function reseedBeads() {
+  db.exec(`
+    DELETE FROM bead_barcodes;
+    DELETE FROM replenish_alerts;
+    DELETE FROM design_bead_usage;
+    DELETE FROM purchase_items;
+    DELETE FROM inventory_logs;
+    DELETE FROM user_bead_inventory;
+    DELETE FROM bead_colors;
+    DELETE FROM bead_series;
+    DELETE FROM bead_brands;
+  `)
+  seedBeads(true)
+}
+
 /** 预置 9 品牌 × 2500+ 种珠子颜色（涵盖国内外主流品牌） */
-export function seedBeads() {
+export function seedBeads(force = false) {
   const count = db.prepare('SELECT COUNT(*) as c FROM bead_brands').get()
-  if (count.c > 0) return
+  if (!force && count.c > 0) return
 
   const brands = [
     // ===== Hama =====

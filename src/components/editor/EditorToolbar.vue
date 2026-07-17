@@ -1,97 +1,132 @@
 <!-- ============================================
-  EditorToolbar.vue — 左侧工具栏
-  ohmybead.cn 风格：垂直排列，工具+辅助+导入导出
-  使用 CSS 即时 tooltip 替代原生 title（零延迟）
-============================================ -->
+  EditorToolbar.vue — 左侧工具箱
+  V3.0 文档第4节：6大类工具，垂直排列
+  ============================================ -->
 <template>
-  <div class="flex flex-col items-center gap-0.5 w-11 bg-[var(--ui-bg-surface)] border-r border-[var(--ui-border)] py-2 flex-shrink-0 select-none relative z-20">
-    <!-- 绘制工具组 -->
-    <button v-for="t in drawTools" :key="t.name"
-      class="toolbar-btn group" :class="{ active: currentTool === t.name }"
-      @click="$emit('selectTool', t.name)">
-      <component :is="t.icon" :size="t.size || 18" />
-      <span class="tooltip">{{ t.label }} ({{ t.key }})</span>
-    </button>
-
-    <div class="w-8 border-t border-[var(--ui-border)] my-1" />
-
-    <!-- 视图辅助组 -->
-    <button class="toolbar-btn group" :class="{ active: showGrid }"
-      @click="$emit('toggleGrid')">
-      <GridIcon :size="18" />
-      <span class="tooltip">网格 (H)</span>
-    </button>
-    <button class="toolbar-btn group" :class="{ active: refOpacity > 0 }"
-      @click="$emit('cycleRefOpacity')">
-      <EyeIcon v-if="refOpacity > 0" :size="18" />
-      <EyeOffIcon v-else :size="18" />
-      <span class="tooltip">参考图透明度 (R)</span>
-    </button>
-    <button class="toolbar-btn group" :class="refLocked && 'text-amber-500'"
-      @click="$emit('toggleRefLock')">
-      <LockIcon v-if="refLocked" :size="16" />
-      <UnlockIcon v-else :size="16" />
-      <span class="tooltip">锁定参考图 (Ctrl+L)</span>
-    </button>
-    <div class="relative group">
-      <button class="toolbar-btn" :class="{ active: symmetryMode !== 'none' }"
-        @pointerdown.prevent="$emit('cycleSymmetry')" @dblclick.prevent="$emit('cycleSymmetry')">
-        <SymmetryIcon :size="18" />
-        <span v-if="symmetryMode !== 'none'" class="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
+  <aside class="flex flex-col items-center w-12 bg-[var(--ui-bg-surface)] border-r border-[var(--ui-border-glass)] flex-shrink-0 select-none z-20 overflow-visible">
+    <div class="flex flex-col items-center py-2 overflow-y-auto scrollbar-hide w-full h-full">
+    <!-- 第一组：导航工具 -->
+    <div class="tool-group">
+      <button class="toolbar-btn" :class="{ active: currentTool === 'move' }"
+        @click="$emit('selectTool', 'move')" title="移动 (V)">
+        <HandIcon :size="16" />
       </button>
-      <span class="tooltip">镜像 (K): {{ symmetryLabels[symmetryMode] }}</span>
+      <button class="toolbar-btn" :class="{ active: currentTool === 'zoom' }"
+        @click="$emit('selectTool', 'zoom')" title="缩放 (Z)">
+        <ZoomInIcon :size="16" />
+      </button>
     </div>
 
-    <div class="w-8 border-t border-[var(--ui-border)] my-1" />
+    <div class="tool-divider" />
 
-    <!-- 选区操作按钮（仅选中有选区时显示） -->
-    <template v-if="currentTool === 'select' && hasSelection">
-      <button class="toolbar-btn group text-blue-500" @click="$emit('copySelection')">
-        <CopyIcon :size="15" /><span class="tooltip">复制 (Ctrl+C)</span></button>
-      <button class="toolbar-btn group text-blue-500" @click="$emit('pasteSelection')">
-        <ClipboardPasteIcon :size="15" /><span class="tooltip">粘贴 (Ctrl+V)</span></button>
-      <button class="toolbar-btn group text-red-500" @click="$emit('deleteSelection')">
-        <Trash2Icon :size="15" /><span class="tooltip">删除 (Del)</span></button>
-      <button class="toolbar-btn group" @click="$emit('flipSelectionH')">
-        <FlipHorizontalIcon :size="15" /><span class="tooltip">水平翻转</span></button>
-      <button class="toolbar-btn group" @click="$emit('flipSelectionV')">
-        <FlipVerticalIcon :size="15" /><span class="tooltip">垂直翻转</span></button>
-      <div class="w-8 border-t border-[var(--ui-border)] my-1" />
-    </template>
+    <!-- 第二组：绘制工具 -->
+    <div class="tool-group">
+      <button class="toolbar-btn" :class="{ active: currentTool === 'brush' }"
+        @click="$emit('selectTool', 'brush')" title="画笔 (B)">
+        <PencilIcon :size="17" />
+      </button>
+      <button class="toolbar-btn" :class="{ active: currentTool === 'eraser' }"
+        @click="$emit('selectTool', 'eraser')" title="橡皮 (E)">
+        <EraserIcon :size="17" />
+      </button>
+      <button class="toolbar-btn" :class="{ active: currentTool === 'fill' }"
+        @click="$emit('selectTool', 'fill')" title="填充 (G)">
+        <PaintBucketIcon :size="17" />
+      </button>
+      <button class="toolbar-btn" :class="{ active: currentTool === 'picker' }"
+        @click="$emit('selectTool', 'picker')" title="吸色 (I)">
+        <PipetteIcon :size="17" />
+      </button>
+      <button class="toolbar-btn" :class="{ active: currentTool === 'replace' }"
+        @click="$emit('selectTool', 'replace')" title="颜色替换 (R)">
+        <ReplaceIcon :size="15" />
+      </button>
+    </div>
 
-    <!-- 导入导出组 -->
-    <button class="toolbar-btn group" @click="$emit('importImage')">
-      <ImageIcon :size="18" /><span class="tooltip">导入图片</span></button>
-    <button class="toolbar-btn group" @click="$emit('exportPNG')">
-      <DownloadIcon :size="18" /><span class="tooltip">导出高清PNG</span></button>
-    <button class="toolbar-btn group" @click="$emit('exportPDF')">
-      <FileTextIcon :size="16" /><span class="tooltip">导出PDF图纸</span></button>
+    <div class="tool-divider" />
+
+    <!-- 第三组：形状工具（开发中） -->
+    <div class="tool-group">
+      <button class="toolbar-btn opacity-40 cursor-not-allowed" disabled title="直线 (L) · 开发中">
+        <MinusIcon :size="17" />
+      </button>
+      <button class="toolbar-btn opacity-40 cursor-not-allowed" disabled title="矩形 (U) · 开发中">
+        <SquareIcon :size="15" />
+      </button>
+      <button class="toolbar-btn opacity-40 cursor-not-allowed" disabled title="圆形 · 开发中">
+        <CircleIcon :size="17" />
+      </button>
+    </div>
+
+    <div class="tool-divider" />
+
+    <!-- 第四组：选区工具 -->
+    <div class="tool-group">
+      <button class="toolbar-btn" :class="{ active: currentTool === 'select' }"
+        @click="$emit('selectTool', 'select')" title="矩形选区 (M)">
+        <PointerIcon :size="17" />
+      </button>
+      <button class="toolbar-btn opacity-40 cursor-not-allowed" disabled title="魔棒 (W) · 开发中">
+        <Wand2Icon :size="15" />
+      </button>
+    </div>
+
+    <div class="tool-divider" />
+
+    <!-- 第五组：辅助视图 -->
+    <div class="tool-group">
+      <button class="toolbar-btn" :class="{ 'text-primary': showGrid }"
+        @click="$emit('toggleGrid')" title="网格 (H)">
+        <Grid3x3Icon :size="16" />
+      </button>
+      <button class="toolbar-btn" :class="{ active: symmetryMode !== 'none' }"
+        @pointerdown.prevent="$emit('cycleSymmetry')" @dblclick.prevent="$emit('cycleSymmetry')"
+        :title="'镜像 (K): ' + symLabels[symmetryMode]">
+        <SymmetryIcon :size="17" />
+      </button>
+    </div>
 
     <div class="flex-1" />
 
-    <!-- 施工引导（底部） -->
-    <button class="toolbar-btn group" :class="guideMode && 'text-green-500'"
-      @click="$emit('toggleGuide')">
-      <Wand2Icon :size="18" /><span class="tooltip">施工引导 (Ctrl+N)</span></button>
-  </div>
+    <!-- 底部：参考图透明度 -->
+    <div class="tool-group">
+      <button class="toolbar-btn" :class="{ 'text-primary': refOpacity > 0 }"
+        @click="$emit('cycleRefOpacity')" title="参考图透明度 (R)">
+        <EyeIcon v-if="refOpacity > 0" :size="16" />
+        <EyeOffIcon v-else :size="16" />
+      </button>
+    </div>
+    </div>
+  </aside>
 </template>
 
 <script setup>
-import {
-  PencilIcon, EraserIcon, PaintBucketIcon, PipetteIcon,
-  HandIcon, PointerIcon, ReplaceIcon,
-  Grid3x3Icon as GridIcon, EyeIcon, EyeOffIcon,
-  LockIcon, UnlockIcon, ImageIcon, DownloadIcon, FileTextIcon,
-  Wand2Icon, CopyIcon, ClipboardPasteIcon, Trash2Icon,
-  FlipHorizontalIcon, FlipVerticalIcon
-} from 'lucide-vue-next'
 import { h } from 'vue'
+import {
+  HandIcon, ZoomInIcon,
+  PencilIcon, EraserIcon, PaintBucketIcon, PipetteIcon,
+  MinusIcon, SquareIcon, CircleIcon,
+  PointerIcon, Wand2Icon,
+  Grid3x3Icon, EyeIcon, EyeOffIcon,
+} from 'lucide-vue-next'
 
-// 对称模式图标组件
+const ReplaceIcon = {
+  render() {
+    return h('svg', {
+      width: 15, height: 15, viewBox: '0 0 24 24',
+      fill: 'none', stroke: 'currentColor', 'stroke-width': '2',
+      'stroke-linecap': 'round', 'stroke-linejoin': 'round'
+    }, [
+      h('path', { d: 'M20 7h-6l2 2-8 8-4-4 2-2' }),
+      h('path', { d: 'M4 17h6l-2-2 8-8 4 4-2 2' }),
+    ])
+  }
+}
+
 const SymmetryIcon = {
   render() {
     return h('svg', {
-      width: 18, height: 18, viewBox: '0 0 24 24',
+      width: 17, height: 17, viewBox: '0 0 24 24',
       fill: 'none', stroke: 'currentColor', 'stroke-width': '2',
       'stroke-linecap': 'round', 'stroke-linejoin': 'round'
     }, [
@@ -106,49 +141,35 @@ defineProps({
   currentTool: { type: String, default: 'brush' },
   showGrid: { type: Boolean, default: true },
   refOpacity: { type: Number, default: 0 },
-  refLocked: { type: Boolean, default: false },
   symmetryMode: { type: String, default: 'none' },
-  guideMode: { type: Boolean, default: false },
-  hasSelection: { type: Boolean, default: false },
 })
 
 defineEmits([
-  'selectTool', 'toggleGrid', 'cycleRefOpacity', 'toggleRefLock',
-  'cycleSymmetry', 'copySelection', 'pasteSelection', 'deleteSelection',
-  'flipSelectionH', 'flipSelectionV',
-  'importImage', 'exportPNG', 'exportPDF', 'toggleGuide'
+  'selectTool', 'toggleGrid', 'cycleSymmetry', 'cycleRefOpacity',
 ])
 
-const drawTools = [
-  { name: 'brush', label: '画笔', key: 'B', icon: PencilIcon },
-  { name: 'eraser', label: '橡皮', key: 'E', icon: EraserIcon, size: 16 },
-  { name: 'fill', label: '填充', key: 'G', icon: PaintBucketIcon },
-  { name: 'picker', label: '吸色', key: 'I', icon: PipetteIcon },
-  { name: 'select', label: '框选', key: 'S', icon: PointerIcon },
-  { name: 'replace', label: '替换', key: 'R', icon: ReplaceIcon },
-  { name: 'move', label: '移动', key: 'M', icon: HandIcon },
-]
-
-const symmetryLabels = { none: '关闭', h: '水平镜像', v: '垂直镜像', quad: '四向镜像' }
+const symLabels = { none: '关闭', h: '水平', v: '垂直', quad: '四向' }
 </script>
 
 <style scoped>
 .toolbar-btn {
   @apply relative w-9 h-9 flex items-center justify-center rounded-xl
          text-[var(--ui-text-tertiary)] hover:text-[var(--ui-text-primary)]
-         hover:bg-[var(--ui-bg-tertiary)] transition-colors;
+         hover:bg-[var(--ui-bg-tertiary)] transition-all duration-150;
 }
+.toolbar-btn:hover { transform: scale(1.08); }
+.toolbar-btn:active { transform: scale(0.92); }
 .toolbar-btn.active {
-  @apply text-primary bg-primary/10;
+  @apply text-white;
+  background-color: var(--ui-accent);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
-/* 即时 tooltip：悬停即显，零延迟，显示在按钮上方偏右 */
-.tooltip {
-  @apply absolute bottom-full mb-0.5 left-2 px-2 py-1 rounded-md
-         bg-slate-800 text-white text-[10px] font-medium whitespace-nowrap
-         opacity-0 pointer-events-none z-50;
+.tool-group {
+  @apply flex flex-col items-center gap-0.5;
 }
-.group:hover .tooltip {
-  @apply opacity-100;
+
+.tool-divider {
+  @apply w-6 border-t border-[var(--ui-border-glass)] my-1.5;
 }
 </style>

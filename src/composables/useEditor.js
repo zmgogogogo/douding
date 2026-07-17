@@ -6,8 +6,8 @@
 import { ref, computed, reactive } from 'vue'
 
 // ---- 单例状态（模块级，全局共享） ----
-const gridW = ref(58)
-const gridH = ref(58)
+const gridW = ref(50)
+const gridH = ref(50)
 const grid = ref([])            // 当前活动层的 grid（兼容旧代码）
 const layers = ref([])          // [{id, name, visible, opacity, grid}]
 const currentLayerId = ref(null)
@@ -50,9 +50,10 @@ const MAX_RECENT = 12
 
 function addRecentColor(color) {
   if (!color?.hex) return
+  const key = color.id ?? color.hex
   recentColors.value = [
-    color,
-    ...recentColors.value.filter(c => c.hex !== color.hex)
+    { ...color },
+    ...recentColors.value.filter(c => (c.id ?? c.hex) !== key)
   ].slice(0, MAX_RECENT)
 }
 
@@ -100,8 +101,8 @@ const autoSaveKey = 'douding_autosave_v2'
 // 弹窗状态
 const showInfo = ref(false)
 const showSizeDialog = ref(false)
-const sizeDialogW = ref(58)
-const sizeDialogH = ref(58)
+const sizeDialogW = ref(50)
+const sizeDialogH = ref(50)
 const showExportMenu = ref(false)
 const showColorStats = ref(false)
 
@@ -110,6 +111,25 @@ const mousePos = ref({ x: -100, y: -100 })
 const crossCol = ref(-1)
 const crossRow = ref(-1)
 const isDrawing = ref(false)
+
+// 指针状态（画布坐标，给状态栏用）
+const mouseCol = ref(-1)
+const mouseRow = ref(-1)
+const mouseColor = computed(() => {
+  if (mouseRow.value < 0 || mouseCol.value < 0) return null
+  const comp = getCompositeGrid()
+  return comp[mouseRow.value]?.[mouseCol.value] || null
+})
+
+// 右侧面板
+const activePanelTab = ref('color') // 'color'|'layer'|'swatch'|'history'|'properties'
+
+// 模式标签
+const modeLabel = computed(() => {
+  if (guideMode.value) return '施工引导模式'
+  if (focusMode.value) return '专注模式'
+  return '编辑模式'
+})
 
 // 品牌/系列筛选
 const brand = ref('全部')
@@ -160,15 +180,17 @@ const filteredColors = computed(() => {
 
 const beadCount = computed(() => {
   let n = 0
-  for (const r of grid.value) if (r) for (const c of r) if (c?.hex) n++
+  const comp = getCompositeGrid()
+  for (const r of comp) if (r) for (const c of r) if (c?.hex) n++
   return n
 })
 
 const gridColorStats = computed(() => {
   const map = new Map()
+  const comp = getCompositeGrid()
   for (let r = 0; r < gridH.value; r++) {
     for (let c = 0; c < gridW.value; c++) {
-      const cell = grid.value[r]?.[c]
+      const cell = comp[r]?.[c]
       if (!cell?.hex) continue
       const key = cell.hex.toUpperCase()
       if (!map.has(key)) map.set(key, { name: cell.name, hex: cell.hex, count: 0 })
@@ -198,6 +220,20 @@ const brushPreviewStyle = computed(() => {
 })
 
 // ---- 网格操作方法 ----
+/** 新建/进入编辑器时重置镜像、参考图等会话状态 */
+function resetEditorSession() {
+  symmetryMode.value = 'none'
+  refPixels.value = null
+  refOpacity.value = 0
+  refImage.value = null
+  refOffsetX.value = 0
+  refOffsetY.value = 0
+  refScale.value = 1
+  highlightHex.value = null
+  replaceSourceHex.value = null
+  guideMode.value = false
+}
+
 function initGrid(w, h) {
   gridW.value = w
   gridH.value = h
@@ -304,6 +340,7 @@ function addLayer(name) {
   layers.value.push({ id, name: name || `图层 ${layers.value.length + 1}`, visible: true, opacity: 1, grid: newGrid })
   currentLayerId.value = id
   grid.value = newGrid
+  saveSnapshot()
 }
 
 function removeLayer(id) {
@@ -314,23 +351,26 @@ function removeLayer(id) {
   const newIdx = Math.min(idx, layers.value.length - 1)
   currentLayerId.value = layers.value[newIdx].id
   grid.value = layers.value[newIdx].grid
+  saveSnapshot()
 }
 
 function selectLayer(id) {
   const layer = layers.value.find(l => l.id === id)
   if (!layer) return
+  // 切换图层前保存当前状态，使切换操作可撤销
+  if (currentLayerId.value !== id) saveSnapshot()
   currentLayerId.value = id
   grid.value = layer.grid
 }
 
 function toggleLayerVisibility(id) {
   const layer = layers.value.find(l => l.id === id)
-  if (layer) layer.visible = !layer.visible
+  if (layer) { layer.visible = !layer.visible; saveSnapshot() }
 }
 
 function setLayerOpacity(id, opacity) {
   const layer = layers.value.find(l => l.id === id)
-  if (layer) layer.opacity = Math.max(0, Math.min(1, opacity))
+  if (layer) { layer.opacity = Math.max(0, Math.min(1, opacity)); saveSnapshot() }
 }
 
 function mergeLayerDown(id) {
@@ -431,6 +471,9 @@ function restoreSnapshot(snapshot) {
     }))
     currentLayerId.value = snapshot.currentLayerId || layers.value[0]?.id
   }
+  // 关键：重新连接 grid 引用到活动图层的 grid，避免引用分离导致编辑丢失
+  const activeLayer = layers.value.find(l => l.id === currentLayerId.value)
+  if (activeLayer) grid.value = activeLayer.grid
 }
 
 // ---- 对称模式 ----
@@ -489,12 +532,23 @@ function openSizeDialog() {
 function applyResize() {
   const nw = Math.max(10, Math.min(300, sizeDialogW.value))
   const nh = Math.max(10, Math.min(300, sizeDialogH.value))
-  const newGrid = Array.from({ length: nh }, (_, r) =>
-    Array.from({ length: nw }, (_, c) => getCell(r, c))
-  )
+  const oldW = gridW.value, oldH = gridH.value
+
+  // 对所有图层统一调整尺寸，避免切换图层时维度不匹配导致渲染崩溃
+  for (const layer of layers.value) {
+    const newGrid = Array.from({ length: nh }, (_, r) =>
+      Array.from({ length: nw }, (_, c) =>
+        (r < oldH && c < oldW && layer.grid[r]?.[c]) ? { ...layer.grid[r][c] } : null
+      )
+    )
+    layer.grid = newGrid
+  }
+
   gridW.value = nw
   gridH.value = nh
-  grid.value = newGrid
+  // 重新连接活动图层引用
+  const activeLayer = layers.value.find(l => l.id === currentLayerId.value)
+  if (activeLayer) grid.value = activeLayer.grid
   showSizeDialog.value = false
   saveSnapshot()
 }
@@ -594,6 +648,8 @@ export function useEditor() {
     showExportMenu, showColorStats,
     colorSearch, recentColors, addRecentColor, codeOnly,
     mousePos, crossCol, crossRow, isDrawing,
+    mouseCol, mouseRow, mouseColor,
+    activePanelTab, modeLabel,
     brand, seriesActive,
 
     // 计算属性
@@ -603,7 +659,7 @@ export function useEditor() {
     brushPreviewStyle,
 
     // 方法
-    initGrid, getCell, setCell, autoFitGrid, expandGridToFit,
+    initGrid, resetEditorSession, getCell, setCell, autoFitGrid, expandGridToFit,
     getSymmetryCells,
     saveSnapshot, undo, redo, restoreSnapshot,
     // 图层

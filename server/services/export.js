@@ -117,6 +117,9 @@ export async function exportPDF(grid, gridW, gridH, opts = {}) {
   const drawH = pageH - margin * 2
 
   // 计算每个珠子的尺寸（尽量放大但不超出页面）
+  if (!gridW || !gridH || gridW <= 0 || gridH <= 0) {
+    throw new Error(`无效的网格尺寸: ${gridW}×${gridH}`)
+  }
   const cellSize = Math.floor(Math.min(drawW / gridW, drawH / gridH))
 
   // 实际网格绘制尺寸

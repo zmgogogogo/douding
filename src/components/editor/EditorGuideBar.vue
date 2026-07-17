@@ -3,9 +3,8 @@
   ohmybead.cn 风格：悬浮在画布顶部中央，逐色导航
   ============================================ -->
 <template>
-  <div class="absolute top-3 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-md rounded-2xl
-              shadow-[0_8px_30px_rgba(0,0,0,0.1)] border border-[var(--ui-border)] px-4 py-2
-              flex items-center gap-3 z-10 animate-bounce-in select-none">
+  <div class="absolute top-3 left-1/2 -translate-x-1/2 glass-panel rounded-2xl px-4 py-2
+              flex items-center gap-3 z-10 animate-scale-in select-none" style="box-shadow: var(--ui-shadow-lg)">
     <!-- 上一个颜色 -->
     <button class="w-6 h-6 rounded-full bg-[var(--ui-bg-tertiary)] flex items-center justify-center
                    hover:bg-[var(--ui-border)] transition-colors"

@@ -3,9 +3,9 @@
   ohmybead.cn 风格：毛玻璃背景 + 项目名 + 操作按钮
   ============================================ -->
 <template>
-  <header class="h-11 bg-white/95 backdrop-blur-md border-b border-[var(--ui-border)] flex items-center px-2 gap-1 flex-shrink-0 z-10 select-none">
+  <header class="h-14 bg-[var(--ui-bg-base)]/95 backdrop-blur-lg border-b border-[var(--ui-border-glass)] flex items-center px-3 gap-1 flex-shrink-0 z-10 select-none sticky top-0">
     <!-- 左侧：返回 + 标题 -->
-    <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--ui-bg-tertiary)] transition-colors flex-shrink-0"
+    <button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--ui-bg-tertiary)] transition-colors flex-shrink-0"
       @click="$emit('back')" title="返回">
       <ArrowLeftIcon :size="18" class="text-[var(--ui-text-secondary)]" />
     </button>
@@ -22,7 +22,7 @@
         @keydown.enter="$event.target.blur()"
       />
       <!-- 未保存指示器 -->
-      <span v-if="hasUnsaved" class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" title="有未保存的更改" />
+      <span v-if="hasUnsaved" class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" title="有未保存的更改" />
       <!-- 已保存提示 -->
       <span v-if="showSaved" class="text-[10px] text-emerald-500 font-medium animate-fade-in flex-shrink-0">已保存</span>
     </div>
@@ -55,13 +55,22 @@
         <EyeOffIcon v-else :size="16" />
       </button>
 
+      <!-- 镜像切换 -->
+      <button class="topbar-action-btn" @click="$emit('toggleSymmetry')" title="镜像 (K)">
+        <ShuffleIcon :size="16" />
+      </button>
+
+      <!-- 施工引导 -->
+      <button class="topbar-action-btn" @click="$emit('toggleGuide')" title="施工引导">
+        <Wand2Icon :size="16" />
+      </button>
+
       <!-- 导出下拉 -->
       <div class="relative">
         <button class="topbar-action-btn" @click="showExport = !showExport" title="导出">
           <DownloadIcon :size="16" />
         </button>
-        <div v-if="showExport" class="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-[var(--ui-border)]
-                      py-1 w-36 z-[150] animate-bounce-in"
+        <div v-if="showExport" class="absolute right-0 top-full mt-1 bg-white rounded-2xl border border-[var(--ui-border-glass)] py-1 w-36 z-[150] animate-scale-in" style="box-shadow: var(--ui-shadow-lg)"
           @mouseleave="showExport = false">
           <button class="export-menu-item" @click="$emit('exportPNG'); showExport = false">
             <ImageIcon :size="14" /><span>导出 PNG 图片</span>
@@ -80,8 +89,7 @@
         <button class="topbar-action-btn" @click="showMore = !showMore" title="更多">
           <MoreHorizontalIcon :size="16" />
         </button>
-        <div v-if="showMore" class="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-[var(--ui-border)]
-                      py-1 w-40 z-[150] animate-bounce-in"
+        <div v-if="showMore" class="absolute right-0 top-full mt-1 bg-white rounded-2xl border border-[var(--ui-border-glass)] py-1 w-40 z-[150] animate-scale-in" style="box-shadow: var(--ui-shadow-lg)"
           @mouseleave="showMore = false">
           <button class="export-menu-item" @click="$emit('save'); showMore = false">
             <SaveIcon :size="14" /><span>保存到云端</span>
@@ -108,7 +116,8 @@ import {
   Grid3x3Icon as GridIcon, EyeIcon, EyeOffIcon,
   DownloadIcon, ImageIcon, FileTextIcon,
   MoreHorizontalIcon, SaveIcon, InfoIcon,
-  MaximizeIcon, Trash2Icon, CodeIcon
+  MaximizeIcon, Trash2Icon, CodeIcon,
+  ShuffleIcon, Wand2Icon
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -124,7 +133,8 @@ defineEmits([
   'back', 'update:title', 'undo', 'redo',
   'toggleGrid', 'toggleRef',
   'exportPNG', 'exportPDF', 'exportJSON',
-  'save', 'showInfo', 'openSizeDialog', 'clear'
+  'save', 'showInfo', 'openSizeDialog', 'clear',
+  'toggleSymmetry', 'toggleGuide'
 ])
 
 const showExport = ref(false)
@@ -143,12 +153,15 @@ watch(() => props.hasUnsaved, (val) => {
 
 <style scoped>
 .topbar-action-btn {
-  @apply w-8 h-8 flex items-center justify-center rounded-lg
+  @apply w-10 h-10 flex items-center justify-center rounded-full
          text-[var(--ui-text-secondary)] hover:bg-[var(--ui-bg-tertiary)]
-         hover:text-[var(--ui-text-primary)] transition-colors flex-shrink-0;
+         hover:text-[var(--ui-text-primary)] transition-all duration-150 flex-shrink-0;
+}
+.topbar-action-btn:active {
+  transform: scale(0.93);
 }
 .export-menu-item {
-  @apply w-full flex items-center gap-2 px-3 py-1.5 text-[12px] text-[var(--ui-text-secondary)]
+  @apply w-full flex items-center gap-2 px-3 py-2 text-[12px] text-[var(--ui-text-secondary)]
          hover:bg-[var(--ui-bg-tertiary)] hover:text-[var(--ui-text-primary)] transition-colors text-left;
 }
 </style>

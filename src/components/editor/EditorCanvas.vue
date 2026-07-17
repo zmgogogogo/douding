@@ -1,73 +1,23 @@
 <!-- ============================================
-  EditorCanvas.vue — 画布区域（核心交互）
-  锚定原点式三级分层画布体系
-    底层：CSS 全局坐标网格（无限延伸浅蓝细网格）
-    中层：有效拼豆范围层（深蓝内部网格 + 红色边框）
-    顶层：拼豆图案内容层（实际珠子渲染）
-
+  双层 Canvas 分离渲染：
+    底层 globalGridCanvas — 全局坐标网格（无限延伸）
+    顶层 mainCanvas — 珠子 + 参考图 + 范围网格 + 色号标签
   坐标原点 (0,0) = 有效拼豆范围左上角
-  X轴 → 右正左负，Y轴 → 下正上负
-  ============================================ -->
-<template>
+  ============================================ --><template>
   <div
     ref="canvasWrap"
-    class="flex-1 relative overflow-hidden"
-    :style="containerStyle"
+    class="absolute inset-0 overflow-hidden"
+    :style="{ backgroundColor: 'var(--ui-bg-canvas)', touchAction: 'none' }"
     @pointerdown="onPointerDown" @pointermove="onPointerMove"
     @pointerup="onPointerUp" @pointerleave="onPointerUp" @pointercancel="onPointerUp"
     @wheel.prevent="onWheel" @contextmenu.prevent
-    @dblclick.prevent="onDoubleClick"
     @keydown="onKeyDown" @keyup="onKeyUp" tabindex="0">
 
-    <!-- === 底层：CSS 全局坐标网格（无限延伸，铺满整个可视区域）=== -->
+    <!-- === 底层：全局坐标网格层（无限延伸，覆盖整个可视区域）=== -->
+    <canvas ref="globalGridCanvas" class="absolute inset-0 pointer-events-none" style="z-index:0" />
 
-    <!-- === 中层：有效范围网格 + 红色边框 === -->
-    <canvas ref="gridCanvas" class="absolute pointer-events-none pixel-thumb" />
-
-    <!-- === 顶层：拼豆图案内容层 === -->
-    <canvas ref="mainCanvas" class="absolute pixel-thumb" />
-
-    <!-- === 参考图叠加层 === -->
-    <canvas ref="refCanvas" class="absolute pointer-events-none pixel-thumb" />
-
-    <!-- === 顶部 X 轴标尺（全屏宽度）=== -->
-    <div v-if="showGrid" class="absolute top-0 left-0 right-0 pointer-events-none z-10"
-      style="height:22px;background:rgba(255,255,255,0.88);backdrop-filter:blur(6px);border-bottom:1px solid #e5e7eb">
-      <div class="absolute inset-0 overflow-hidden">
-        <template v-for="c in rulerCols" :key="'ct'+c">
-          <div
-            class="absolute flex flex-col items-center justify-end"
-            :style="{
-              left: Math.round(gridLeft + c * zoom + zoom / 2) + 'px',
-              transform: 'translateX(-50%)',
-              top: '0',
-              height: '22px'
-            }">
-            <span class="text-[11px] text-slate-600 font-medium leading-none mb-0.5 font-mono select-none">{{ c }}</span>
-            <div class="h-[5px] w-px bg-slate-350" />
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <!-- === 左侧 Y 轴标尺（全屏高度）=== -->
-    <div v-if="showGrid" class="absolute top-0 left-0 bottom-0 pointer-events-none z-10"
-      style="width:32px;background:rgba(255,255,255,0.88);backdrop-filter:blur(6px);border-right:1px solid #e5e7eb">
-      <div class="absolute inset-0 overflow-hidden">
-        <template v-for="r in rulerRows" :key="'rt'+r">
-          <div
-            class="absolute flex items-center w-full"
-            :style="{
-              top: Math.round(gridTop + r * zoom + zoom / 2) + 'px',
-              transform: 'translateY(-50%)',
-              height: zoom + 'px'
-            }">
-            <span class="text-[11px] text-slate-600 font-medium leading-none ml-1 font-mono select-none w-5 text-right">{{ r }}</span>
-            <div class="w-[5px] h-px bg-slate-350 ml-0.5" />
-          </div>
-        </template>
-      </div>
-    </div>
+    <!-- === 顶层：白底 + 珠子 + 参考图 + 范围网格 + 色号 === -->
+    <canvas ref="mainCanvas" class="absolute" style="background:#e8eaed;z-index:1" />
 
     <!-- 画笔大小预览 — 网格点阵 -->
     <div v-if="showBrushPreview" class="absolute pointer-events-none z-20"
@@ -75,8 +25,8 @@
       <div class="w-full h-full grid"
         :style="{ gridTemplateColumns: `repeat(${brushSize}, 1fr)`, gridTemplateRows: `repeat(${brushSize}, 1fr)` }">
         <div v-for="i in brushSize * brushSize" :key="i"
-          class="border border-slate-700/30"
-          :style="{ background: curColor?.hex ? curColor.hex + '40' : 'transparent' }" />
+          class="border border-slate-400/25"
+          :style="{ background: curColor?.hex ? curColor.hex + '40' : 'transparent', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }" />
       </div>
     </div>
 
@@ -88,9 +38,7 @@
       @prev="$emit('guidePrev')" @next="$emit('guideNext')" @exit="$emit('toggleGuide')" />
 
     <!-- 参考图控制面板 -->
-    <div v-if="refOpacity > 0 && refPixels" class="absolute top-10 right-3 bg-white/85 backdrop-blur rounded-xl
-                shadow-sm border border-[var(--ui-border)] px-2.5 py-1.5 flex flex-col gap-1 z-10 select-none"
-                style="min-width:150px">
+    <div v-if="refOpacity > 0 && refPixels" class="absolute top-10 right-3 glass-panel rounded-2xl px-2.5 py-1.5 flex flex-col gap-1 z-10 select-none" style="min-width:150px">
       <div class="flex items-center gap-1.5">
         <EyeIcon :size="11" class="text-[var(--ui-text-tertiary)]" />
         <input type="range" min="0.05" max="0.7" step="0.05" :value="refOpacity"
@@ -113,55 +61,21 @@
       </div>
     </div>
 
-    <!-- 底部信息卡 -->
-    <div class="absolute bottom-12 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur rounded-2xl
-                shadow-[0_8px_30px_rgba(0,0,0,0.1)] border border-[var(--ui-border)] px-4 py-2 flex items-center gap-3 z-10 select-none">
-      <div class="flex flex-col items-start">
-        <span class="text-[9px] text-[var(--ui-text-tertiary)] leading-none">{{ editMode ? '编辑模式' : '完成模式' }}</span>
-        <span class="text-[13px] font-bold text-[var(--ui-text-primary)]">{{ gridW }}×{{ gridH }} · {{ beadCount }}颗</span>
-      </div>
-      <button class="h-7 px-2.5 rounded-full bg-[var(--ui-bg-tertiary)] text-[10px] text-[var(--ui-text-secondary)]
-                   font-medium hover:bg-[var(--ui-border)] transition-colors flex items-center gap-1"
-        @click="$emit('autoFit')" title="根据内容自动调整画布"><MaximizeIcon :size="10" />自适应</button>
-      <button class="h-7 px-2.5 rounded-full bg-[var(--ui-bg-tertiary)] text-[10px] text-[var(--ui-text-secondary)]
-                   font-medium hover:bg-[var(--ui-border)] transition-colors flex items-center gap-1"
-        @click="$emit('openSizeDialog')"><PencilIcon :size="10" />大小</button>
-      <button class="h-7 px-2.5 rounded-full text-[10px] font-medium text-white transition-colors flex items-center gap-1"
-        :class="guideMode ? 'bg-emerald-500' : 'bg-primary'"
-        @click="$emit('toggleGuide')"><Wand2Icon :size="10" />{{ guideMode ? '退出' : '辅助' }}</button>
-    </div>
-
-    <!-- 去除杂色按钮 -->
-    <button v-if="beadCount > 0"
-      class="absolute bottom-3 right-3 bg-white/90 backdrop-blur rounded-full
-             shadow-sm border border-[var(--ui-border)] px-3 py-1.5 flex items-center gap-1.5
-             text-[10px] text-[var(--ui-text-secondary)] hover:text-primary transition-colors z-10"
-      @click="$emit('removeNoise')" title="去除杂色">
-      <span>🧹 去杂色</span>
-    </button>
-
-    <!-- 底部缩放控件 -->
-    <EditorZoomControl
-      :zoom="zoom" :minZoom="0.5" :maxZoom="30" :step="0.5"
-      @zoomToFit="$emit('zoomToFit')" @zoomOut="$emit('zoomOut')"
-      @zoomIn="$emit('zoomIn')" @setZoom="v => $emit('setZoom', v)"
-      @zoomTo1x="$emit('zoomTo1x')" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { PencilIcon, Wand2Icon, EyeIcon, MaximizeIcon } from 'lucide-vue-next'
+import { EyeIcon } from 'lucide-vue-next'
 import { CanvasRenderer } from '@/utils/canvas.js'
 import EditorGuideBar from './EditorGuideBar.vue'
-import EditorZoomControl from './EditorZoomControl.vue'
 
 const props = defineProps({
   gridW: Number, gridH: Number, grid: Array,
   zoom: Number, panX: Number, panY: Number,
   tool: String, brushSize: Number, curColor: Object,
   highlightHex: String, symmetryMode: String,
-  showGrid: Boolean, editMode: Boolean, guideMode: Boolean,
+  showGrid: { type: Boolean, default: true }, editMode: { type: Boolean, default: true }, guideMode: { type: Boolean, default: false },
   refOpacity: Number, refPixels: Array, refW: Number, refH: Number,
   refOffsetX: Number, refOffsetY: Number, refScale: Number,
   guideCurrentColor: Object, guideProgress: Number, guideColorIdx: Number,
@@ -173,22 +87,18 @@ const props = defineProps({
 const emit = defineEmits([
   'setCell', 'saveSnapshot', 'scheduleRender',
   'expandGrid',
-  'update:panX', 'update:panY', 'update:zoom',
-  'setZoom', 'zoomIn', 'zoomOut', 'zoomToFit', 'zoomTo1x',
+  'update:panX', 'update:panY',
   'setRefOpacity', 'refZoomIn', 'refZoomOut', 'refMove', 'refReset',
   'toggleGuide', 'guidePrev', 'guideNext',
-  'openSizeDialog', 'removeNoise', 'autoFit',
-  'update:crossCol', 'update:crossRow', 'update:mousePos',
-  'update:selectionRect', 'deleteSelection', 'copySelection', 'pasteSelection',
-  'pickColor',
+  'update:mouseCol', 'update:mouseRow', 'update:mouseColor',
+  'pickColor', 'floodFill',
 ])
 
 const canvasWrap = ref(null)
 const mainCanvas = ref(null)
-const gridCanvas = ref(null)
-const refCanvas = ref(null)
+const globalGridCanvas = ref(null)
 
-let mainRenderer, gridRenderer, refRenderer
+let renderer
 const crossCol = ref(-1)
 const crossRow = ref(-1)
 const mousePos = ref({ x: -100, y: -100 })
@@ -209,67 +119,6 @@ const gridLeft = computed(() => {
 const gridTop = computed(() => {
   const ch = props.gridH * props.zoom
   return (canvasWrap.value?.clientHeight || 0) / 2 + props.panY - ch / 2
-})
-
-// ---- 容器样式（CSS 全局背景网格） ----
-// 无限延伸的浅灰蓝细网格，每格 = zoom 像素，原点锚定有效范围左上角
-const containerStyle = computed(() => {
-  const z = props.zoom
-  if (!props.showGrid || z < 2) {
-    return { backgroundColor: '#F5F8FC', touchAction: 'none' }
-  }
-  const gl = gridLeft.value
-  const gt = gridTop.value
-  return {
-    backgroundColor: '#FAFBFC',
-    touchAction: 'none',
-    // 全局坐标网格：超淡灰细线
-    backgroundImage: `
-      linear-gradient(to right, #E8ECF0 1px, transparent 1px),
-      linear-gradient(to bottom, #E8ECF0 1px, transparent 1px)
-    `.replace(/\s+/g, ' ').trim(),
-    backgroundSize: `${z}px ${z}px`,
-    backgroundPosition: `${gl}px ${gt}px`,
-    backgroundRepeat: 'repeat'
-  }
-})
-
-// ---- 标尺：每5格标注，密度随缩放自适应 ----
-const rulerCols = computed(() => {
-  const z = props.zoom
-  let step = 5
-  if (z < 4) step = 25
-  else if (z < 7) step = 10
-  else if (z < 12) step = 5
-  else step = 2
-
-  const cols = []
-  for (let c = 0; c < props.gridW; c += step) {
-    cols.push(c)
-  }
-  // 确保包含最后一格
-  if (cols[cols.length - 1] !== props.gridW - 1) {
-    cols.push(props.gridW - 1)
-  }
-  return cols
-})
-
-const rulerRows = computed(() => {
-  const z = props.zoom
-  let step = 5
-  if (z < 4) step = 25
-  else if (z < 7) step = 10
-  else if (z < 12) step = 5
-  else step = 2
-
-  const rows = []
-  for (let r = 0; r < props.gridH; r += step) {
-    rows.push(r)
-  }
-  if (rows[rows.length - 1] !== props.gridH - 1) {
-    rows.push(props.gridH - 1)
-  }
-  return rows
 })
 
 // ---- 画布坐标 → 网格坐标（0-based，原点左上角）----
@@ -329,7 +178,7 @@ function onPointerDown(e) {
   if (spaceHeld.value || e.button === 1) {
     canvasWrap.value.setPointerCapture(e.pointerId)
     isDrawing.value = true
-    lastCell.value = { x: e.clientX, y: e.clientY, panX: props.panX, panY: props.panY }
+    lastCell.value = { x: e.clientX, y: e.clientY, panX: props.panX, panY: props.panY, button: e.button }
     return
   }
 
@@ -390,6 +239,14 @@ function onPointerMove(e) {
 
   if (crossTimer) { clearTimeout(crossTimer); crossTimer = null }
   crossTimer = setTimeout(() => { crossCol.value = -1; crossRow.value = -1 }, 300)
+
+  // 通知父组件鼠标坐标（给状态栏使用）
+  emit('update:mouseCol', col)
+  emit('update:mouseRow', row)
+  // 获取当前位置颜色
+  const cellAtMouse = (row >= 0 && row < props.gridH && col >= 0 && col < props.gridW)
+    ? props.grid[row]?.[col] : null
+  emit('update:mouseColor', cellAtMouse?.hex ? cellAtMouse : null)
 
   // —— 空格键/中键拖拽平移（最高优先级） ——
   if (isDrawing.value && (spaceHeld.value || lastCell.value?.button === 1)) {
@@ -491,14 +348,15 @@ function getSymmetryCells(r, c) {
 function onWheel(e) {
   if (e.ctrlKey || e.metaKey) {
     const factor = e.deltaY < 0 ? 1.1 : 0.9
-    emit('setZoom', Math.max(0.5, Math.min(30, props.zoom * factor)))
-  } else if (e.deltaMode === 0) {
-    emit('update:panX', props.panX - e.deltaX)
-    emit('update:panY', props.panY - e.deltaY)
+    emit('update:zoom', Math.max(0.5, Math.min(30, props.zoom * factor)))
+    return
   }
+  // deltaMode: 0=像素, 1=行, 2=页 — 统一处理为像素级平移
+  const lineHeight = 18
+  const scale = e.deltaMode === 0 ? 1 : e.deltaMode === 1 ? lineHeight : 800
+  emit('update:panX', props.panX - e.deltaX * scale)
+  emit('update:panY', props.panY - e.deltaY * scale)
 }
-
-function onDoubleClick() { emit('zoomTo1x') }
 
 function onKeyDown(e) {
   if (e.code === 'Space') {
@@ -526,49 +384,74 @@ function scheduleRender() {
   rafId = requestAnimationFrame(() => { rafId = null; renderAll() })
 }
 
+// ---- 渲染 ----
 function renderAll() {
-  if (!mainRenderer) return
-  mainRenderer.renderBeads(props.grid, props.highlightHex || null, props.focusDimHex || null)
-  gridRenderer.renderGridLines(props.showGrid, crossCol.value, crossRow.value)
-
-  if (props.refPixels) {
-    refRenderer.renderRefOverlay(props.refPixels, props.refW, props.refH, props.refOpacity, props.refOffsetX || 0, props.refOffsetY || 0, props.refScale || 1)
-  } else {
-    refRenderer.ctx.clearRect(0, 0, props.gridW, props.gridH)
+  if (!renderer) {
+    // 渲染器未初始化，自动初始化
+    if (mainCanvas.value) initCanvas()
+    if (!renderer) return
+  }
+  try {
+    renderer.renderAll(props.grid, {
+      highlightHex: props.highlightHex || null,
+      dimHex: props.focusDimHex || null,
+      refPixels: props.refPixels, refW: props.refW, refH: props.refH,
+      refOpacity: props.refOpacity,
+      refOffsetX: props.refOffsetX || 0, refOffsetY: props.refOffsetY || 0,
+      refScale: props.refScale || 1,
+      showGrid: props.showGrid, zoom: props.zoom
+    })
+  } catch (e) {
+    console.error('Canvas renderAll 失败:', e)
   }
 }
 
-function positionCanvases() {
-  [mainRenderer, gridRenderer, refRenderer].forEach(r => {
-    r?.position(canvasWrap.value, props.zoom, props.panX, props.panY)
-  })
+function positionCanvas() {
+  renderer?.position(canvasWrap.value, props.zoom, props.panX, props.panY)
+  renderGlobalGrid()
+}
+
+/** 渲染全局坐标网格（底层无限延伸） */
+function renderGlobalGrid() {
+  if (!renderer || !props.showGrid) return
+  renderer.renderGlobalGrid(canvasWrap.value, props.zoom, props.panX, props.panY)
 }
 
 function initCanvas() {
   if (!mainCanvas.value) return
-  mainRenderer = new CanvasRenderer(mainCanvas.value, { gridW: props.gridW, gridH: props.gridH })
-  gridRenderer = new CanvasRenderer(gridCanvas.value, { gridW: props.gridW, gridH: props.gridH })
-  refRenderer = new CanvasRenderer(refCanvas.value, { gridW: props.gridW, gridH: props.gridH })
-  mainRenderer.resize(props.gridW, props.gridH)
-  gridRenderer.resize(props.gridW, props.gridH)
-  refRenderer.resize(props.gridW, props.gridH)
+  renderer = new CanvasRenderer(mainCanvas.value, { gridW: props.gridW, gridH: props.gridH, zoom: props.zoom })
+  renderer.resize(props.gridW, props.gridH, props.zoom)
+  if (globalGridCanvas.value) {
+    renderer.setGlobalGridCanvas(globalGridCanvas.value)
+  }
+  positionCanvas()
 }
 
 onMounted(() => {
-  nextTick(() => { initCanvas(); positionCanvases(); renderAll() })
+  nextTick(() => { initCanvas(); positionCanvas(); renderAll() })
 })
 
 watch([() => props.gridW, () => props.gridH], ([w, h]) => {
   nextTick(() => {
-    mainRenderer?.resize(w, h)
-    gridRenderer?.resize(w, h)
-    refRenderer?.resize(w, h)
-    positionCanvases()
+    renderer?.resize(w, h, props.zoom)
+    positionCanvas()
     renderAll()
   })
 })
 
-watch([() => props.zoom, () => props.panX, () => props.panY], () => { positionCanvases() })
+// 缩放变化时需重设 canvas 尺寸（1:1 渲染要求）
+watch(() => props.zoom, (z) => {
+  nextTick(() => {
+    renderer?.resize(props.gridW, props.gridH, z)
+    positionCanvas()
+    renderAll()
+  })
+})
+
+watch([() => props.panX, () => props.panY], () => { positionCanvas() })
+
+// 网格开关变化时重绘全局网格层
+watch(() => props.showGrid, () => { if (props.showGrid) renderGlobalGrid() })
 
 watch([
   () => props.grid, () => props.highlightHex, () => props.showGrid,
@@ -576,5 +459,5 @@ watch([
   () => props.guideMode, () => props.guideCurrentColor
 ], () => { scheduleRender() }, { deep: true })
 
-defineExpose({ scheduleRender, renderAll, posToGrid, initCanvas, positionCanvases })
+defineExpose({ scheduleRender, renderAll, posToGrid, initCanvas, positionCanvas, canvasWrap })
 </script>

@@ -4,6 +4,7 @@
 // ============================================================
 import 'dotenv/config'
 import express from 'express'
+import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -96,6 +97,21 @@ app.use('/api', printRoutes)
 
 // 版本 + 公告
 app.use('/api', publicRoutes)
+
+// Multer / API 错误处理（避免返回 HTML 导致前端 JSON 解析失败）
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ code: 413, message: '图片过大，请压缩后重试（最大 30MB）' })
+    }
+    return res.status(400).json({ code: 400, message: err.message || '上传失败' })
+  }
+  if (req.path.startsWith('/api/')) {
+    console.error('API 错误:', err)
+    return res.status(500).json({ code: 500, message: err.message || '服务器错误' })
+  }
+  next(err)
+})
 
 // ============================================
 //  生产模式：Serve 构建后的前端 SPA

@@ -31,6 +31,11 @@ async function upload(url, formData, auth = true) {
   const token = getToken()
   if (auth && token) opts.headers = { 'Authorization': 'Bearer ' + token }
   const res = await fetch(BASE + url, opts)
+  const ct = res.headers.get('content-type') || ''
+  if (!ct.includes('application/json')) {
+    const text = await res.text()
+    throw new Error(res.status === 413 ? '图片过大，请压缩后重试' : `服务器错误 (${res.status})`)
+  }
   return res.json()
 }
 

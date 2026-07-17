@@ -1,135 +1,257 @@
 <!-- ============================================
-  EditorRightPanel.vue — 右侧调色板面板
-  ohmybead.cn 风格：品牌选择 → 系列标签 → 7列颜色网格 → 画笔 → 统计
+  EditorRightPanel.vue — 右侧面板组
+  V3.0 文档第5节：标签页切换容器，5个面板
+  颜色 / 图层 / 色板 / 历史 / 属性
   ============================================ -->
 <template>
-  <div class="w-[200px] bg-[var(--ui-bg-surface)] border-l border-[var(--ui-border)] flex flex-col flex-shrink-0 overflow-hidden max-md:hidden select-none">
-    <!-- 品牌选择 -->
-    <div class="p-2 border-b border-[var(--ui-border)] space-y-1.5">
-      <select :value="brand" @change="$emit('update:brand', $event.target.value)"
-        class="w-full h-7 border border-[var(--ui-border)] rounded-md text-[11px] px-1.5 bg-[var(--ui-bg-base)]
-               text-[var(--ui-text-primary)] outline-none focus:border-[var(--ui-accent)] transition-colors cursor-pointer">
-        <option v-for="b in brands" :key="b" :value="b">
-          {{ b === '全部' ? `全部 · ${totalColorCount}色` : `${b} · ${(brandColorCounts[b] || 0)}色` }}
-        </option>
-      </select>
-      <div class="text-[9px] text-[var(--ui-text-tertiary)] text-center">共 {{ totalColorCount }} 种颜色</div>
-    </div>
-
-    <!-- 系列标签（水平滚动） -->
-    <div class="flex gap-0.5 px-1.5 py-1.5 border-b border-[var(--ui-border)] overflow-x-auto scrollbar-hide">
-      <button v-for="s in seriesList" :key="s"
-        class="px-2 py-0.5 rounded-md text-[10px] font-medium whitespace-nowrap transition-colors flex-shrink-0"
-        :class="seriesActive === s ? 'bg-primary/10 text-primary' : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-bg-tertiary)]'"
-        @click="$emit('update:seriesActive', s)">
-        {{ s.length > 12 ? s.slice(0, 12) + '…' : s }}
+  <aside class="w-60 bg-[var(--ui-bg-surface)] border-l border-[var(--ui-border-glass)] flex flex-col flex-shrink-0 overflow-hidden select-none max-md:hidden">
+    <!-- 标签页头部 -->
+    <div class="flex border-b border-[var(--ui-border)]">
+      <button v-for="tab in tabs" :key="tab.id"
+        class="flex-1 py-2 text-[10px] font-medium transition-colors relative"
+        :class="activeTab === tab.id
+          ? 'text-[var(--ui-accent)]'
+          : 'text-[var(--ui-text-tertiary)] hover:text-[var(--ui-text-secondary)] hover:bg-[var(--ui-bg-tertiary)]'"
+        @click="$emit('update:activeTab', tab.id)">
+        {{ tab.label }}
+        <div v-if="activeTab === tab.id" class="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full" style="background:var(--ui-accent)" />
       </button>
-      <span v-if="seriesList.length === 0" class="text-[10px] text-[var(--ui-text-tertiary)] px-1">全部系列</span>
     </div>
 
-    <!-- 颜色搜索 -->
-    <div class="px-2 py-1.5 border-b border-[var(--ui-border)]">
-      <div class="relative">
-        <SearchIcon :size="12" class="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-tertiary)]" />
-        <input
-          :value="searchText"
-          type="text"
-          placeholder="搜索颜色或色号..."
-          class="w-full h-7 pl-6 pr-2 border border-[var(--ui-border)] rounded-md text-[10px]
-                 bg-[var(--ui-bg-base)] outline-none focus:border-[var(--ui-accent)] transition-colors"
-          @input="$emit('update:searchText', $event.target.value)"
-        />
+    <!-- ========== 颜色面板 ========== -->
+    <div v-if="activeTab === 'color'" class="flex-1 flex flex-col overflow-hidden">
+      <!-- 前景色/背景色 -->
+      <div class="px-3 py-2 border-b border-[var(--ui-border)]">
+        <div class="flex items-center gap-2">
+          <div class="relative w-8 h-8">
+            <div class="checkerboard-bg absolute inset-0 rounded-lg" />
+            <div class="absolute inset-0 rounded-lg ring-1 ring-black/10" :style="{ background: curColor?.hex || '#fff' }" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[11px] font-semibold text-[var(--ui-text-primary)] truncate">{{ curColor?.name || '未选择' }}</div>
+            <div class="text-[10px] text-[var(--ui-text-tertiary)] font-mono">{{ curColor?.hex || '–' }}</div>
+          </div>
+          <button class="text-[9px] text-[var(--ui-text-tertiary)] hover:text-[var(--ui-text-primary)] px-1.5 py-0.5 rounded bg-[var(--ui-bg-tertiary)]"
+            @click="swapFgBg" title="交换前景色/背景色">X</button>
+        </div>
       </div>
-    </div>
 
-    <!-- 最近使用颜色 -->
-    <div v-if="recentColors.length" class="px-2 py-1.5 border-b border-[var(--ui-border)]">
-      <div class="text-[9px] text-[var(--ui-text-tertiary)] mb-1">最近使用</div>
-      <div class="flex flex-wrap gap-1">
-        <button v-for="c in recentColors" :key="c.hex"
-          class="w-6 h-6 rounded-md ring-1 ring-black/10 hover:scale-125 hover:z-10 hover:shadow-md transition-all relative"
-          :style="{ background: c.hex }"
-          :title="c.name"
-          @click="$emit('selectColor', c)" />
+      <!-- 品牌选择 -->
+      <div class="px-2 py-1.5 border-b border-[var(--ui-border)]">
+        <select :value="brand" @change="$emit('update:brand', $event.target.value)"
+          class="w-full h-7 border border-[var(--ui-border)] rounded-md text-[10px] px-1.5 bg-[var(--ui-bg-base)] text-[var(--ui-text-primary)] outline-none focus:border-[var(--ui-accent)] cursor-pointer">
+          <option v-for="b in brands" :key="b" :value="b">
+            {{ b === '全部' ? `全部 · ${totalColorCount}色` : `${b} · ${(brandColorCounts[b] || 0)}色` }}
+          </option>
+        </select>
       </div>
-    </div>
 
-    <!-- 当前筛选色卡数 -->
-    <div class="px-2 py-0.5 text-[9px] text-[var(--ui-text-tertiary)] border-b border-[var(--ui-border)] text-center">
-      {{ seriesActive || '全部' }} · {{ seriesColorCount }}色
-    </div>
-
-    <!-- 当前颜色指示 -->
-    <div v-if="curColor" class="flex items-center gap-2 px-3 py-2 border-b border-[var(--ui-border)] bg-[var(--ui-bg-base)]">
-      <div class="w-5 h-5 rounded-full border-2 border-white shadow-sm flex-shrink-0"
-        :style="{ background: curColor.hex }" />
-      <div class="text-[11px] font-semibold text-[var(--ui-text-primary)] truncate">{{ curColor.name }}</div>
-      <div class="text-[10px] text-[var(--ui-text-tertiary)] font-mono ml-auto">{{ curColor.hex }}</div>
-    </div>
-
-    <!-- 颜色网格（7列，ohmybead 风格） -->
-    <div class="flex-1 overflow-y-auto p-1.5">
-      <div class="grid grid-cols-7 gap-1">
-        <button v-for="c in colors" :key="c.hex"
-          class="aspect-square rounded-lg transition-all duration-100 relative
-                 hover:scale-125 hover:z-10 hover:shadow-md flex items-end justify-center"
-          :class="curColor?.hex === c.hex ? 'ring-2 ring-primary ring-offset-1' : 'ring-1 ring-black/5'"
-          :style="{ background: c.hex }"
-          :title="c.name + ' ' + c.hex + (inventory[c.id] != null ? ' 库存:' + inventory[c.id] : '')"
-          @click="$emit('selectColor', c)">
-          <!-- 色卡编号标签 -->
-          <span class="text-[7px] font-semibold text-white/90 bg-black/25 rounded-sm px-0.5 leading-tight mb-0.5 select-none"
-            style="text-shadow: 0 1px 2px rgba(0,0,0,0.4);letter-spacing:-0.3px;">
-            {{ c.name.length > 4 ? c.name.slice(0,4) : c.name }}
-          </span>
-          <!-- 库存标记 -->
-          <span v-if="inventory[c.id] != null && inventory[c.id] <= 0"
-            class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-400 ring-1 ring-white shadow-sm" />
-          <span v-else-if="inventory[c.id] != null && inventory[c.id] < 50"
-            class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-amber-400 ring-1 ring-white shadow-sm" />
+      <!-- 系列标签 -->
+      <div class="flex gap-0.5 px-1.5 py-1 border-b border-[var(--ui-border)] overflow-x-auto scrollbar-hide">
+        <button v-for="s in seriesList" :key="s"
+          class="px-2 py-0.5 rounded-md text-[9px] font-medium whitespace-nowrap transition-colors flex-shrink-0"
+          :class="seriesActive === s ? 'bg-[var(--ui-accent)]/10 text-[var(--ui-accent)]' : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-bg-tertiary)]'"
+          @click="$emit('update:seriesActive', s)">
+          {{ s.length > 10 ? s.slice(0, 10) + '…' : s }}
         </button>
       </div>
-      <div v-if="colors.length === 0" class="text-[10px] text-[var(--ui-text-tertiary)] text-center py-8">
-        加载中...
-      </div>
-    </div>
 
-    <!-- 画笔大小 -->
-    <div class="px-3 py-2 border-t border-[var(--ui-border)] bg-[var(--ui-bg-base)]">
-      <div class="flex items-center justify-between text-[10px] text-[var(--ui-text-tertiary)] mb-1">
-        <span>画笔</span><span>{{ brushSize }}px</span>
+      <!-- 搜索 + 最近使用 -->
+      <div class="px-2 py-1.5 space-y-1.5 border-b border-[var(--ui-border)]">
+        <div class="relative">
+          <SearchIcon :size="11" class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[var(--ui-text-tertiary)]" />
+          <input :value="searchText" type="text" placeholder="搜索颜色或色号..."
+            class="w-full h-7 pl-5 pr-2 border border-[var(--ui-border)] rounded-md text-[10px] bg-[var(--ui-bg-base)] outline-none focus:border-[var(--ui-accent)]"
+            @input="$emit('update:searchText', $event.target.value)" />
+        </div>
+        <div v-if="recentColors.length" class="flex flex-wrap gap-1">
+          <button v-for="c in recentColors" :key="c.id ?? c.hex"
+            class="w-5 h-5 rounded-md ring-1 ring-black/10 hover:scale-125 hover:z-10 transition-all"
+            :style="{ background: c.hex }" :title="c.name"
+            @click="$emit('selectColor', c)" />
+        </div>
       </div>
-      <input :value="brushSize" type="range" min="1" max="8"
-        class="w-full h-1 accent-primary cursor-pointer"
-        @input="$emit('update:brushSize', parseInt($event.target.value))" />
-    </div>
 
-    <!-- 颜色统计面板（可折叠） -->
-    <div class="border-t border-[var(--ui-border)] bg-[var(--ui-bg-base)]">
-      <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-[var(--ui-text-secondary)]
-                     hover:bg-[var(--ui-bg-tertiary)] transition-colors"
-        @click="expanded = !expanded">
-        <span>📊 颜色统计 {{ stats.length > 0 ? '(' + stats.length + '色)' : '' }}</span>
-        <ChevronRightIcon :size="12" :class="expanded && 'rotate-90'" class="transition-transform" />
-      </button>
-      <div v-if="expanded && stats.length" class="max-h-[180px] overflow-y-auto px-2 pb-2">
-        <div v-for="s in stats" :key="s.hex"
-          class="flex items-center gap-1.5 py-0.5 text-[10px] hover:bg-white/60 rounded px-1 cursor-pointer transition-colors"
-          @click="$emit('highlightColor', s.hex)">
-          <div class="w-3 h-3 rounded-sm ring-1 ring-black/10 flex-shrink-0" :style="{ background: s.hex }" />
-          <span class="text-[var(--ui-text-primary)] truncate flex-1">{{ s.name }}</span>
-          <span class="text-[var(--ui-text-tertiary)] font-mono">{{ s.count }}</span>
+      <!-- 颜色网格 -->
+      <div class="flex-1 overflow-y-auto p-1.5">
+        <div class="grid grid-cols-7 gap-1">
+          <button v-for="c in colors" :key="c.id"
+            class="aspect-square rounded-lg transition-all duration-150 relative hover:scale-115 hover:z-10 hover:shadow-md flex items-end justify-center overflow-hidden"
+            :class="curColor?.id === c.id ? 'ring-2 ring-[var(--ui-accent)] ring-offset-1 scale-110 z-10' : 'ring-1 ring-black/5'"
+            :title="c.name + ' ' + c.hex"
+            @click="$emit('selectColor', c)">
+            <div class="checkerboard-bg absolute inset-0 rounded-lg" />
+            <div class="absolute inset-0 rounded-lg" :style="{ background: c.hex }" />
+            <span class="relative text-[7px] font-semibold text-white/90 bg-black/25 rounded-sm px-0.5 leading-tight mb-0.5 select-none"
+              style="text-shadow: 0 1px 2px rgba(0,0,0,0.4)">{{ c.name.length > 4 ? c.name.slice(0,4) : c.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 画笔大小 -->
+      <div class="px-3 py-2 border-t border-[var(--ui-border)]">
+        <div class="flex items-center justify-between text-[10px] text-[var(--ui-text-tertiary)] mb-0.5">
+          <span>画笔大小</span><span class="font-semibold text-[var(--ui-text-secondary)]">{{ brushSize }}</span>
+        </div>
+        <input :value="brushSize" type="range" min="1" max="8"
+          class="w-full h-1.5 accent-[var(--ui-accent)] cursor-pointer rounded-full"
+          @input="$emit('update:brushSize', parseInt($event.target.value))" />
+      </div>
+
+      <!-- 颜色统计 -->
+      <div class="border-t border-[var(--ui-border)]">
+        <button class="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-[var(--ui-text-secondary)] hover:bg-[var(--ui-bg-tertiary)]"
+          @click="statsExpanded = !statsExpanded">
+          <span>📊 颜色统计 ({{ stats.length }}色)</span>
+          <ChevronRightIcon :size="11" :class="statsExpanded && 'rotate-90'" class="transition-transform" />
+        </button>
+        <div v-if="statsExpanded && stats.length" class="max-h-32 overflow-y-auto px-2 pb-2 space-y-0.5">
+          <div v-for="s in stats" :key="s.hex"
+            class="flex items-center gap-1.5 py-0.5 text-[10px] hover:bg-[var(--ui-bg-tertiary)] rounded px-1 cursor-pointer"
+            @click="$emit('highlightColor', s.hex)">
+            <div class="w-3 h-3 rounded-sm ring-1 ring-black/10 flex-shrink-0" :style="{ background: s.hex }" />
+            <span class="flex-1 truncate text-[var(--ui-text-primary)]">{{ s.name }}</span>
+            <span class="font-mono text-[var(--ui-text-tertiary)]">{{ s.count }}</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- ========== 图层面板 ========== -->
+    <div v-if="activeTab === 'layer'" class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex-1 overflow-y-auto">
+        <div v-for="(layer, i) in layers" :key="layer.id"
+          class="flex items-center gap-1.5 px-2 py-1.5 border-b border-[var(--ui-border)] cursor-pointer hover:bg-[var(--ui-bg-tertiary)] transition-colors"
+          :class="layer.id === currentLayerId ? 'bg-[var(--ui-accent)]/8' : ''"
+          @click="$emit('selectLayer', layer.id)">
+          <!-- 可见性 -->
+          <button class="w-4 h-4 flex items-center justify-center rounded flex-shrink-0"
+            :class="layer.visible ? 'text-[var(--ui-text-secondary)]' : 'text-[var(--ui-text-tertiary)]'"
+            @click.stop="$emit('toggleVisibility', layer.id)">
+            <EyeIcon v-if="layer.visible" :size="11" />
+            <EyeOffIcon v-else :size="11" />
+          </button>
+          <!-- 缩略图色块 -->
+          <div class="w-5 h-5 rounded ring-1 ring-black/5 flex-shrink-0 bg-[var(--ui-bg-tertiary)] flex items-center justify-center">
+            <div v-if="layerPreviewColor(layer)" class="w-3 h-3 rounded-sm" :style="{ background: layerPreviewColor(layer) }" />
+          </div>
+          <!-- 名称 -->
+          <span class="flex-1 text-[11px] font-medium truncate"
+            :class="layer.id === currentLayerId ? 'text-[var(--ui-accent)]' : 'text-[var(--ui-text-primary)]'">
+            {{ layer.name }}
+          </span>
+          <!-- 锁定 -->
+          <button class="w-4 h-4 flex items-center justify-center rounded text-[var(--ui-text-tertiary)] hover:text-[var(--ui-text-primary)]"
+            @click.stop="$emit('toggleLock', layer.id)">
+            <LockIcon v-if="layer.locked" :size="10" />
+            <UnlockIcon v-else :size="10" />
+          </button>
+        </div>
+      </div>
+      <!-- 底部按钮 -->
+      <div class="flex gap-0.5 px-2 py-1.5 border-t border-[var(--ui-border)]">
+        <button class="flex-1 h-7 rounded-lg text-[10px] font-medium bg-[var(--ui-bg-tertiary)] hover:bg-[var(--ui-border)] transition-colors text-[var(--ui-text-secondary)]"
+          @click="$emit('addLayer')">+ 新建</button>
+        <button class="flex-1 h-7 rounded-lg text-[10px] font-medium bg-[var(--ui-bg-tertiary)] hover:bg-[var(--ui-border)] transition-colors text-[var(--ui-text-secondary)]"
+          @click="$emit('removeLayer', currentLayerId)" :disabled="layers.length <= 1">− 删除</button>
+      </div>
+    </div>
+
+    <!-- ========== 色板面板 ========== -->
+    <div v-if="activeTab === 'swatch'" class="flex-1 flex flex-col overflow-hidden">
+      <div class="p-2 border-b border-[var(--ui-border)]">
+        <select class="w-full h-7 border border-[var(--ui-border)] rounded-md text-[10px] px-1.5 bg-[var(--ui-bg-base)] text-[var(--ui-text-primary)] outline-none">
+          <option>官方色板</option>
+          <option>自定义色板</option>
+        </select>
+      </div>
+      <div class="flex-1 overflow-y-auto p-2">
+        <h4 class="text-[10px] font-semibold text-[var(--ui-text-secondary)] mb-1.5">当前图纸颜色</h4>
+        <div v-if="stats.length" class="space-y-0.5">
+          <div v-for="s in stats" :key="s.hex"
+            class="flex items-center gap-1.5 py-0.5 text-[10px] hover:bg-[var(--ui-bg-tertiary)] rounded px-1 cursor-pointer"
+            @click="$emit('selectColor', s)">
+            <div class="w-3 h-3 rounded-sm ring-1 ring-black/10 flex-shrink-0" :style="{ background: s.hex }" />
+            <span class="flex-1 truncate text-[var(--ui-text-primary)]">{{ s.name }}</span>
+            <span class="font-mono text-[var(--ui-text-tertiary)]">{{ s.count }}颗</span>
+          </div>
+        </div>
+        <div v-else class="text-[10px] text-[var(--ui-text-tertiary)] text-center py-4">暂无颜色数据</div>
+      </div>
+      <div class="flex gap-0.5 px-2 py-1.5 border-t border-[var(--ui-border)]">
+        <button class="flex-1 h-7 rounded-lg text-[9px] bg-[var(--ui-bg-tertiary)] text-[var(--ui-text-tertiary)]" disabled>导入色板</button>
+        <button class="flex-1 h-7 rounded-lg text-[9px] bg-[var(--ui-bg-tertiary)] text-[var(--ui-text-tertiary)]" disabled>导出色板</button>
+      </div>
+    </div>
+
+    <!-- ========== 历史面板 ========== -->
+    <div v-if="activeTab === 'history'" class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+        <div v-for="(snap, i) in historyList" :key="i"
+          class="flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer transition-colors text-[10px]"
+          :class="i === historyIdx ? 'bg-[var(--ui-accent)]/10 text-[var(--ui-accent)] font-semibold' : 'text-[var(--ui-text-secondary)] hover:bg-[var(--ui-bg-tertiary)]'"
+          @click="$emit('jumpToHistory', i)">
+          <span class="font-mono text-[var(--ui-text-tertiary)] w-5 text-right flex-shrink-0">{{ i + 1 }}</span>
+          <span class="flex-1 truncate">{{ getStepLabel(i) }}</span>
+          <span v-if="i === historyIdx" class="text-[8px] text-[var(--ui-accent)]">当前</span>
+        </div>
+        <div v-if="historyList.length <= 1" class="text-[10px] text-[var(--ui-text-tertiary)] text-center py-8">暂无操作记录</div>
+      </div>
+      <div class="px-2 py-1.5 border-t border-[var(--ui-border)]">
+        <button class="w-full h-7 rounded-lg text-[10px] bg-[var(--ui-bg-tertiary)] hover:bg-[var(--ui-border)] transition-colors text-[var(--ui-text-secondary)]"
+          @click="$emit('createSnapshot')">📸 新建快照</button>
+      </div>
+    </div>
+
+    <!-- ========== 属性面板 ========== -->
+    <div v-if="activeTab === 'properties'" class="flex-1 overflow-y-auto p-3 space-y-3">
+      <!-- 画布属性 -->
+      <div>
+        <h4 class="text-[10px] font-semibold text-[var(--ui-text-tertiary)] uppercase tracking-wider mb-1.5">画布</h4>
+        <div class="space-y-1 text-[11px]">
+          <div class="flex justify-between"><span class="text-[var(--ui-text-tertiary)]">尺寸</span>
+            <span class="font-medium text-[var(--ui-text-primary)]">{{ gridW }} × {{ gridH }}</span></div>
+          <div class="flex justify-between"><span class="text-[var(--ui-text-tertiary)]">总豆子数</span>
+            <span class="font-medium text-[var(--ui-text-primary)]">{{ beadCount }}</span></div>
+          <div class="flex justify-between"><span class="text-[var(--ui-text-tertiary)]">颜色数</span>
+            <span class="font-medium text-[var(--ui-text-primary)]">{{ stats.length }}</span></div>
+          <div class="flex justify-between"><span class="text-[var(--ui-text-tertiary)]">图层数</span>
+            <span class="font-medium text-[var(--ui-text-primary)]">{{ layers.length }}</span></div>
+        </div>
+      </div>
+      <!-- 工具属性 -->
+      <div>
+        <h4 class="text-[10px] font-semibold text-[var(--ui-text-tertiary)] uppercase tracking-wider mb-1.5">工具</h4>
+        <div class="space-y-1 text-[11px]">
+          <div class="flex justify-between"><span class="text-[var(--ui-text-tertiary)]">当前工具</span>
+            <span class="font-medium text-[var(--ui-text-primary)]">{{ toolLabels[currentTool] || currentTool }}</span></div>
+          <div class="flex justify-between"><span class="text-[var(--ui-text-tertiary)]">画笔大小</span>
+            <span class="font-medium text-[var(--ui-text-primary)]">{{ brushSize }}px</span></div>
+          <div class="flex justify-between"><span class="text-[var(--ui-text-tertiary)]">镜像模式</span>
+            <span class="font-medium text-[var(--ui-text-primary)]">{{ symLabels[symmetryMode] }}</span></div>
+        </div>
+      </div>
+      <!-- 撤销/重做状态 -->
+      <div>
+        <h4 class="text-[10px] font-semibold text-[var(--ui-text-tertiary)] uppercase tracking-wider mb-1.5">历史</h4>
+        <div class="space-y-1 text-[11px]">
+          <div class="flex justify-between"><span class="text-[var(--ui-text-tertiary)]">历史步数</span>
+            <span class="font-medium text-[var(--ui-text-primary)]">{{ historyIdx + 1 }} / {{ historyList.length }}</span></div>
+        </div>
+      </div>
+    </div>
+  </aside>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { ChevronRightIcon, SearchIcon } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { SearchIcon, ChevronRightIcon, EyeIcon, EyeOffIcon, LockIcon, UnlockIcon } from 'lucide-vue-next'
 
-defineProps({
+const props = defineProps({
+  // 标签页
+  activeTab: { type: String, default: 'color' },
+
+  // 颜色面板
   brand: { type: String, default: '全部' },
   seriesActive: { type: String, default: '' },
   brands: { type: Array, default: () => [] },
@@ -138,18 +260,76 @@ defineProps({
   curColor: { type: Object, default: null },
   brushSize: { type: Number, default: 1 },
   stats: { type: Array, default: () => [] },
-  inventory: { type: Object, default: () => ({}) },
   totalColorCount: { type: Number, default: 0 },
-  seriesColorCount: { type: Number, default: 0 },
   brandColorCounts: { type: Object, default: () => ({}) },
   searchText: { type: String, default: '' },
   recentColors: { type: Array, default: () => [] },
+
+  // 图层面板
+  layers: { type: Array, default: () => [] },
+  currentLayerId: { type: String, default: null },
+
+  // 历史面板
+  historyArr: { type: Array, default: () => [] },
+  historyIdx: { type: Number, default: -1 },
+
+  // 属性面板
+  gridW: { type: Number, default: 58 },
+  gridH: { type: Number, default: 58 },
+  beadCount: { type: Number, default: 0 },
+  currentTool: { type: String, default: 'brush' },
+  symmetryMode: { type: String, default: 'none' },
 })
 
-defineEmits([
-  'update:brand', 'update:seriesActive', 'update:brushSize',
-  'selectColor', 'highlightColor', 'update:searchText'
+const emit = defineEmits([
+  'update:activeTab',
+  'update:brand', 'update:seriesActive', 'update:searchText', 'update:brushSize',
+  'selectColor', 'highlightColor',
+  'addLayer', 'removeLayer', 'selectLayer', 'toggleVisibility', 'toggleLock',
+  'jumpToHistory', 'createSnapshot',
 ])
 
-const expanded = ref(false)
+const statsExpanded = ref(false)
+
+const tabs = [
+  { id: 'color', label: '🎨 颜色' },
+  { id: 'layer', label: '📑 图层' },
+  { id: 'swatch', label: '🎨 色板' },
+  { id: 'history', label: '📜 历史' },
+  { id: 'properties', label: '📐 属性' },
+]
+
+const toolLabels = {
+  brush: '画笔', eraser: '橡皮', fill: '填充', picker: '吸色',
+  select: '框选', replace: '替换', move: '移动', zoom: '缩放'
+}
+
+const symLabels = { none: '关闭', h: '水平', v: '垂直', quad: '四向' }
+
+// 历史列表（反转显示，最新的在前）
+const historyList = computed(() => props.historyArr)
+
+// 图层缩略图颜色（取图层中第一个非空颜色）
+function layerPreviewColor(layer) {
+  if (!layer.grid) return null
+  for (const row of layer.grid) {
+    if (!row) continue
+    for (const cell of row) {
+      if (cell?.hex) return cell.hex
+    }
+  }
+  return null
+}
+
+// 历史步骤标签
+function getStepLabel(i) {
+  if (i === 0) return '初始状态'
+  return `步骤 ${i}`
+}
+
+// 交换前景色（暂时无背景色概念，仅占位）
+function swapFgBg() {
+  // V3.0 文档 5.1：前景色/背景色互换，按 X 键
+  // 阶段一暂不实现背景色，仅做占位
+}
 </script>

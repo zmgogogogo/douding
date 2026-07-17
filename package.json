@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "reseed-beads": "node server/scripts/reseed-beads.js"
   },
   "dependencies": {
     "archiver": "^8.0.0",
