@@ -75,6 +75,10 @@
           <button class="export-menu-item" @click="$emit('exportPNG'); showExport = false">
             <ImageIcon :size="14" /><span>导出 PNG 图片</span>
           </button>
+          <button class="export-menu-item" @click="$emit('exportSVG'); showExport = false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 7h10l-3 5 3 5H7"/></svg>
+            <span>导出 SVG 矢量</span>
+          </button>
           <button class="export-menu-item" @click="$emit('exportPDF'); showExport = false">
             <FileTextIcon :size="14" /><span>导出 PDF 图纸</span>
           </button>
@@ -132,7 +136,7 @@ const props = defineProps({
 defineEmits([
   'back', 'update:title', 'undo', 'redo',
   'toggleGrid', 'toggleRef',
-  'exportPNG', 'exportPDF', 'exportJSON',
+  'exportPNG', 'exportSVG', 'exportPDF', 'exportJSON',
   'save', 'showInfo', 'openSizeDialog', 'clear',
   'toggleSymmetry', 'toggleGuide'
 ])

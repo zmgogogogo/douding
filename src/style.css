@@ -78,6 +78,77 @@
   --omb-safe-right: env(safe-area-inset-right, 0px);
 }
 
+/* ============================================
+   暗色主题
+   ============================================ */
+[data-theme="dark"] {
+  --ui-bg-base: #0f1117;
+  --ui-bg-surface: #1a1d27;
+  --ui-bg-surface-glass: rgba(26, 29, 39, 0.94);
+  --ui-bg-primary: var(--ui-bg-surface);
+  --ui-bg-secondary: var(--ui-bg-base);
+  --ui-bg-tertiary: #262935;
+  --ui-bg-muted: #1a1d27;
+
+  --ui-text-primary: #e8eaed;
+  --ui-text-secondary: #9ca3af;
+  --ui-text-tertiary: #6b7280;
+
+  --ui-border: #2d3140;
+  --ui-border-strong: #404558;
+
+  --ui-accent: #60a5fa;
+  --ui-accent-hover: #93bbfc;
+  --ui-primary: #60a5fa;
+
+  --ui-status-warning-bg: rgba(245, 158, 11, 0.15);
+  --ui-status-danger-bg: rgba(244, 63, 94, 0.15);
+
+  --ui-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ui-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --ui-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --ui-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --ui-shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.7);
+
+  --ui-bg-canvas: #1a1d27;
+  --ui-bg-canvas-dark: #0f1117;
+
+  --ui-bg-glass-strong: rgba(26, 29, 39, 0.96);
+  --ui-bg-glass-light: rgba(26, 29, 39, 0.90);
+  --ui-border-glass: rgba(45, 49, 64, 0.6);
+
+  --ui-checkerboard: repeating-conic-gradient(#2d3140 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+}
+
+/* ============================================
+   护眼主题
+   ============================================ */
+[data-theme="eye-care"] {
+  --ui-bg-base: #f5f0e8;
+  --ui-bg-surface: #faf7f0;
+  --ui-bg-surface-glass: rgba(250, 247, 240, 0.94);
+  --ui-bg-tertiary: #ede6d9;
+  --ui-bg-muted: #f5f0e8;
+
+  --ui-text-primary: #3d3226;
+  --ui-text-secondary: #8b7355;
+
+  --ui-border: #d9cfb8;
+  --ui-border-strong: #c4b898;
+
+  --ui-accent: #8b6914;
+  --ui-accent-hover: #6b5010;
+
+  --ui-bg-canvas: #e8dfcd;
+  --ui-bg-canvas-dark: #d9cfb8;
+
+  --ui-bg-glass-strong: rgba(250, 247, 240, 0.96);
+  --ui-bg-glass-light: rgba(250, 247, 240, 0.90);
+  --ui-border-glass: rgba(217, 207, 184, 0.6);
+
+  --ui-checkerboard: repeating-conic-gradient(#d9cfb8 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+}
+
 @layer base {
   html, body, #app {
     @apply h-full overflow-hidden;

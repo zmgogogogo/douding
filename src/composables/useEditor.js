@@ -9,12 +9,32 @@ import { ref, computed, reactive } from 'vue'
 const gridW = ref(50)
 const gridH = ref(50)
 const grid = ref([])            // 当前活动层的 grid（兼容旧代码）
-const layers = ref([])          // [{id, name, visible, opacity, grid}]
+const layers = ref([])          // [{id, name, visible, opacity, blendMode, grid}]
 const currentLayerId = ref(null)
 const zoom = ref(10)
 const panX = ref(0)
 const panY = ref(0)
-const tool = ref('brush')       // 'brush'|'eraser'|'fill'|'picker'|'select'|'replace'|'move'
+const tool = ref('brush')       // 'brush'|'eraser'|'fill'|'picker'|'select'|'replace'|'move'|'wand'|'lasso'
+
+// 16 种图层混合模式（文档 5.2）
+const BLEND_MODES = [
+  { id: 'normal', label: '正常' },
+  { id: 'multiply', label: '正片叠底' },
+  { id: 'screen', label: '滤色' },
+  { id: 'overlay', label: '叠加' },
+  { id: 'darken', label: '变暗' },
+  { id: 'lighten', label: '变亮' },
+  { id: 'color-dodge', label: '颜色减淡' },
+  { id: 'color-burn', label: '颜色加深' },
+  { id: 'hard-light', label: '强光' },
+  { id: 'soft-light', label: '柔光' },
+  { id: 'difference', label: '差值' },
+  { id: 'exclusion', label: '排除' },
+  { id: 'hue', label: '色相' },
+  { id: 'saturation', label: '饱和度' },
+  { id: 'color', label: '颜色' },
+  { id: 'luminosity', label: '明度' },
+]
 const brushSize = ref(1)
 const curColor = ref(null)      // {name, hex, brand, series, id}
 const highlightHex = ref(null)  // 同色高亮的颜色 hex
@@ -27,6 +47,7 @@ const refLocked = ref(false)
 const editMode = ref(true)      // true=编辑, false=预览
 const guideMode = ref(false)
 const focusMode = ref(false)    // 专注模式
+const maskEditMode = ref(false) // 蒙版编辑模式
 
 // 参考图数据
 const refPixels = ref(null)     // ImageData 或像素数组
@@ -40,6 +61,7 @@ const refScale = ref(1)         // 参考图缩放
 // 选区工具
 const selectionRect = ref(null)      // {r1, c1, r2, c2}
 const selectionDragging = ref(false)
+const selectionMode = ref('new')     // 'new'|'add'|'subtract'|'intersect' 选区模式
 const clipboard = ref(null)          // {grid, w, h}
 
 // 颜色搜索和最近使用
@@ -63,6 +85,12 @@ const replaceSourceHex = ref(null)
 // 施工引导
 const guideColorIdx = ref(0)
 const guideDone = ref(new Set())
+const guideAutoPlay = ref(false)
+const guideSpeed = ref(3)          // 秒/步，1-10
+const guideGroupBy = ref('color')  // 'color'|'region'|'layer'
+const guideRegionSize = ref(10)    // 区域分组时的区域大小（格）
+let guideTimer = null
+
 const guideColors = computed(() => {
   const map = new Map()
   for (let r = 0; r < gridH.value; r++) {
@@ -239,7 +267,7 @@ function initGrid(w, h) {
   gridH.value = h
   const newGrid = Array.from({ length: h }, () => Array(w).fill(null))
   grid.value = newGrid
-  layers.value = [{ id: 'l1', name: '图层 1', visible: true, opacity: 1, grid: newGrid }]
+  layers.value = [{ id: 'l1', name: '图层 1', visible: true, opacity: 1, blendMode: 'normal', grid: newGrid }]
   currentLayerId.value = 'l1'
 }
 
@@ -337,7 +365,7 @@ function autoFitGrid(padding = 4) {
 function addLayer(name) {
   const id = 'l' + Date.now()
   const newGrid = Array.from({ length: gridH.value }, () => Array(gridW.value).fill(null))
-  layers.value.push({ id, name: name || `图层 ${layers.value.length + 1}`, visible: true, opacity: 1, grid: newGrid })
+  layers.value.push({ id, name: name || `图层 ${layers.value.length + 1}`, visible: true, opacity: 1, blendMode: 'normal', grid: newGrid })
   currentLayerId.value = id
   grid.value = newGrid
   saveSnapshot()
@@ -373,6 +401,66 @@ function setLayerOpacity(id, opacity) {
   if (layer) { layer.opacity = Math.max(0, Math.min(1, opacity)); saveSnapshot() }
 }
 
+function setLayerBlendMode(id, mode) {
+  const layer = layers.value.find(l => l.id === id)
+  if (layer) { layer.blendMode = mode; saveSnapshot() }
+}
+
+// ---- 蒙版管理 ----
+function addMask(id) {
+  const layer = layers.value.find(l => l.id === id)
+  if (!layer || layer.mask) return
+  layer.mask = new Uint8Array(gridW.value * gridH.value).fill(255) // 全白 = 全部可见
+  layer.maskEnabled = true
+  saveSnapshot()
+}
+
+function removeMask(id) {
+  const layer = layers.value.find(l => l.id === id)
+  if (!layer || !layer.mask) return
+  delete layer.mask
+  delete layer.maskEnabled
+  maskEditMode.value = false
+  saveSnapshot()
+}
+
+function applyMask(id) {
+  const layer = layers.value.find(l => l.id === id)
+  if (!layer || !layer.mask) return
+  // 将蒙版应用到像素：mask < 128 的格子清空
+  for (let r = 0; r < gridH.value; r++) {
+    for (let c = 0; c < gridW.value; c++) {
+      const m = layer.mask[r * gridW.value + c]
+      if (m < 128) layer.grid[r][c] = null
+    }
+  }
+  delete layer.mask
+  delete layer.maskEnabled
+  maskEditMode.value = false
+  if (currentLayerId.value === id) grid.value = layer.grid
+  saveSnapshot()
+}
+
+function toggleMaskEnabled(id) {
+  const layer = layers.value.find(l => l.id === id)
+  if (!layer || !layer.mask) return
+  layer.maskEnabled = !layer.maskEnabled
+  saveSnapshot()
+}
+
+function setMaskCell(id, r, c, value) {
+  const layer = layers.value.find(l => l.id === id)
+  if (!layer?.mask) return
+  if (r < 0 || r >= gridH.value || c < 0 || c >= gridW.value) return
+  layer.mask[r * gridW.value + c] = Math.max(0, Math.min(255, value))
+}
+
+/** 获取蒙版灰度色（用于渲染预览） */
+function getMaskHex(value) {
+  const v = Math.round((value / 255) * 100)
+  return `rgba(0,0,0,${(100 - v) / 100})` // 白=透明，黑=不透明
+}
+
 function mergeLayerDown(id) {
   const idx = layers.value.findIndex(l => l.id === id)
   if (idx <= 0) return // 不能合并最底层
@@ -390,7 +478,107 @@ function mergeLayerDown(id) {
   saveSnapshot()
 }
 
-// 获取合成后的完整 grid（所有可见层合并）
+// ---- 图层分组 ----
+function createGroup(layerIds, name) {
+  const groupId = 'g' + Date.now()
+  const children = layers.value.filter(l => layerIds.includes(l.id))
+  const other = layers.value.filter(l => !layerIds.includes(l.id))
+
+  // 找到第一个分组图层的位置
+  const firstIdx = layers.value.findIndex(l => l.id === layerIds[0])
+  layers.value = [
+    ...other.slice(0, firstIdx),
+    { id: groupId, name: name || '分组', type: 'group', visible: true, children },
+    ...other.slice(firstIdx),
+  ]
+  saveSnapshot()
+}
+
+function ungroup(groupId) {
+  const idx = layers.value.findIndex(l => l.id === groupId)
+  if (idx < 0 || layers.value[idx].type !== 'group') return
+  const group = layers.value[idx]
+  layers.value = [
+    ...layers.value.slice(0, idx),
+    ...(group.children || []),
+    ...layers.value.slice(idx + 1),
+  ]
+  saveSnapshot()
+}
+
+// ---- 图层对齐（基于内容包围盒） ----
+function getLayerBounds(layer) {
+  const g = layer.grid || layer._grid
+  let minR = Infinity, maxR = -Infinity, minC = Infinity, maxC = -Infinity
+  for (let r = 0; r < gridH.value; r++) {
+    for (let c = 0; c < gridW.value; c++) {
+      if (g[r]?.[c]) {
+        minR = Math.min(minR, r); maxR = Math.max(maxR, r)
+        minC = Math.min(minC, c); maxC = Math.max(maxC, c)
+      }
+    }
+  }
+  return minR === Infinity ? { minR: 0, maxR: 0, minC: 0, maxC: 0 } : { minR, maxR, minC, maxC }
+}
+
+function alignLayers(layerIds, align) {
+  if (layerIds.length < 2) return
+  const bounds = layerIds.map(id => ({ id, ...getLayerBounds(layers.value.find(l => l.id === id)) }))
+
+  // 以第一个图层为基准
+  const ref = bounds[0]
+
+  for (let i = 1; i < bounds.length; i++) {
+    const b = bounds[i]
+    const layer = layers.value.find(l => l.id === b.id)
+    if (!layer) continue
+    const dy = b.maxR - b.minR, dx = b.maxC - b.minC
+
+    let targetR = b.minR, targetC = b.minC
+    switch (align) {
+      case 'left': targetC = ref.minC; break
+      case 'center': targetC = ref.minC + (ref.maxC - ref.minC - dx) / 2; break
+      case 'right': targetC = ref.maxC - dx; break
+      case 'top': targetR = ref.minR; break
+      case 'middle': targetR = ref.minR + (ref.maxR - ref.minR - dy) / 2; break
+      case 'bottom': targetR = ref.maxR - dy; break
+    }
+
+    const dR = Math.round(targetR - b.minR)
+    const dC = Math.round(targetC - b.minC)
+
+    if (dR !== 0 || dC !== 0) {
+      // 移动图层内容
+      const newGrid = Array.from({ length: gridH.value }, () => Array(gridW.value).fill(null))
+      for (let r = 0; r < gridH.value; r++) {
+        for (let c = 0; c < gridW.value; c++) {
+          const sr = r - dR, sc = c - dC
+          if (sr >= 0 && sr < gridH.value && sc >= 0 && sc < gridW.value) {
+            newGrid[r][c] = layer.grid[sr]?.[sc] || null
+          }
+        }
+      }
+      layer.grid = newGrid
+      if (layer.id === currentLayerId.value) grid.value = newGrid
+    }
+  }
+  saveSnapshot()
+}
+
+// ---- 图层样式 ----
+function setLayerStyle(id, style) {
+  const layer = layers.value.find(l => l.id === id)
+  if (!layer) return
+  layer.style = { ...layer.style, ...style }
+  saveSnapshot()
+}
+
+function removeLayerStyle(id) {
+  const layer = layers.value.find(l => l.id === id)
+  if (!layer) return
+  delete layer.style
+  saveSnapshot()
+}
 function getCompositeGrid() {
   const result = Array.from({ length: gridH.value }, () => Array(gridW.value).fill(null))
   for (const layer of layers.value) {
@@ -504,22 +692,64 @@ function toggleGuideMode() {
   if (guideMode.value) {
     guideColorIdx.value = 0
     guideDone.value = new Set()
+    stopAutoPlay()
+  } else {
+    stopAutoPlay()
   }
 }
 
 function guidePrev() {
+  stopAutoPlay()
   if (guideColorIdx.value > 0) guideColorIdx.value--
 }
 
 function guideNext() {
+  stopAutoPlay()
   guideDone.value.add(guideColorIdx.value)
   if (guideColorIdx.value < guideColors.value.length - 1) {
     guideColorIdx.value++
   } else {
-    // 全部完成
     guideMode.value = false
     guideDone.value = new Set()
   }
+}
+
+function guideJumpTo(idx) {
+  if (idx >= 0 && idx < guideColors.value.length) {
+    guideColorIdx.value = idx
+    stopAutoPlay()
+  }
+}
+
+function toggleAutoPlay() {
+  guideAutoPlay.value = !guideAutoPlay.value
+  if (guideAutoPlay.value) _startAutoPlay()
+  else stopAutoPlay()
+}
+
+function _startAutoPlay() {
+  stopAutoPlay()
+  if (!guideAutoPlay.value) return
+  guideTimer = setInterval(() => {
+    if (!guideMode.value || !guideAutoPlay.value) { stopAutoPlay(); return }
+    guideDone.value.add(guideColorIdx.value)
+    if (guideColorIdx.value < guideColors.value.length - 1) {
+      guideColorIdx.value++
+    } else {
+      guideMode.value = false
+      stopAutoPlay()
+    }
+  }, guideSpeed.value * 1000)
+}
+
+function stopAutoPlay() {
+  guideAutoPlay.value = false
+  if (guideTimer) { clearInterval(guideTimer); guideTimer = null }
+}
+
+function setGuideSpeed(speed) {
+  guideSpeed.value = Math.max(1, Math.min(10, speed))
+  if (guideAutoPlay.value) _startAutoPlay()
 }
 
 // ---- 弹窗 ----
@@ -621,6 +851,85 @@ function flipSelectionV() {
   saveSnapshot()
 }
 
+// ==================== 魔棒选区（BFS 泛洪 + 容差） ====================
+// 容差下颜色相似判断（RGB 欧几里得距离）
+function _colorsMatch(hex1, hex2, tolerance) {
+  if (!hex1 || !hex2) return !hex1 && !hex2
+  if (hex1 === hex2) return true
+  if (tolerance <= 0) return false
+  const r1 = parseInt(hex1.slice(1, 3), 16), g1 = parseInt(hex1.slice(3, 5), 16), b1 = parseInt(hex1.slice(5, 7), 16)
+  const r2 = parseInt(hex2.slice(1, 3), 16), g2 = parseInt(hex2.slice(3, 5), 16), b2 = parseInt(hex2.slice(5, 7), 16)
+  const dist = Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2)
+  return dist <= tolerance * 4.5 // tolerance 0-100 → 0-450 RGB 距离
+}
+
+/** 魔棒选区：BFS 四连通区域选择 */
+function magicWandSelect(r, c, tolerance = 0) {
+  const sourceCell = getCell(r, c)
+  const sourceHex = sourceCell?.hex || null
+  const visited = new Set()
+  const queue = [[r, c]]
+  visited.add(`${r},${c}`)
+
+  let minR = r, maxR = r, minC = c, maxC = c
+
+  while (queue.length) {
+    const [cr, cc] = queue.shift()
+    for (const [nr, nc] of [[cr - 1, cc], [cr + 1, cc], [cr, cc - 1], [cr, cc + 1]]) {
+      if (nr < 0 || nr >= gridH.value || nc < 0 || nc >= gridW.value) continue
+      const key = `${nr},${nc}`
+      if (visited.has(key)) continue
+      const cell = getCell(nr, nc)
+      const cellHex = cell?.hex || null
+      if (_colorsMatch(sourceHex, cellHex, tolerance)) {
+        visited.add(key)
+        queue.push([nr, nc])
+        if (nr < minR) minR = nr
+        if (nr > maxR) maxR = nr
+        if (nc < minC) minC = nc
+        if (nc > maxC) maxC = nc
+      }
+    }
+  }
+
+  const newRect = { r1: minR, c1: minC, r2: maxR, c2: maxC }
+
+  // 选区模式处理
+  if (selectionMode.value === 'add' && selectionRect.value) {
+    const old = getOrderedRect(selectionRect.value)
+    newRect.r1 = Math.min(old.r1, newRect.r1)
+    newRect.c1 = Math.min(old.c1, newRect.c1)
+    newRect.r2 = Math.max(old.r2, newRect.r2)
+    newRect.c2 = Math.max(old.c2, newRect.c2)
+  } else if (selectionMode.value === 'subtract') {
+    // 简化：直接清空选区
+    selectionRect.value = null
+    return
+  }
+
+  selectionRect.value = newRect
+}
+
+/** 自由选区（套索）：接收路径点列表，计算包围盒 */
+function lassoSelect(points) {
+  if (!points || points.length < 3) return
+  let minR = Infinity, maxR = -Infinity, minC = Infinity, maxC = -Infinity
+  for (const { r, c } of points) {
+    if (r < minR) minR = r
+    if (r > maxR) maxR = r
+    if (c < minC) minC = c
+    if (c > maxC) maxC = c
+  }
+  selectionRect.value = { r1: minR, c1: minC, r2: maxR, c2: maxC }
+}
+
+/** 循环选区模式 */
+function cycleSelectionMode() {
+  const modes = ['new', 'add', 'subtract']
+  const idx = modes.indexOf(selectionMode.value)
+  selectionMode.value = modes[(idx + 1) % modes.length]
+}
+
 function getOrderedRect(rect) {
   return {
     r1: Math.min(rect.r1, rect.r2),
@@ -637,10 +946,12 @@ export function useEditor() {
     tool, brushSize, curColor, highlightHex,
     symmetryMode, showGrid, showMinorGrid, showMajorGrid,
     refOpacity, refLocked, refPixels, refW, refH, refImage, refOffsetX, refOffsetY, refScale,
-    editMode, guideMode, focusMode,
-    selectionRect, selectionDragging, clipboard,
+    editMode, guideMode, focusMode, maskEditMode,
+    selectionRect, selectionDragging, selectionMode, clipboard,
     replaceSourceHex,
     guideColorIdx, guideDone, guideColors, guideCurrentColor, guideProgress,
+    guideAutoPlay, guideSpeed, guideGroupBy,
+    guideJumpTo, toggleAutoPlay, stopAutoPlay, setGuideSpeed,
     historyArr, historyIdx,
     beadData, inventory,
     editId, editTitle, hasUnsavedChanges, lastSavedTime, autoSaveKey,
@@ -663,9 +974,13 @@ export function useEditor() {
     getSymmetryCells,
     saveSnapshot, undo, redo, restoreSnapshot,
     // 图层
-    layers, currentLayerId,
+    layers, currentLayerId, BLEND_MODES,
     addLayer, removeLayer, selectLayer,
-    toggleLayerVisibility, setLayerOpacity, mergeLayerDown, getCompositeGrid,
+    toggleLayerVisibility, setLayerOpacity, setLayerBlendMode, mergeLayerDown, getCompositeGrid,
+    // 蒙版
+    addMask, removeMask, applyMask, toggleMaskEnabled, setMaskCell, getMaskHex,
+    // 分组/对齐/样式
+    createGroup, ungroup, alignLayers, setLayerStyle, removeLayerStyle,
     // 对称
     cycleSymmetry,
     cycleRefOpacity, setRefOpacity, toggleRefLock,
@@ -673,6 +988,7 @@ export function useEditor() {
     openSizeDialog, applyResize,
     deleteSelection, copySelection, pasteSelection,
     flipSelectionH, flipSelectionV,
+    magicWandSelect, lassoSelect, cycleSelectionMode,
     getOrderedRect,
   }
 }

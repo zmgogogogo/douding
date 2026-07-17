@@ -164,6 +164,49 @@
 
   <!-- ====== 编辑器视图 (V3.0 布局) ====== -->
   <div v-else class="fixed inset-0 z-50 flex flex-col bg-[var(--ui-bg-base)]">
+    <!-- ===== 顶部菜单栏 ===== -->
+    <EditorMenuBar
+      :title="editTitle"
+      :hasUnsaved="hasUnsavedChanges"
+      :canUndo="historyIdx > 0"
+      :canRedo="historyIdx < historyArr.length - 1"
+      :showGrid="showGrid"
+      @newDesign="exitEditor"
+      @save="saveDesign"
+      @exportPNG="exportPNG" @exportSVG="exportSVG" @exportPDF="exportPDFFile" @exportCSV="exportCSV" @exportMaterial="exportMaterial" @exportJSON="exportJSONFile"
+      @undo="undo" @redo="redo"
+      @cut="copySelection(); deleteSelection(); scheduleRender()"
+      @copy="copySelection()"
+      @paste="pasteSelection(); saveSnapshot(); renderAll()"
+      @selectAll="selectionRect = { r1: 0, c1: 0, r2: gridH - 1, c2: gridW - 1 }; scheduleRender()"
+      @deselect="selectionRect = null; scheduleRender()"
+      @flipH="flipSelectionH(); scheduleRender()"
+      @flipV="flipSelectionV(); scheduleRender()"
+      @zoomIn="zoom = Math.min(30, zoom * 1.25)"
+      @zoomOut="zoom = Math.max(0.5, zoom / 1.25)"
+      @zoomFit="zoom = Math.min(30, Math.floor(Math.min(canvasContainerW / gridW, canvasContainerH / gridH) * 0.9))"
+      @zoomActual="zoom = 10"
+      @toggleGrid="showGrid = !showGrid"
+      @print="showPrintPreview = true"
+      @fullscreen="toggleFullscreen"
+      @autoFit="autoFitGrid(4); renderAll()"
+      @openSizeDialog="openSizeDialog()"
+      @invertColors="onInvertColors"
+      @grayscale="onGrayscale"
+      @addLayer="addLayer('新图层'); renderAll()"
+      @removeLayer="removeLayer(currentLayerId); renderAll()"
+      @mergeDown="mergeLayerDown(currentLayerId); renderAll()"
+      @addMask="addMask(currentLayerId); renderAll()"
+      @toggleMaskEdit="maskEditMode = !maskEditMode"
+      @alignLeft="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'left'); renderAll()"
+      @alignCenter="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'center'); renderAll()"
+      @alignRight="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'right'); renderAll()"
+      @alignTop="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'top'); renderAll()"
+      @alignMiddle="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'middle'); renderAll()"
+      @alignBottom="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'bottom'); renderAll()"
+      @shortcuts="showShortcuts = true"
+    />
+
     <!-- ===== 顶部导航栏 ===== -->
     <EditorTopBar
       :title="editTitle"
@@ -178,7 +221,7 @@
       @redo="redo; renderAll()"
       @toggleGrid="showGrid = !showGrid"
       @toggleRef="cycleRefOpacity"
-      @exportPNG="exportPNG" @exportPDF="exportPDFFile" @exportJSON="exportJSONFile"
+      @exportPNG="exportPNG" @exportSVG="exportSVG" @exportPDF="exportPDFFile" @exportJSON="exportJSONFile"
       @save="saveDesign" @showInfo="showInfo = !showInfo"
       @openSizeDialog="showSizePanel = true" @clear="confirmClear"
       @toggleSymmetry="cycleSymmetry"
@@ -212,6 +255,7 @@
           :refOffsetX="refOffsetX" :refOffsetY="refOffsetY" :refScale="refScale"
           :guideCurrentColor="guideCurrentColor" :guideProgress="guideProgress"
           :guideColorIdx="guideColorIdx"
+          :guideAutoPlay="guideAutoPlay" :guideSpeed="guideSpeed"
           :selectionRect="selectionRect"
           :beadCount="beadCount"
           :replaceSourceHex="replaceSourceHex"
@@ -229,7 +273,10 @@
           @refMove="(dx, dy) => { refOffsetX += dx; refOffsetY += dy }"
           @refReset="refScale = 1; refOffsetX = 0; refOffsetY = 0"
           @toggleGuide="toggleGuideMode" @guidePrev="guidePrev" @guideNext="guideNext"
+          @toggleAutoPlay="toggleAutoPlay" @setGuideSpeed="setGuideSpeed"
           @pickColor="onPickColor" @floodFill="onFloodFill"
+          @magicWand="onMagicWand" @lassoClick="onLassoClick"
+          @shapePreview="onShapePreview" @drawShape="onDrawShape" @placeText="onPlaceText"
         />
       </div>
 
@@ -248,8 +295,11 @@
         :brandColorCounts="brandColorCounts"
         :searchText="colorSearch"
         :recentColors="recentColors"
+        :grid="compositeGrid"
         :layers="layers"
         :currentLayerId="currentLayerId"
+        :blendModes="BLEND_MODES"
+        :maskEditMode="maskEditMode"
         :historyArr="historyArr"
         :historyIdx="historyIdx"
         :gridW="gridW"
@@ -269,6 +319,15 @@
         @selectLayer="selectLayer($event); renderAll()"
         @toggleVisibility="toggleLayerVisibility($event); renderAll()"
         @toggleLock="toggleLayerLock"
+        @setOpacity="(v) => { setLayerOpacity(currentLayerId, v); renderAll(); }"
+        @setBlendMode="(v) => { setLayerBlendMode(currentLayerId, v); renderAll(); }"
+        @addMask="addMask($event); renderAll();"
+        @removeMask="removeMask($event); renderAll();"
+        @applyMask="applyMask($event); renderAll();"
+        @toggleMaskEdit="maskEditMode = !maskEditMode"
+        @applyAIEnhance="onApplyAIEnhance"
+        @applyAIGenerate="onApplyAIGenerate"
+        @applyPalette="onApplyPalette"
         @jumpToHistory="onJumpToHistory"
         @createSnapshot="saveSnapshot"
       />
@@ -331,6 +390,11 @@
     />
   </div>
 
+  <!-- 打印预览 -->
+  <EditorPrintPreview v-if="showPrintPreview"
+    :grid="compositeGrid" :gridW="gridW" :gridH="gridH" :gridColorStats="gridColorStats"
+    @close="showPrintPreview = false" />
+
   <!-- 隐藏的文件输入 -->
   <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
 </template>
@@ -350,11 +414,16 @@ import {
 } from 'lucide-vue-next'
 
 import EditorTopBar from '@/components/editor/EditorTopBar.vue'
+import EditorMenuBar from '@/components/editor/EditorMenuBar.vue'
+import EditorPrintPreview from '@/components/editor/EditorPrintPreview.vue'
 import EditorCanvas from '@/components/editor/EditorCanvas.vue'
 import EditorFocusMode from '@/components/editor/EditorFocusMode.vue'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import EditorRightPanel from '@/components/editor/EditorRightPanel.vue'
 import EditorStatusBar from '@/components/editor/EditorStatusBar.vue'
+import { generateSVG, downloadSVG } from '@/utils/svgExport.js'
+import { bresenhamLine, drawRect, drawCircle, drawPixelText } from '@/utils/shapeDrawing.js'
+import { exportColorMatrixCSV, exportMaterialList, downloadCSV } from '@/utils/exportFormats.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -384,21 +453,126 @@ const {
   beadCount, gridColorStats,
   brandColorCounts, totalColorCount, seriesColorCount,
   brushPreviewStyle, colorSearch, recentColors, addRecentColor, codeOnly, autoFitGrid,
-  layers, currentLayerId, addLayer, removeLayer, selectLayer,
-  toggleLayerVisibility, setLayerOpacity, mergeLayerDown, getCompositeGrid,
+  layers, currentLayerId, BLEND_MODES, addLayer, removeLayer, selectLayer,
+  toggleLayerVisibility, setLayerOpacity, setLayerBlendMode, mergeLayerDown, getCompositeGrid,
+  maskEditMode,
+  addMask, removeMask, applyMask, toggleMaskEnabled, setMaskCell, getMaskHex,
   initGrid, resetEditorSession, getCell, setCell, expandGridToFit,
   saveSnapshot, undo, redo,
   cycleSymmetry, cycleRefOpacity, setRefOpacity, toggleRefLock,
   toggleGuideMode, guidePrev, guideNext,
+  guideAutoPlay, guideSpeed, guideGroupBy,
+  guideJumpTo, toggleAutoPlay, stopAutoPlay, setGuideSpeed,
   openSizeDialog, applyResize,
   deleteSelection, copySelection, pasteSelection,
   flipSelectionH, flipSelectionV,
+  magicWandSelect, lassoSelect, cycleSelectionMode,
   getOrderedRect,
+  createGroup, ungroup, alignLayers, setLayerStyle, removeLayerStyle,
+  selectionMode,
 } = useEditor()
 
 const compositeGrid = computed(() => getCompositeGrid())
 const editorCanvasRef = ref(null)
 const fileInput = ref(null)
+const canvasContainerW = ref(800)
+const canvasContainerH = ref(600)
+const showShortcuts = ref(false)
+const showPrintPreview = ref(false)
+
+// 画布容器尺寸监听
+function updateCanvasSize() {
+  const el = document.querySelector('.editor-canvas-wrap')
+  if (el) { canvasContainerW.value = el.clientWidth; canvasContainerH.value = el.clientHeight }
+}
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen()
+  } else {
+    document.documentElement.requestFullscreen()
+  }
+}
+
+function onInvertColors() {
+  const comp = getCompositeGrid()
+  for (let r = 0; r < gridH.value; r++) {
+    for (let c = 0; c < gridW.value; c++) {
+      const cell = comp[r]?.[c]
+      if (cell?.hex) {
+        const h = cell.hex.replace('#', '')
+        const inv = '#' + (255 - parseInt(h.slice(0,2),16)).toString(16).padStart(2,'0')
+          + (255 - parseInt(h.slice(2,4),16)).toString(16).padStart(2,'0')
+          + (255 - parseInt(h.slice(4,6),16)).toString(16).padStart(2,'0')
+        setCell(r, c, { ...cell, hex: inv })
+        getCell(r, c) // trigger reactivity
+      }
+    }
+  }
+  saveSnapshot(); renderAll()
+}
+
+function onGrayscale() {
+  for (let r = 0; r < gridH.value; r++) {
+    for (let c = 0; c < gridW.value; c++) {
+      const cell = getCell(r, c)
+      if (cell?.hex) {
+        const h = cell.hex.replace('#', '')
+        const gray = Math.round(parseInt(h.slice(0,2),16) * 0.299 + parseInt(h.slice(2,4),16) * 0.587 + parseInt(h.slice(4,6),16) * 0.114)
+        const gHex = '#' + gray.toString(16).padStart(2,'0').repeat(3)
+        setCell(r, c, { ...cell, hex: gHex })
+      }
+    }
+  }
+  saveSnapshot(); renderAll()
+}
+
+// ---- AI 增强处理 ----
+function onApplyAIEnhance(enhancedGrid) {
+  if (!enhancedGrid || !Array.isArray(enhancedGrid)) return
+  // 修改前先保存快照，确保可以撤销 AI 操作
+  saveSnapshot()
+  const layer = layers.value.find(l => l.id === currentLayerId.value)
+  if (!layer) return
+  // 先清空当前图层所有格子，再写入增强结果
+  for (let r = 0; r < gridH.value; r++) {
+    for (let c = 0; c < gridW.value; c++) {
+      layer.grid[r][c] = null
+    }
+  }
+  const maxR = Math.min(gridH.value, enhancedGrid.length)
+  const maxC = Math.min(gridW.value, enhancedGrid[0]?.length || 0)
+  for (let r = 0; r < maxR; r++) {
+    for (let c = 0; c < maxC; c++) {
+      if (enhancedGrid[r]?.[c]) layer.grid[r][c] = { ...enhancedGrid[r][c] }
+    }
+  }
+  renderAll()
+}
+
+function onApplyAIGenerate(newGrid, w, h) {
+  if (!newGrid || !Array.isArray(newGrid)) return
+  // 修改前先保存快照
+  saveSnapshot()
+  gridW.value = w || newGrid[0]?.length || gridW.value
+  gridH.value = h || newGrid.length || gridH.value
+  initGrid(gridW.value, gridH.value)
+  const layer = layers.value.find(l => l.id === currentLayerId.value)
+  if (layer) {
+    for (let r = 0; r < gridH.value; r++) {
+      for (let c = 0; c < gridW.value; c++) {
+        if (newGrid[r]?.[c]) layer.grid[r][c] = { ...newGrid[r][c] }
+      }
+    }
+  }
+  saveSnapshot(); renderAll()
+}
+
+function onApplyPalette(colors) {
+  if (!colors?.length) return
+  // 将推荐配色方案应用到色板（占位）
+  console.log('[AI] 应用配色方案:', colors.length + '色')
+}
 
 // ---- 创作入口页状态 ----
 const inEditor = ref(false)
@@ -579,6 +753,64 @@ function onFloodFill(sr, sc) {
   renderAll()
 }
 
+// ---- 魔棒选区 ----
+function onMagicWand(r, c) {
+  magicWandSelect(r, c, 0)
+  scheduleRender()
+}
+
+// ---- 套索选区 ----
+const lassoPoints = []
+function onLassoClick(r, c) {
+  lassoPoints.push({ r, c })
+  if (lassoPoints.length >= 3) {
+    lassoSelect(lassoPoints)
+    lassoPoints.length = 0 // 清空路径
+    scheduleRender()
+  }
+}
+
+// ---- 形状绘制 ----
+function onShapePreview({ tool, r1, c1, r2, c2 }) {
+  // 预览由 InteractionLayer 处理，此处仅记录
+}
+
+function onDrawShape({ tool, r1, c1, r2, c2 }) {
+  if (!curColor.value) return
+
+  let cells = []
+  switch (tool) {
+    case 'line':
+      cells = bresenhamLine(r1, c1, r2, c2, Math.max(1, brushSize.value))
+      break
+    case 'rect':
+      cells = drawRect(r1, c1, r2, c2, 'outline', Math.max(1, brushSize.value))
+      break
+    case 'circle': {
+      const rr = Math.round(Math.sqrt((r2 - r1) ** 2 + (c2 - c1) ** 2))
+      cells = drawCircle(r1, c1, rr, 'outline')
+      break
+    }
+  }
+
+  for (const { r, c } of cells) {
+    setCell(r, c, curColor.value)
+  }
+  saveSnapshot()
+  renderAll()
+}
+
+function onPlaceText(r, c) {
+  const text = prompt('输入文字（A-Z, 0-9）：', 'HELLO')
+  if (!text || !curColor.value) return
+  const cells = drawPixelText(text, r, c, Math.max(1, brushSize.value))
+  for (const { r: cr, c: cc } of cells) {
+    setCell(cr, cc, curColor.value)
+  }
+  saveSnapshot()
+  renderAll()
+}
+
 // ---- 图层锁定 ----
 function toggleLayerLock(id) {
   const layer = layers.value.find(l => l.id === id)
@@ -640,6 +872,27 @@ async function exportPDFFile() {
     a.click(); URL.revokeObjectURL(url)
     toast.show('PDF 导出成功')
   } catch (e) { toast.show('导出失败，请稍后重试') }
+}
+
+function exportSVG() {
+  const comp = getCompositeGrid()
+  const svg = generateSVG(comp, gridW.value, gridH.value, {
+    cellSize: 10,
+    showGrid: true,
+    showLabels: false,
+  })
+  downloadSVG(svg, `${editTitle.value || '拼豆图纸'}.svg`)
+}
+
+function exportCSV() {
+  const comp = getCompositeGrid()
+  const csv = exportColorMatrixCSV(comp, gridW.value, gridH.value)
+  downloadCSV(csv, `${editTitle.value || '拼豆图纸'}_色号矩阵.csv`)
+}
+
+function exportMaterial() {
+  const csv = exportMaterialList(gridColorStats.value)
+  downloadCSV(csv, `${editTitle.value || '拼豆图纸'}_用料清单.csv`)
 }
 
 function exportJSONFile() {
@@ -924,9 +1177,16 @@ onMounted(async () => {
         layers.value[0].grid = parsedGrid
         saveSnapshot()
         inEditor.value = true
-        nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+        nextTick(() => {
+          setTimeout(() => {
+            editorCanvasRef.value?.initCanvas()
+            renderAll()
+          }, 100)
+        })
       }
-    } catch (_) { /* 加载失败，显示入口页 */ }
+    } catch (e) {
+      console.error('加载设计失败:', e)
+    }
   } else {
     // 检查是否有从其他页面导入的数据
     const importedRaw = sessionStorage.getItem('imported_grid')
@@ -944,10 +1204,19 @@ onMounted(async () => {
           editTitle.value = '导入图纸'
           inEditor.value = true
           saveSnapshot()
-          nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+          // 延迟确保 DOM 已渲染 canvas 元素
+          nextTick(() => {
+            setTimeout(() => {
+              editorCanvasRef.value?.initCanvas()
+              renderAll()
+            }, 100)
+          })
           return
         }
-      } catch (_) { /* 数据异常 */ }
+      } catch (e) {
+        console.error('导入图纸数据异常:', e)
+        toast.show('导入失败，数据格式异常')
+      }
     }
 
     clearAutoSave()

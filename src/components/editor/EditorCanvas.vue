@@ -35,7 +35,10 @@
       :currentColor="guideCurrentColor"
       :progress="guideProgress"
       :hasPrev="guideColorIdx > 0"
-      @prev="$emit('guidePrev')" @next="$emit('guideNext')" @exit="$emit('toggleGuide')" />
+      :autoPlay="guideAutoPlay"
+      :speed="guideSpeed"
+      @prev="$emit('guidePrev')" @next="$emit('guideNext')" @exit="$emit('toggleGuide')"
+      @toggleAutoPlay="$emit('toggleAutoPlay')" @setSpeed="v => $emit('setGuideSpeed', v)" />
 
     <!-- 参考图控制面板 -->
     <div v-if="refOpacity > 0 && refPixels" class="absolute top-10 right-3 glass-panel rounded-2xl px-2.5 py-1.5 flex flex-col gap-1 z-10 select-none" style="min-width:150px">
@@ -79,6 +82,7 @@ const props = defineProps({
   refOpacity: Number, refPixels: Array, refW: Number, refH: Number,
   refOffsetX: Number, refOffsetY: Number, refScale: Number,
   guideCurrentColor: Object, guideProgress: Number, guideColorIdx: Number,
+  guideAutoPlay: Boolean, guideSpeed: Number,
   selectionRect: Object,
   beadCount: Number, hasSelection: Boolean,
   replaceSourceHex: String, focusDimHex: String,
@@ -89,9 +93,11 @@ const emit = defineEmits([
   'expandGrid',
   'update:panX', 'update:panY',
   'setRefOpacity', 'refZoomIn', 'refZoomOut', 'refMove', 'refReset',
-  'toggleGuide', 'guidePrev', 'guideNext',
+  'toggleGuide', 'guidePrev', 'guideNext', 'toggleAutoPlay', 'setGuideSpeed',
   'update:mouseCol', 'update:mouseRow', 'update:mouseColor',
   'pickColor', 'floodFill',
+  'magicWand', 'lassoClick',
+  'shapePreview', 'drawShape', 'placeText',
 ])
 
 const canvasWrap = ref(null)
@@ -104,6 +110,10 @@ const crossRow = ref(-1)
 const mousePos = ref({ x: -100, y: -100 })
 const isDrawing = ref(false)
 const lastCell = ref(null)
+
+// 形状工具拖拽状态
+const shapeStart = ref(null)    // {r, c} 起始点
+const shapePreview = ref(null)  // [{r, c}, ...] 预览格子
 const strokeCells = new Set()
 const spaceHeld = ref(false)  // 空格键拖拽平移
 const shiftHeld = ref(false)  // Shift 画直线
@@ -212,6 +222,34 @@ function onPointerDown(e) {
     return
   }
 
+  if (props.tool === 'wand') {
+    if (row >= 0 && row < props.gridH && col >= 0 && col < props.gridW) {
+      emit('magicWand', row, col)
+    }
+    return
+  }
+
+  if (props.tool === 'lasso') {
+    emit('lassoClick', row, col)
+    return
+  }
+
+  // 形状工具：记录起点，拖拽时预览
+  if (['line', 'rect', 'circle'].includes(props.tool)) {
+    shapeStart.value = { r: row, c: col }
+    canvasWrap.value.setPointerCapture(e.pointerId)
+    isDrawing.value = true
+    return
+  }
+
+  // 文字工具：点击放置
+  if (props.tool === 'text') {
+    if (row >= 0 && row < props.gridH && col >= 0 && col < props.gridW) {
+      emit('placeText', row, col)
+    }
+    return
+  }
+
   if (props.tool === 'brush' || props.tool === 'eraser') {
     canvasWrap.value.setPointerCapture(e.pointerId)
     isDrawing.value = true
@@ -266,6 +304,14 @@ function onPointerMove(e) {
     return
   }
 
+  // 形状工具拖拽预览
+  if (['line', 'rect', 'circle'].includes(props.tool) && isDrawing.value && shapeStart.value) {
+    const start = shapeStart.value
+    lastCell.value = { row, col }
+    emit('shapePreview', { tool: props.tool, r1: start.r, c1: start.c, r2: row, c2: col })
+    return
+  }
+
   if ((props.tool === 'brush' || props.tool === 'eraser') && isDrawing.value) {
     if (e.buttons === 2) {
       if (row >= 0 && row < props.gridH && col >= 0 && col < props.gridW) {
@@ -286,6 +332,14 @@ function onPointerMove(e) {
 function onPointerUp(e) {
   if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null }
   if (isDrawing.value) {
+    // 形状工具：结束拖拽，绘制形状
+    if (['line', 'rect', 'circle'].includes(props.tool) && shapeStart.value) {
+      emit('drawShape', { tool: props.tool, r1: shapeStart.value.r, c1: shapeStart.value.c, r2: lastCell.value?.row ?? shapeStart.value.r, c2: lastCell.value?.col ?? shapeStart.value.c })
+      shapeStart.value = null
+      shapePreview.value = null
+      isDrawing.value = false
+      return
+    }
     if (strokeCells.size > 0) emit('saveSnapshot')
     isDrawing.value = false
     strokeCells.clear()
@@ -418,7 +472,27 @@ function renderGlobalGrid() {
 }
 
 function initCanvas() {
-  if (!mainCanvas.value) return
+  if (!mainCanvas.value) {
+    console.warn('[EditorCanvas] Canvas 元素未就绪，延迟初始化')
+    // 重试：最多等 500ms
+    let retries = 0
+    const maxRetries = 10
+    const retry = () => {
+      if (mainCanvas.value) {
+        _doInitCanvas()
+        renderAll()
+        return
+      }
+      if (++retries < maxRetries) setTimeout(retry, 50)
+      else console.error('[EditorCanvas] Canvas 初始化失败：元素始终不可用')
+    }
+    setTimeout(retry, 50)
+    return
+  }
+  _doInitCanvas()
+}
+
+function _doInitCanvas() {
   renderer = new CanvasRenderer(mainCanvas.value, { gridW: props.gridW, gridH: props.gridH, zoom: props.zoom })
   renderer.resize(props.gridW, props.gridH, props.zoom)
   if (globalGridCanvas.value) {
@@ -428,7 +502,7 @@ function initCanvas() {
 }
 
 onMounted(() => {
-  nextTick(() => { initCanvas(); positionCanvas(); renderAll() })
+  nextTick(() => { initCanvas(); positionCanvas() })
 })
 
 watch([() => props.gridW, () => props.gridH], ([w, h]) => {

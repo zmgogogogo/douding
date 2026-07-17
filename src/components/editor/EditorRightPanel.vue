@@ -132,20 +132,63 @@
             <EyeOffIcon v-else :size="11" />
           </button>
           <!-- 缩略图色块 -->
-          <div class="w-5 h-5 rounded ring-1 ring-black/5 flex-shrink-0 bg-[var(--ui-bg-tertiary)] flex items-center justify-center">
+          <div class="w-5 h-5 rounded ring-1 ring-black/5 flex-shrink-0 bg-[var(--ui-bg-tertiary)] flex items-center justify-center relative">
             <div v-if="layerPreviewColor(layer)" class="w-3 h-3 rounded-sm" :style="{ background: layerPreviewColor(layer) }" />
+            <!-- 蒙版指示器 -->
+            <div v-if="layer.mask" class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-sm bg-black/20 ring-1 ring-black/20 flex items-center justify-center">
+              <div class="w-1.5 h-1.5 bg-white/70 rounded-sm" />
+            </div>
           </div>
           <!-- 名称 -->
           <span class="flex-1 text-[11px] font-medium truncate"
             :class="layer.id === currentLayerId ? 'text-[var(--ui-accent)]' : 'text-[var(--ui-text-primary)]'">
             {{ layer.name }}
           </span>
+          <!-- 蒙版编辑标记 -->
+          <span v-if="layer.mask && maskEditMode && layer.id === currentLayerId"
+            class="text-[8px] text-white bg-[var(--ui-accent)] rounded-full px-1.5 py-0.5 flex-shrink-0">蒙版</span>
           <!-- 锁定 -->
           <button class="w-4 h-4 flex items-center justify-center rounded text-[var(--ui-text-tertiary)] hover:text-[var(--ui-text-primary)]"
             @click.stop="$emit('toggleLock', layer.id)">
             <LockIcon v-if="layer.locked" :size="10" />
             <UnlockIcon v-else :size="10" />
           </button>
+        </div>
+      </div>
+      <!-- 蒙版操作 -->
+      <div class="px-2 py-1 border-t border-[var(--ui-border)]">
+        <div class="flex gap-0.5">
+          <button v-if="!selectedLayer?.mask" class="flex-1 h-6 rounded text-[9px] bg-[var(--ui-bg-tertiary)] hover:bg-[var(--ui-accent)]/10 hover:text-[var(--ui-accent)] transition-colors text-[var(--ui-text-secondary)]"
+            @click="$emit('addMask', currentLayerId)">+ 蒙版</button>
+          <template v-else>
+            <button class="flex-1 h-6 rounded text-[9px] transition-colors"
+              :class="maskEditMode ? 'bg-[var(--ui-accent)] text-white' : 'bg-[var(--ui-bg-tertiary)] text-[var(--ui-text-secondary)] hover:bg-[var(--ui-accent)]/10'"
+              @click="$emit('toggleMaskEdit')">✏️{{ maskEditMode ? '编辑中' : '编辑' }}</button>
+            <button class="flex-1 h-6 rounded text-[9px] bg-[var(--ui-bg-tertiary)] hover:bg-red-50 hover:text-red-500 transition-colors text-[var(--ui-text-secondary)]"
+              @click="$emit('applyMask', currentLayerId)">✓ 应用</button>
+            <button class="px-1.5 h-6 rounded text-[9px] bg-[var(--ui-bg-tertiary)] hover:bg-red-50 hover:text-red-500 transition-colors text-[var(--ui-text-secondary)]"
+              @click="$emit('removeMask', currentLayerId)">×</button>
+          </template>
+        </div>
+      </div>
+      <!-- 选中图层属性 -->
+      <div class="px-2 py-1.5 border-t border-[var(--ui-border)] space-y-1.5">
+        <div class="flex items-center justify-between text-[10px]">
+          <span class="text-[var(--ui-text-tertiary)]">不透明度</span>
+          <span class="font-mono text-[var(--ui-text-secondary)] w-7 text-right">{{ Math.round((selectedLayer?.opacity ?? 1) * 100) }}%</span>
+        </div>
+        <input type="range" min="0" max="100"
+          :value="Math.round((selectedLayer?.opacity ?? 1) * 100)"
+          class="w-full h-1 accent-[var(--ui-accent)] cursor-pointer"
+          @input="$emit('setOpacity', $event.target.value / 100)" />
+        <div class="flex items-center justify-between text-[10px]">
+          <span class="text-[var(--ui-text-tertiary)]">混合模式</span>
+          <select
+            :value="selectedLayer?.blendMode || 'normal'"
+            class="h-6 border border-[var(--ui-border)] rounded text-[10px] px-1 bg-[var(--ui-bg-base)] text-[var(--ui-text-primary)] outline-none cursor-pointer"
+            @change="$emit('setBlendMode', $event.target.value)">
+            <option v-for="bm in blendModes" :key="bm.id" :value="bm.id">{{ bm.label }}</option>
+          </select>
         </div>
       </div>
       <!-- 底部按钮 -->
@@ -240,12 +283,20 @@
         </div>
       </div>
     </div>
+
+    <!-- ========== AI 面板 ========== -->
+    <EditorAIPanel v-if="activeTab === 'ai'"
+      :grid="grid" :gridW="gridW" :gridH="gridH" :gridColorStats="stats"
+      @applyEnhance="grid => $emit('applyAIEnhance', grid)"
+      @applyGenerate="(grid, w, h) => $emit('applyAIGenerate', grid, w, h)"
+      @applyPalette="colors => $emit('applyPalette', colors)" />
   </aside>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { SearchIcon, ChevronRightIcon, EyeIcon, EyeOffIcon, LockIcon, UnlockIcon } from 'lucide-vue-next'
+import EditorAIPanel from './EditorAIPanel.vue'
 
 const props = defineProps({
   // 标签页
@@ -268,11 +319,15 @@ const props = defineProps({
   // 图层面板
   layers: { type: Array, default: () => [] },
   currentLayerId: { type: String, default: null },
+  blendModes: { type: Array, default: () => [{ id: 'normal', label: '正常' }] },
+  maskEditMode: { type: Boolean, default: false },
 
   // 历史面板
   historyArr: { type: Array, default: () => [] },
   historyIdx: { type: Number, default: -1 },
 
+  // AI 面板
+  grid: { type: Array, default: () => [] },
   // 属性面板
   gridW: { type: Number, default: 58 },
   gridH: { type: Number, default: 58 },
@@ -286,10 +341,17 @@ const emit = defineEmits([
   'update:brand', 'update:seriesActive', 'update:searchText', 'update:brushSize',
   'selectColor', 'highlightColor',
   'addLayer', 'removeLayer', 'selectLayer', 'toggleVisibility', 'toggleLock',
+  'setOpacity', 'setBlendMode',
+  'addMask', 'removeMask', 'applyMask', 'toggleMaskEdit',
   'jumpToHistory', 'createSnapshot',
+  'applyAIEnhance', 'applyAIGenerate', 'applyPalette',
 ])
 
 const statsExpanded = ref(false)
+
+const selectedLayer = computed(() =>
+  props.layers.find(l => l.id === props.currentLayerId) || null
+)
 
 const tabs = [
   { id: 'color', label: '🎨 颜色' },
@@ -297,6 +359,7 @@ const tabs = [
   { id: 'swatch', label: '🎨 色板' },
   { id: 'history', label: '📜 历史' },
   { id: 'properties', label: '📐 属性' },
+  { id: 'ai', label: '🤖 AI' },
 ]
 
 const toolLabels = {

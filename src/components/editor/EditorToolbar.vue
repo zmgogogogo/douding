@@ -41,20 +41,34 @@
         @click="$emit('selectTool', 'replace')" title="颜色替换 (R)">
         <ReplaceIcon :size="15" />
       </button>
+      <button class="toolbar-btn" :class="{ active: currentTool === 'gradient' }"
+        @click="$emit('selectTool', 'gradient')" title="渐变 (J)">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+        </svg>
+      </button>
     </div>
 
     <div class="tool-divider" />
 
-    <!-- 第三组：形状工具（开发中） -->
+    <!-- 第三组：形状工具 -->
     <div class="tool-group">
-      <button class="toolbar-btn opacity-40 cursor-not-allowed" disabled title="直线 (L) · 开发中">
+      <button class="toolbar-btn" :class="{ active: currentTool === 'line' }"
+        @click="$emit('selectTool', 'line')" title="直线 (L)">
         <MinusIcon :size="17" />
       </button>
-      <button class="toolbar-btn opacity-40 cursor-not-allowed" disabled title="矩形 (U) · 开发中">
+      <button class="toolbar-btn" :class="{ active: currentTool === 'rect' }"
+        @click="$emit('selectTool', 'rect')" title="矩形 (U)">
         <SquareIcon :size="15" />
       </button>
-      <button class="toolbar-btn opacity-40 cursor-not-allowed" disabled title="圆形 · 开发中">
+      <button class="toolbar-btn" :class="{ active: currentTool === 'circle' }"
+        @click="$emit('selectTool', 'circle')" title="圆形 (O)">
         <CircleIcon :size="17" />
+      </button>
+      <button class="toolbar-btn" :class="{ active: currentTool === 'text' }"
+        @click="$emit('selectTool', 'text')" title="文字 (T)">
+        <TypeIcon :size="17" />
       </button>
     </div>
 
@@ -66,7 +80,8 @@
         @click="$emit('selectTool', 'select')" title="矩形选区 (M)">
         <PointerIcon :size="17" />
       </button>
-      <button class="toolbar-btn opacity-40 cursor-not-allowed" disabled title="魔棒 (W) · 开发中">
+      <button class="toolbar-btn" :class="{ active: currentTool === 'wand' }"
+        @click="$emit('selectTool', 'wand')" title="魔棒 (W)">
         <Wand2Icon :size="15" />
       </button>
     </div>
@@ -105,7 +120,7 @@ import { h } from 'vue'
 import {
   HandIcon, ZoomInIcon,
   PencilIcon, EraserIcon, PaintBucketIcon, PipetteIcon,
-  MinusIcon, SquareIcon, CircleIcon,
+  MinusIcon, SquareIcon, CircleIcon, TypeIcon,
   PointerIcon, Wand2Icon,
   Grid3x3Icon, EyeIcon, EyeOffIcon,
 } from 'lucide-vue-next'
