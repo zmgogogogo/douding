@@ -1,70 +1,75 @@
 <!-- ============================================
   EditorToolbar.vue — 左侧工具栏
   ohmybead.cn 风格：垂直排列，工具+辅助+导入导出
-  ============================================ -->
+  使用 CSS 即时 tooltip 替代原生 title（零延迟）
+============================================ -->
 <template>
-  <div class="flex flex-col items-center gap-0.5 w-11 bg-[var(--ui-bg-surface)] border-r border-[var(--ui-border)] py-2 overflow-y-auto flex-shrink-0 select-none">
+  <div class="flex flex-col items-center gap-0.5 w-11 bg-[var(--ui-bg-surface)] border-r border-[var(--ui-border)] py-2 flex-shrink-0 select-none">
     <!-- 绘制工具组 -->
     <button v-for="t in drawTools" :key="t.name"
-      class="toolbar-btn" :class="{ active: currentTool === t.name }"
-      @click="$emit('selectTool', t.name)"
-      :title="`${t.label} (${t.key})`">
+      class="toolbar-btn group" :class="{ active: currentTool === t.name }"
+      @click="$emit('selectTool', t.name)">
       <component :is="t.icon" :size="t.size || 18" />
+      <span class="tooltip">{{ t.label }} ({{ t.key }})</span>
     </button>
 
     <div class="w-8 border-t border-[var(--ui-border)] my-1" />
 
     <!-- 视图辅助组 -->
-    <button class="toolbar-btn" :class="{ active: showGrid }"
-      @click="$emit('toggleGrid')" title="网格 (H)">
+    <button class="toolbar-btn group" :class="{ active: showGrid }"
+      @click="$emit('toggleGrid')">
       <GridIcon :size="18" />
+      <span class="tooltip">网格 (H)</span>
     </button>
-    <button class="toolbar-btn" :class="{ active: refOpacity > 0 }"
-      @click="$emit('cycleRefOpacity')" title="参考图透明度 (R)">
+    <button class="toolbar-btn group" :class="{ active: refOpacity > 0 }"
+      @click="$emit('cycleRefOpacity')">
       <EyeIcon v-if="refOpacity > 0" :size="18" />
       <EyeOffIcon v-else :size="18" />
+      <span class="tooltip">参考图透明度 (R)</span>
     </button>
-    <button class="toolbar-btn" :class="refLocked && 'text-amber-500'"
-      @click="$emit('toggleRefLock')" title="锁定参考图 (Ctrl+L)">
+    <button class="toolbar-btn group" :class="refLocked && 'text-amber-500'"
+      @click="$emit('toggleRefLock')">
       <LockIcon v-if="refLocked" :size="16" />
       <UnlockIcon v-else :size="16" />
+      <span class="tooltip">锁定参考图 (Ctrl+L)</span>
     </button>
-    <button class="toolbar-btn" :class="symmetryMode !== 'none' && 'text-primary'"
-      @click="$emit('cycleSymmetry')" :title="`镜像 (K): ${symmetryLabels[symmetryMode]}`">
+    <button class="toolbar-btn group" :class="symmetryMode !== 'none' && 'text-primary'"
+      @click="$emit('cycleSymmetry')">
       <SymmetryIcon :size="18" />
+      <span class="tooltip">镜像 (K): {{ symmetryLabels[symmetryMode] }}</span>
     </button>
 
     <div class="w-8 border-t border-[var(--ui-border)] my-1" />
 
     <!-- 选区操作按钮（仅选中有选区时显示） -->
     <template v-if="currentTool === 'select' && hasSelection">
-      <button class="toolbar-btn text-blue-500" @click="$emit('copySelection')" title="复制 (Ctrl+C)">
-        <CopyIcon :size="15" /></button>
-      <button class="toolbar-btn text-blue-500" @click="$emit('pasteSelection')" title="粘贴 (Ctrl+V)">
-        <ClipboardPasteIcon :size="15" /></button>
-      <button class="toolbar-btn text-red-500" @click="$emit('deleteSelection')" title="删除 (Del)">
-        <Trash2Icon :size="15" /></button>
-      <button class="toolbar-btn" @click="$emit('flipSelectionH')" title="水平翻转">
-        <FlipHorizontalIcon :size="15" /></button>
-      <button class="toolbar-btn" @click="$emit('flipSelectionV')" title="垂直翻转">
-        <FlipVerticalIcon :size="15" /></button>
+      <button class="toolbar-btn group text-blue-500" @click="$emit('copySelection')">
+        <CopyIcon :size="15" /><span class="tooltip">复制 (Ctrl+C)</span></button>
+      <button class="toolbar-btn group text-blue-500" @click="$emit('pasteSelection')">
+        <ClipboardPasteIcon :size="15" /><span class="tooltip">粘贴 (Ctrl+V)</span></button>
+      <button class="toolbar-btn group text-red-500" @click="$emit('deleteSelection')">
+        <Trash2Icon :size="15" /><span class="tooltip">删除 (Del)</span></button>
+      <button class="toolbar-btn group" @click="$emit('flipSelectionH')">
+        <FlipHorizontalIcon :size="15" /><span class="tooltip">水平翻转</span></button>
+      <button class="toolbar-btn group" @click="$emit('flipSelectionV')">
+        <FlipVerticalIcon :size="15" /><span class="tooltip">垂直翻转</span></button>
       <div class="w-8 border-t border-[var(--ui-border)] my-1" />
     </template>
 
     <!-- 导入导出组 -->
-    <button class="toolbar-btn" @click="$emit('importImage')" title="导入图片">
-      <ImageIcon :size="18" /></button>
-    <button class="toolbar-btn" @click="$emit('exportPNG')" title="导出高清PNG">
-      <DownloadIcon :size="18" /></button>
-    <button class="toolbar-btn" @click="$emit('exportPDF')" title="导出PDF图纸">
-      <FileTextIcon :size="16" /></button>
+    <button class="toolbar-btn group" @click="$emit('importImage')">
+      <ImageIcon :size="18" /><span class="tooltip">导入图片</span></button>
+    <button class="toolbar-btn group" @click="$emit('exportPNG')">
+      <DownloadIcon :size="18" /><span class="tooltip">导出高清PNG</span></button>
+    <button class="toolbar-btn group" @click="$emit('exportPDF')">
+      <FileTextIcon :size="16" /><span class="tooltip">导出PDF图纸</span></button>
 
     <div class="flex-1" />
 
     <!-- 施工引导（底部） -->
-    <button class="toolbar-btn" :class="guideMode && 'text-green-500'"
-      @click="$emit('toggleGuide')" title="施工引导 (Ctrl+N)">
-      <Wand2Icon :size="18" /></button>
+    <button class="toolbar-btn group" :class="guideMode && 'text-green-500'"
+      @click="$emit('toggleGuide')">
+      <Wand2Icon :size="18" /><span class="tooltip">施工引导 (Ctrl+N)</span></button>
   </div>
 </template>
 
@@ -77,7 +82,7 @@ import {
   Wand2Icon, CopyIcon, ClipboardPasteIcon, Trash2Icon,
   FlipHorizontalIcon, FlipVerticalIcon
 } from 'lucide-vue-next'
-import { shallowRef, h } from 'vue'
+import { h } from 'vue'
 
 // 对称模式图标组件
 const SymmetryIcon = {
@@ -123,3 +128,24 @@ const drawTools = [
 
 const symmetryLabels = { none: '关闭', h: '水平镜像', v: '垂直镜像', quad: '四向镜像' }
 </script>
+
+<style scoped>
+.toolbar-btn {
+  @apply relative w-9 h-9 flex items-center justify-center rounded-xl
+         text-[var(--ui-text-tertiary)] hover:text-[var(--ui-text-primary)]
+         hover:bg-[var(--ui-bg-tertiary)] transition-colors;
+}
+.toolbar-btn.active {
+  @apply text-primary bg-primary/10;
+}
+
+/* 即时 tooltip：悬停即显，零延迟，显示在按钮上方偏右 */
+.tooltip {
+  @apply absolute bottom-full mb-0.5 left-2 px-2 py-1 rounded-md
+         bg-slate-800 text-white text-[10px] font-medium whitespace-nowrap
+         opacity-0 pointer-events-none z-50;
+}
+.group:hover .tooltip {
+  @apply opacity-100;
+}
+</style>

@@ -9,6 +9,13 @@ import { safeParseJSON } from '../utils/helpers.js'
 
 const router = Router()
 
+// RFC 5987 编码中文文件名
+function attachmentFilename(name) {
+  const encoded = encodeURIComponent(name).replace(/['()]/g, escape).replace(/\*/g, '%2A')
+  // 兼容旧浏览器 + 现代浏览器
+  return `attachment; filename="${name.replace(/[^\x00-\x7F]/g, '_')}"; filename*=UTF-8''${encoded}`
+}
+
 // 单图高清导出
 router.post('/export/grid', authOptional, async (req, res) => {
   try {
@@ -26,7 +33,7 @@ router.post('/export/grid', authOptional, async (req, res) => {
     })
 
     res.setHeader('Content-Type', 'image/png')
-    res.setHeader('Content-Disposition', `attachment; filename="拼豆_${gridWidth}x${gridHeight}_高清.png"`)
+    res.setHeader('Content-Disposition', attachmentFilename(`拼豆_${gridWidth}x${gridHeight}_高清.png`))
     res.send(pngBuffer)
   } catch (e) {
     console.error('导出失败:', e)
@@ -54,7 +61,7 @@ router.post('/export/design/:id', authOptional, async (req, res) => {
     })
 
     res.setHeader('Content-Type', 'image/png')
-    res.setHeader('Content-Disposition', `attachment; filename="${design.title}_${design.grid_width}x${design.grid_height}.png"`)
+    res.setHeader('Content-Disposition', attachmentFilename(`${design.title}_${design.grid_width}x${design.grid_height}.png`))
     res.send(pngBuffer)
   } catch (e) {
     console.error('导出失败:', e)
@@ -90,7 +97,7 @@ router.post('/export/batch', authRequired, async (req, res) => {
     const zipBuffer = await exportBatch(designs, { scale: parseInt(scale) })
 
     res.setHeader('Content-Type', 'application/zip')
-    res.setHeader('Content-Disposition', `attachment; filename="拼豆批量导出_${designs.length}张.zip"`)
+    res.setHeader('Content-Disposition', attachmentFilename(`拼豆批量导出_${designs.length}张.zip`))
     res.send(zipBuffer)
   } catch (e) {
     console.error('批量导出失败:', e)
@@ -114,7 +121,7 @@ router.post('/export/pdf', authOptional, async (req, res) => {
     })
 
     res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Disposition', `attachment; filename="拼豆_${gridWidth}x${gridHeight}_图纸.pdf"`)
+    res.setHeader('Content-Disposition', attachmentFilename(`拼豆_${gridWidth}x${gridHeight}_图纸.pdf`))
     res.send(pdfBuffer)
   } catch (e) {
     console.error('PDF 导出失败:', e)

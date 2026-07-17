@@ -43,22 +43,31 @@
           </div>
         </div>
 
-        <!-- 图片预览 + 参数 -->
+        <!-- 图片预览 + 裁剪 -->
         <div v-else class="space-y-4">
-          <div class="bg-slate-100 rounded-2xl p-4 flex items-center justify-center">
-            <img :src="imageSrc" class="max-w-full max-h-[300px] rounded-xl shadow-sm" />
-          </div>
-
-          <!-- 色彩模式切换 -->
-          <div>
-            <label class="text-[10px] font-bold uppercase text-slate-400 mb-2 block">色彩模式</label>
-            <div class="flex bg-slate-100 rounded-xl p-1">
-              <button class="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
-                :class="!rawMode ? 'bg-white text-primary shadow-sm' : 'text-slate-500'"
-                @click="rawMode = false">🎨 色卡匹配</button>
-              <button class="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
-                :class="rawMode ? 'bg-white text-primary shadow-sm' : 'text-slate-500'"
-                @click="rawMode = true">🖼️ 原图直出</button>
+          <div class="bg-slate-100 rounded-2xl p-4 flex items-center justify-center overflow-hidden relative">
+            <div class="relative" :style="{ width: imgDisplayW + 'px', height: imgDisplayH + 'px' }">
+              <img :src="imageSrc"
+                class="block select-none"
+                :style="{ width: imgDisplayW + 'px', height: imgDisplayH + 'px' }"
+                draggable="false"
+                @load="onOcrImageLoad" />
+              <!-- 裁剪框 -->
+              <div v-if="imgLoaded" class="absolute border-2 border-primary cursor-move"
+                :style="cropCtrl.cropStyle.value"
+                @pointerdown.stop="cropCtrl.startDrag($event)">
+                <div class="absolute inset-0 pointer-events-none">
+                  <div class="absolute top-1/3 left-0 right-0 border-t border-white/40" />
+                  <div class="absolute top-2/3 left-0 right-0 border-t border-white/40" />
+                  <div class="absolute left-1/3 top-0 bottom-0 border-l border-white/40" />
+                  <div class="absolute left-2/3 top-0 bottom-0 border-l border-white/40" />
+                </div>
+                <div v-for="h in cropCtrl.handles.value" :key="h.cursor"
+                  class="absolute w-3 h-3 bg-white border-2 border-primary rounded-sm
+                         -translate-x-1/2 -translate-y-1/2 shadow-sm"
+                  :style="{ left: h.left, top: h.top, cursor: h.cursor }"
+                  @pointerdown.stop="cropCtrl.startResize($event, h.handle)" />
+              </div>
             </div>
           </div>
 
@@ -75,7 +84,7 @@
               </div>
             </div>
 
-            <div v-if="!rawMode">
+            <div>
               <label class="text-[10px] font-bold uppercase text-slate-400">珠子品牌</label>
               <select v-model="brand" class="w-full h-10 border border-slate-200 rounded-lg px-3 text-sm mt-1">
                 <option value="全部">全部品牌</option>
@@ -153,14 +162,20 @@ import { ArrowLeftIcon, ScanTextIcon, InfoIcon, LoaderIcon, CheckCircleIcon }
   from 'lucide-vue-next'
 import API from '@/api/index.js'
 import { useToast } from '@/composables/useToast.js'
+import { useImageCrop } from '@/composables/useImageCrop.js'
 
 const router = useRouter()
 const toast = useToast()
 
+// 裁剪交互
+const cropCtrl = useImageCrop()
+
 const imageSrc = ref('')
 const originalFile = ref(null)
+const imgLoaded = ref(false)
+const imgDisplayW = ref(0)
+const imgDisplayH = ref(0)
 const brand = ref('全部')
-const rawMode = ref(false)
 const brands = ref([])
 const qStyle = ref(null)
 const qStyles = ref([])
@@ -187,6 +202,17 @@ function onFileSelect(e) {
   reader.readAsDataURL(file)
 }
 
+function onOcrImageLoad(e) {
+  const img = e.target
+  const maxW = 500
+  const s = Math.min(1, maxW / Math.max(img.naturalWidth, img.naturalHeight))
+  imgDisplayW.value = Math.round(img.naturalWidth * s)
+  imgDisplayH.value = Math.round(img.naturalHeight * s)
+  cropCtrl.setImageSize(img.naturalWidth, img.naturalHeight, s)
+  cropCtrl.initCrop()
+  imgLoaded.value = true
+}
+
 async function startRecognize() {
   if (!originalFile.value) return
   recognizing.value = true
@@ -194,7 +220,13 @@ async function startRecognize() {
   try {
     const form = new FormData()
     form.append('file', originalFile.value)
-    if (rawMode.value) form.append('raw', 'true')
+    const oc = cropCtrl.getOriginalCrop()
+    if (oc.w > 0 && oc.h > 0) {
+      form.append('cropX', String(oc.x))
+      form.append('cropY', String(oc.y))
+      form.append('cropW', String(oc.w))
+      form.append('cropH', String(oc.h))
+    }
     if (brand.value && brand.value !== '全部') form.append('brand', brand.value)
     if (qStyle.value) form.append('qStyle', qStyle.value)
     if (manualRows.value > 0) form.append('gridRows', String(manualRows.value))
@@ -237,7 +269,8 @@ function importToEditor() {
     gridWidth: result.value.gridWidth,
     gridHeight: result.value.gridHeight
   }))
-  window.location.hash = '#/editor'
+  sessionStorage.setItem('import_toast', 'OCR 识别完成，已导入编辑器')
+  router.replace('/editor')
 }
 
 function reset() {

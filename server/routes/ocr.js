@@ -15,13 +15,18 @@ router.post('/ocr/recognize', authOptional, upload.single('file'), async (req, r
   const gridCols = parseInt(req.body.gridCols) || 0
   const brand = req.body.brand || null
   const raw = req.body.raw === 'true' || req.body.raw === '1'
+  const cropX = parseInt(req.body.cropX) || 0
+  const cropY = parseInt(req.body.cropY) || 0
+  const cropW = parseInt(req.body.cropW) || 0
+  const cropH = parseInt(req.body.cropH) || 0
 
   try {
     const result = await recognizeBeadPattern(req.file.path, {
       gridRows: gridRows > 0 ? gridRows : null,
       gridCols: gridCols > 0 ? gridCols : null,
       brand,
-      raw
+      raw,
+      crop: cropW > 0 && cropH > 0 ? { left: cropX, top: cropY, width: cropW, height: cropH } : null
     })
 
     res.json({

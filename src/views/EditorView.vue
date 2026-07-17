@@ -370,7 +370,7 @@ const {
   brands, series, filteredColors,
   beadCount, gridColorStats,
   brandColorCounts, totalColorCount, seriesColorCount,
-  brushPreviewStyle, colorSearch, recentColors, addRecentColor, autoFitGrid,
+  brushPreviewStyle, colorSearch, recentColors, addRecentColor, codeOnly, autoFitGrid,
   layers, currentLayerId, addLayer, removeLayer, selectLayer,
   toggleLayerVisibility, setLayerOpacity, mergeLayerDown, getCompositeGrid,
   initGrid, getCell, setCell, expandGridToFit,
@@ -950,6 +950,8 @@ onMounted(async () => {
       try {
         const imported = JSON.parse(importedRaw)
         sessionStorage.removeItem('imported_grid') // 清除，防止下次重复加载
+        const importToast = sessionStorage.getItem('import_toast')
+        if (importToast) { sessionStorage.removeItem('import_toast'); nextTick(() => toast.show(importToast)) }
         if (imported.grid && imported.gridWidth && imported.gridHeight) {
           gridW.value = imported.gridWidth
           gridH.value = imported.gridHeight

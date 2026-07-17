@@ -44,6 +44,7 @@ const clipboard = ref(null)          // {grid, w, h}
 
 // 颜色搜索和最近使用
 const colorSearch = ref('')
+const codeOnly = ref(true)    // 默认仅显示有编号色卡
 const recentColors = ref([])  // 最近使用的颜色 [{name, hex, brand, series}]
 const MAX_RECENT = 12
 
@@ -147,6 +148,11 @@ const filteredColors = computed(() => {
       c.hex.toLowerCase().includes(q) ||
       (c.brand && c.brand.toLowerCase().includes(q))
     )
+  }
+
+  // 仅显示有编号的色卡（名称中包含数字，如 S01、H01、M-01）
+  if (codeOnly.value) {
+    result = result.filter(c => /\d/.test(c.name))
   }
 
   return result
@@ -270,20 +276,24 @@ function autoFitGrid(padding = 4) {
 
   if (newW === gridW.value && newH === gridH.value) return false
 
-  // 裁剪/扩展
-  const newGrid = Array.from({ length: newH }, () => Array(newW).fill(null))
-  for (let r = 0; r < newH; r++) {
-    for (let c = 0; c < newW; c++) {
-      const srcR = r - padding + minR, srcC = c - padding + minC
-      if (srcR >= 0 && srcR < gridH.value && srcC >= 0 && srcC < gridW.value) {
-        newGrid[r][c] = comp[srcR]?.[srcC] ? { ...comp[srcR][srcC] } : null
+  // 对每个图层分别执行裁剪/扩展，保留所有图层数据
+  for (const layer of layers.value) {
+    const newGrid = Array.from({ length: newH }, () => Array(newW).fill(null))
+    for (let r = 0; r < newH; r++) {
+      for (let c = 0; c < newW; c++) {
+        const srcR = r - padding + minR, srcC = c - padding + minC
+        if (srcR >= 0 && srcR < gridH.value && srcC >= 0 && srcC < gridW.value) {
+          newGrid[r][c] = layer.grid[srcR]?.[srcC] ? { ...layer.grid[srcR][srcC] } : null
+        }
       }
     }
+    layer.grid = newGrid
   }
+
   gridW.value = newW; gridH.value = newH
-  layers.value = [{ id: 'l1', name: '图层 1', visible: true, opacity: 1, grid: newGrid }]
-  currentLayerId.value = 'l1'
-  grid.value = newGrid
+  // 更新当前活动层的 grid 引用
+  const curLayer = layers.value.find(l => l.id === currentLayerId.value)
+  if (curLayer) grid.value = curLayer.grid
   return true
 }
 
@@ -582,7 +592,7 @@ export function useEditor() {
     editId, editTitle, hasUnsavedChanges, lastSavedTime, autoSaveKey,
     showInfo, showSizeDialog, sizeDialogW, sizeDialogH,
     showExportMenu, showColorStats,
-    colorSearch, recentColors, addRecentColor,
+    colorSearch, recentColors, addRecentColor, codeOnly,
     mousePos, crossCol, crossRow, isDrawing,
     brand, seriesActive,
 

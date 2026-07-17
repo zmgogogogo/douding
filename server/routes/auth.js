@@ -60,7 +60,7 @@ router.get('/me', authRequired, (req, res) => {
 // 更新个人资料
 router.put('/profile', authRequired, (req, res) => {
   const { nickname, bio } = req.body || {}
-  db.prepare('UPDATE users SET nickname = ?, bio = ?, updated_at = datetime("now") WHERE id = ?')
+  db.prepare("UPDATE users SET nickname = ?, bio = ?, updated_at = datetime('now') WHERE id = ?")
     .run(nickname || null, bio || null, req.user.id)
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
   res.json({ code: 200, data: userPublic(user) })

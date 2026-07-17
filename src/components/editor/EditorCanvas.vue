@@ -369,6 +369,7 @@ function onPointerDown(e) {
     strokeCells.clear()
     // 检测边界，必要时动态扩展画布
     const adjusted = ensureBrushInBounds(row, col, e)
+    if (shiftHeld.value) lineStartCell.value = { row: adjusted.row, col: adjusted.col }
     drawAt(adjusted.row, adjusted.col)
     lastCell.value = { row: adjusted.row, col: adjusted.col }
     longPressTimer = setTimeout(() => {

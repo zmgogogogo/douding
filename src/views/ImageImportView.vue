@@ -43,29 +43,51 @@
     <!-- 已上传图片：预览 + 设置 -->
     <div v-else class="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
       <!-- 图片预览区 -->
-      <div class="flex-1 bg-slate-100 flex items-center justify-center overflow-hidden relative">
+      <div class="flex-1 bg-slate-100 flex items-center justify-center overflow-hidden relative"
+        :class="imgLoaded && !isPanning && 'cursor-grab'"
+        :style="imgLoaded && isPanning ? { cursor: 'grabbing' } : {}"
+        @wheel.prevent="onImgWheel"
+        @pointerdown="onImgBgPointerDown">
+        <!-- 操作提示 -->
+        <div v-if="imgLoaded" class="absolute top-3 left-3 z-10 text-[10px] text-slate-400 bg-white/80 backdrop-blur rounded-lg px-2 py-1 pointer-events-none">
+          滚轮缩放 · 拖拽平移 · 拖动裁剪框
+        </div>
         <div class="relative shadow-2xl bg-white" :style="previewStyle">
           <img ref="previewImg" :src="imageSrc"
-            class="block max-w-full max-h-full select-none"
+            class="block select-none"
             :style="imgTransform"
             draggable="false"
             @load="onImageLoad" />
-          <!-- 裁剪框 -->
-          <div v-if="imgLoaded" class="absolute border-2 border-primary pointer-events-none"
-            :style="cropStyle">
-            <!-- 网格线 -->
-            <div class="absolute inset-0">
-              <div class="absolute top-1/3 left-0 right-0 border-t border-white/20" />
-              <div class="absolute top-2/3 left-0 right-0 border-t border-white/20" />
-              <div class="absolute left-1/3 top-0 bottom-0 border-l border-white/20" />
-              <div class="absolute left-2/3 top-0 bottom-0 border-l border-white/20" />
+          <!-- 裁剪框（随缩放联动） -->
+          <div v-if="imgLoaded" class="absolute border-2 border-primary cursor-move"
+            :style="{ ...cropStyle, transform: `scale(${imgZoom})`, transformOrigin: '0 0' }"
+            @pointerdown.stop="cropCtrl.startDrag($event)">
+            <!-- 九宫格参考线 -->
+            <div class="absolute inset-0 pointer-events-none">
+              <div class="absolute top-1/3 left-0 right-0 border-t border-white/40" />
+              <div class="absolute top-2/3 left-0 right-0 border-t border-white/40" />
+              <div class="absolute left-1/3 top-0 bottom-0 border-l border-white/40" />
+              <div class="absolute left-2/3 top-0 bottom-0 border-l border-white/40" />
             </div>
-            <!-- 四角手柄 -->
-            <div v-for="h in handles" :key="h.cursor" class="absolute w-2.5 h-2.5 bg-white border-2 border-primary rounded-sm
-              -translate-x-1/2 -translate-y-1/2 shadow-sm"
+            <!-- 四角缩放手柄 -->
+            <div v-for="h in cropCtrl.handles.value" :key="h.cursor"
+              class="absolute w-3 h-3 bg-white border-2 border-primary rounded-sm
+                     -translate-x-1/2 -translate-y-1/2 shadow-sm"
               :style="{ left: h.left, top: h.top, cursor: h.cursor }"
-              @pointerdown.stop="startResize($event, h.handle)" />
+              @pointerdown.stop="cropCtrl.startResize($event, h.handle)" />
           </div>
+        </div>
+
+        <!-- 缩放控件 -->
+        <div v-if="imgLoaded" class="absolute bottom-3 right-3 z-20 flex items-center gap-1 bg-white/90 backdrop-blur rounded-full
+                    shadow-md border border-slate-200 px-2 py-1">
+          <button class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold
+                         hover:bg-slate-200 transition-colors" @click="zoomOut">−</button>
+          <span class="text-[10px] font-mono w-10 text-center text-slate-600">{{ Math.round(imgZoom * 100) }}%</span>
+          <button class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold
+                         hover:bg-slate-200 transition-colors" @click="zoomIn">+</button>
+          <button class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px]
+                         hover:bg-slate-200 transition-colors ml-1" @click="zoomReset" title="重置">↺</button>
         </div>
 
         <!-- 加载中 -->
@@ -101,8 +123,8 @@
             </div>
           </section>
 
-          <!-- 珠子品牌（仅色卡模式显示） -->
-          <section v-if="!rawMode">
+          <!-- 珠子品牌 -->
+          <section>
             <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">珠子品牌</h3>
             <div class="flex flex-wrap gap-1.5">
               <button v-for="b in beadBrands" :key="b"
@@ -110,24 +132,6 @@
                 :class="brand === b ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
                 @click="brand = b">{{ b }}</button>
             </div>
-          </section>
-
-          <!-- 色彩模式切换 -->
-          <section>
-            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">色彩模式</h3>
-            <div class="flex bg-slate-100 rounded-xl p-1 gap-0.5">
-              <button
-                class="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
-                :class="!rawMode ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'"
-                @click="rawMode = false">🎨 系统色卡</button>
-              <button
-                class="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
-                :class="rawMode ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'"
-                @click="rawMode = true">🖼️ 1:1 原色</button>
-            </div>
-            <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
-              {{ rawMode ? '保留图片原始色彩，不匹配任何珠子色卡' : '将图片颜色匹配到所选品牌的珠子色卡' }}
-            </p>
           </section>
 
           <!-- Q 版风格选择 -->
@@ -192,17 +196,21 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeftIcon, UploadIcon, AlertCircleIcon, LoaderIcon, WandIcon }
   from 'lucide-vue-next'
 import API from '@/api/index.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useToast } from '@/composables/useToast.js'
+import { useImageCrop } from '@/composables/useImageCrop.js'
 
 const router = useRouter()
 const auth = useAuth()
 const toast = useToast()
+
+// 裁剪交互（拖拽移动 + 四角缩放）
+const cropCtrl = useImageCrop()
 
 // 图片
 const imageSrc = ref('')
@@ -211,11 +219,55 @@ const previewImg = ref(null)
 const imgLoaded = ref(false)
 const imgNaturalW = ref(0), imgNaturalH = ref(0)
 
-// 裁剪
-const cropX = ref(0), cropY = ref(0), cropW = ref(0), cropH = ref(0)
+// 图片缩放与平移
+const fitScale = ref(1)      // 适配容器的基础缩放
+const imgZoom = ref(1)       // 用户放大倍数
+const imgPanX = ref(0)       // 平移 X（px）
+const imgPanY = ref(0)       // 平移 Y（px）
+const isPanning = ref(false)
+const panStart = ref(null)
 
-// 缩放旋转
-const scale = ref(1), rotation = ref(0)
+function zoomIn() { imgZoom.value = Math.min(5, imgZoom.value * 1.3) }
+function zoomOut() { imgZoom.value = Math.max(0.2, imgZoom.value / 1.3) }
+function zoomReset() { imgZoom.value = 1; imgPanX.value = 0; imgPanY.value = 0 }
+
+function onImgWheel(e) {
+  const rect = e.currentTarget.getBoundingClientRect()
+  const cx = e.clientX - rect.left   // 光标相对容器位置
+  const cy = e.clientY - rect.top
+  const oldZoom = imgZoom.value
+  const delta = e.deltaY < 0 ? 1.15 : 0.87
+  const newZoom = Math.max(0.2, Math.min(5, oldZoom * delta))
+
+  // 以光标为中心缩放：调整 pan 使光标下的点保持不变
+  const scaleChange = newZoom / oldZoom
+  imgPanX.value = cx - scaleChange * (cx - imgPanX.value)
+  imgPanY.value = cy - scaleChange * (cy - imgPanY.value)
+  imgZoom.value = newZoom
+}
+
+function onImgBgPointerDown(e) {
+  // 裁剪框及其手柄不触发平移
+  if (e.target.closest('.border-primary')) return
+  if (e.target.closest('button')) return
+  isPanning.value = true
+  panStart.value = { x: e.clientX - imgPanX.value, y: e.clientY - imgPanY.value }
+  document.addEventListener('pointermove', onPanMove)
+  document.addEventListener('pointerup', onPanEnd)
+}
+
+function onPanMove(e) {
+  if (!panStart.value) return
+  imgPanX.value = e.clientX - panStart.value.x
+  imgPanY.value = e.clientY - panStart.value.y
+}
+
+function onPanEnd() {
+  isPanning.value = false
+  panStart.value = null
+  document.removeEventListener('pointermove', onPanMove)
+  document.removeEventListener('pointerup', onPanEnd)
+}
 
 // Q版风格
 const qStyle = ref(null)
@@ -225,7 +277,6 @@ const selectedStyle = computed(() => qStyles.value.find(s => s.style_id === qSty
 // 参数
 const targetW = ref(58), targetH = ref(58)
 const brand = ref('全部')
-const rawMode = ref(false)  // 1:1 原色还原模式
 const beadBrands = ref([])
 const allColors = ref([])
 
@@ -236,32 +287,26 @@ const gridResult = ref(null)
 const colorCount = ref(0)
 const previewCanvas = ref(null)
 
-const cropStyle = computed(() => ({
-  left: cropX.value + 'px', top: cropY.value + 'px',
-  width: cropW.value + 'px', height: cropH.value + 'px'
-}))
+const cropStyle = computed(() => cropCtrl.cropStyle.value)
+const handles = computed(() => cropCtrl.handles.value)
 
-const imgTransform = computed(() => ({
-  transform: `scale(${scale.value}) rotate(${rotation.value}deg)`,
-  transformOrigin: 'center center'
-}))
-
-const previewStyle = computed(() => {
-  if (!imgLoaded.value) return {}
+const imgTransform = computed(() => {
+  const s = fitScale.value * imgZoom.value
   return {
-    width: (imgNaturalW.value * scale.value) + 'px',
-    height: (imgNaturalH.value * scale.value) + 'px'
+    width: (imgNaturalW.value * s) + 'px',
+    height: (imgNaturalH.value * s) + 'px',
+    transform: `translate(${imgPanX.value}px, ${imgPanY.value}px)`,
+    transformOrigin: '0 0'
   }
 })
 
-const handles = computed(() => {
-  if (!cropW.value) return []
-  return [
-    { handle: 'nw', left: '0%', top: '0%', cursor: 'nwse-resize' },
-    { handle: 'ne', left: '100%', top: '0%', cursor: 'nesw-resize' },
-    { handle: 'sw', left: '0%', top: '100%', cursor: 'nesw-resize' },
-    { handle: 'se', left: '100%', top: '100%', cursor: 'nwse-resize' },
-  ]
+const previewStyle = computed(() => {
+  if (!imgLoaded.value) return {}
+  const s = fitScale.value * imgZoom.value
+  return {
+    width: (imgNaturalW.value * s) + 'px',
+    height: (imgNaturalH.value * s) + 'px'
+  }
 })
 
 // Q版风格
@@ -283,8 +328,13 @@ onMounted(async () => {
   try {
     const res = await API.get('/api/beads/colors', false)
     allColors.value = res.data || []
-    beadBrands.value = [...new Set(allColors.value.map(c => c.brand))]
+    beadBrands.value = [...new Set(allColors.value.map(c => c.brand))].sort()
   } catch { /* ignore */ }
+})
+
+// 参数变更时实时更新预览
+watch([brand, targetW, targetH], () => {
+  updatePreview()
 })
 
 function onFileSelect(e) {
@@ -299,36 +349,66 @@ function onImageLoad() {
   const img = previewImg.value; if (!img) return
   imgNaturalW.value = img.naturalWidth
   imgNaturalH.value = img.naturalHeight
-  const s = Math.min(1, 500 / Math.max(img.naturalWidth, img.naturalHeight))
-  scale.value = s
-
-  // 初始裁剪区域：居中正方形
-  const size = Math.min(img.naturalWidth, img.naturalHeight) * 0.8 * s
-  cropW.value = size; cropH.value = size
-  cropX.value = (img.naturalWidth * s - size) / 2
-  cropY.value = (img.naturalHeight * s - size) / 2
+  // 根据容器大小计算合适的显示比例（最大边占容器 70%）
+  const container = img.closest('.flex-1')
+  const maxW = (container?.clientWidth || 800) * 0.7
+  const maxH = (container?.clientHeight || 600) * 0.7
+  fitScale.value = Math.min(1, maxW / img.naturalWidth, maxH / img.naturalHeight)
+  imgZoom.value = 1
+  imgPanX.value = 0
+  imgPanY.value = 0
+  // 初始化裁剪区域（居中正方形，占图片短边 80%）
+  cropCtrl.setImageSize(img.naturalWidth, img.naturalHeight, fitScale.value)
+  cropCtrl.initCrop()
   imgLoaded.value = true
-
   nextTick(updatePreview)
 }
 
 function updatePreview() {
-  if (!imgLoaded.value) return
-  // 简化预览：随机生成颜色块作为预览效果
-  const colors = allColors.value.filter(c => c.brand === brand.value)
-  if (!colors.length) return
-  const preview = []
-  const w = Math.min(targetW.value, 20), h = Math.min(targetH.value, 20)
-  for (let r = 0; r < h; r++) {
+  if (!imgLoaded.value || !previewImg.value) return
+  const img = previewImg.value
+  const tw = targetW.value, th = targetH.value
+  // 用离屏 canvas 采样原始图片 → 缩放到目标尺寸 → 匹配珠子颜色
+  const offscreen = document.createElement('canvas')
+  offscreen.width = tw; offscreen.height = th
+  const octx = offscreen.getContext('2d')
+  octx.drawImage(img, 0, 0, tw, th)
+  const imgData = octx.getImageData(0, 0, tw, th)
+
+  // 加载当前品牌的颜色库用于匹配
+  const palette = (brand.value === '全部' ? allColors.value : allColors.value.filter(c => c.brand === brand.value))
+  if (!palette.length) return
+
+  // 构建颜色查找表（hex → 颜色对象）
+  const colorMap = palette.reduce((m, c) => { m[c.hex.toUpperCase()] = c; return m }, {})
+
+  const grid = []
+  const usedHexes = new Set()
+  for (let r = 0; r < th; r++) {
     const row = []
-    for (let c = 0; c < w; c++) {
-      row.push(colors[Math.floor(Math.random() * colors.length)])
+    for (let c = 0; c < tw; c++) {
+      const i = (r * tw + c) * 4
+      const pr = imgData.data[i], pg = imgData.data[i + 1], pb = imgData.data[i + 2], pa = imgData.data[i + 3]
+      if (pa < 128) { row.push(null); continue }
+      // 简易加权欧几里得距离匹配最近珠子颜色
+      let best = palette[0], bestDist = Infinity
+      for (const bc of palette) {
+        const hex = bc.hex.replace('#', '')
+        const br = parseInt(hex.substring(0, 2), 16)
+        const bg = parseInt(hex.substring(2, 4), 16)
+        const bb = parseInt(hex.substring(4, 6), 16)
+        const dr = pr - br, dg = pg - bg, db = pb - bb
+        const dist = dr * dr * 2 + dg * dg * 3 + db * db * 1  // 人眼对绿色更敏感
+        if (dist < bestDist) { bestDist = dist; best = bc }
+      }
+      row.push(best)
+      usedHexes.add(best.hex.toUpperCase())
     }
-    preview.push(row)
+    grid.push(row)
   }
-  gridPreview.value = preview
-  colorCount.value = new Set(preview.flat().map(c => c.hex)).size
-  renderPreviewCanvas(preview, w, h)
+  gridPreview.value = grid
+  colorCount.value = usedHexes.size
+  renderPreviewCanvas(grid, tw, th)
 }
 
 function renderPreviewCanvas(grid, w, h) {
@@ -352,44 +432,13 @@ function renderPreviewCanvas(grid, w, h) {
   ctx.putImageData(img, 0, 0)
 }
 
-// 简单的裁剪调整
-let resizeHandle = null
-function startResize(e, handle) {
-  e.preventDefault(); e.stopPropagation()
-  resizeHandle = { handle, startX: e.clientX, startY: e.clientY, cx: cropX.value, cy: cropY.value, cw: cropW.value, ch: cropH.value }
-  document.addEventListener('pointermove', onResizeMove)
-  document.addEventListener('pointerup', onResizeEnd)
-}
-
-function onResizeMove(e) {
-  if (!resizeHandle) return
-  const dx = e.clientX - resizeHandle.startX, dy = e.clientY - resizeHandle.startY
-  const { handle, cx, cy, cw, ch } = resizeHandle
-  if (handle.includes('e')) cropW.value = Math.max(20, cw + dx)
-  if (handle.includes('w')) { cropX.value = cx + dx; cropW.value = Math.max(20, cw - dx) }
-  if (handle.includes('s')) cropH.value = Math.max(20, ch + dy)
-  if (handle.includes('n')) { cropY.value = cy + dy; cropH.value = Math.max(20, ch - dy) }
-  updatePreview()
-}
-
-function onResizeEnd() {
-  resizeHandle = null
-  document.removeEventListener('pointermove', onResizeMove)
-  document.removeEventListener('pointerup', onResizeEnd)
-}
-
 // 生成图纸 — 上传原始文件 + 裁剪参数，后端完成全部图片处理
-// 管道：引导滤波 → Sharp 缩放 → Lab 色彩量化 + Floyd-Steinberg 抖动 → 珠子匹配
 async function generate() {
   if (!originalFile.value || !imgLoaded.value) return
   generating.value = true
   try {
-    const sx = Math.round(cropX.value / scale.value)
-    const sy = Math.round(cropY.value / scale.value)
-    const sw = Math.round(cropW.value / scale.value)
-    const sh = Math.round(cropH.value / scale.value)
-
-    if (sw <= 0 || sh <= 0) {
+    const oc = cropCtrl.getOriginalCrop()
+    if (oc.w <= 0 || oc.h <= 0) {
       toast.show('请先调整裁剪区域'); generating.value = false; return
     }
 
@@ -397,20 +446,19 @@ async function generate() {
     form.append('file', originalFile.value)
     form.append('targetWidth', String(targetW.value))
     form.append('targetHeight', String(targetH.value))
-    form.append('cropX', String(sx))
-    form.append('cropY', String(sy))
-    form.append('cropW', String(sw))
-    form.append('cropH', String(sh))
+    form.append('cropX', String(oc.x))
+    form.append('cropY', String(oc.y))
+    form.append('cropW', String(oc.w))
+    form.append('cropH', String(oc.h))
     form.append('brand', brand.value)
-    if (rawMode.value) form.append('raw', 'true')
     if (qStyle.value) form.append('qStyle', qStyle.value)
 
     const res = await API.upload('/api/image-to-grid', form, auth.isLoggedIn.value)
     if (res.code === 200) {
       gridResult.value = res.data
       sessionStorage.setItem('imported_grid', JSON.stringify(res.data))
+      sessionStorage.setItem('import_toast', '图片已转换为拼豆图纸！')
       router.replace('/editor')
-      nextTick(() => toast.show('图片已转换为拼豆图纸！'))
     } else {
       toast.show('转换失败: ' + (res.message || '请重试'))
     }

@@ -10,12 +10,24 @@ import { rgbToOklab, oklabDist } from '../utils/colorSpace.js'
  * 增强图像预处理（方案四）
  * 自适应二值化 + 对比度增强 + 噪声去除
  */
-export async function preprocessForOCR(imagePath) {
+export async function preprocessForOCR(imagePath, crop = null) {
   const sharp = (await import('sharp')).default
   const meta = await sharp(imagePath).metadata()
+  let pipeline = sharp(imagePath)
 
-  const buffer = await sharp(imagePath)
-    .resize(Math.min(meta.width, 1600), Math.min(meta.height, 1600), { fit: 'inside' })
+  // 裁剪（确保不超出边界）
+  if (crop && crop.width > 0 && crop.height > 0) {
+    const left = Math.max(0, crop.left)
+    const top = Math.max(0, crop.top)
+    const width = Math.min(crop.width, meta.width - left)
+    const height = Math.min(crop.height, meta.height - top)
+    if (width > 0 && height > 0) {
+      pipeline = pipeline.extract({ left, top, width, height })
+    }
+  }
+
+  const buffer = await pipeline
+    .resize(Math.min(crop?.width || 1600, 1600), Math.min(crop?.height || 1600, 1600), { fit: 'inside' })
     .greyscale()                    // 灰度化
     .normalize()                    // 对比度拉伸
     .median(3)                      // 中值滤波去噪
@@ -23,7 +35,8 @@ export async function preprocessForOCR(imagePath) {
     .linear(1.1, -(128 * 0.1))    // 提亮 + 增对比
     .toBuffer()
 
-  return { buffer, width: Math.min(meta.width, 1600), height: Math.min(meta.height, 1600) }
+  const outMeta = await sharp(buffer).metadata()
+  return { buffer, width: outMeta.width, height: outMeta.height }
 }
 
 /**
@@ -71,21 +84,38 @@ export function calculateConfidence(grid, ocrResults, imagePixels, w, h, cellW, 
  * 流程：检测网格 → 提取色号区域 → Tesseract OCR → 匹配珠子颜色
  */
 export async function recognizeBeadPattern(imagePath, opts = {}) {
-  const { gridRows, gridCols, brand, raw } = opts
+  const { gridRows, gridCols, brand, raw, crop } = opts
 
   // 加载珠子颜色库
   const beadColors = loadBeadColors(brand)
 
   // 获取图片原始尺寸和像素数据
   const sharp = (await import('sharp')).default
-  const metadata = await sharp(imagePath).metadata()
+  const imgMeta = await sharp(imagePath).metadata()
+  const imgW = imgMeta.width
+  const imgH = imgMeta.height
+
+  // 计算实际裁剪区域（确保不超出图片边界）
+  let extractRegion = { left: 0, top: 0, width: imgW, height: imgH }
+  if (crop && crop.width > 0 && crop.height > 0) {
+    extractRegion = {
+      left: Math.max(0, Math.min(crop.left, imgW - 1)),
+      top: Math.max(0, Math.min(crop.top, imgH - 1)),
+      width: Math.min(crop.width, imgW - Math.max(0, crop.left)),
+      height: Math.min(crop.height, imgH - Math.max(0, crop.top))
+    }
+  }
+  if (extractRegion.width <= 0 || extractRegion.height <= 0) {
+    extractRegion = { left: 0, top: 0, width: imgW, height: imgH }
+  }
 
   // 检测网格线和色号：先缩放到合适尺寸方便OCR
-  const ocrWidth = Math.min(metadata.width, 1200)
-  const ocrHeight = Math.round(ocrWidth * (metadata.height / metadata.width))
+  const ocrWidth = Math.min(extractRegion.width, 1200)
+  const ocrHeight = Math.round(ocrWidth * (extractRegion.height / extractRegion.width))
 
-  // 提取原始像素用于颜色分析
+  // 提取像素用于颜色分析
   const { data: rawPixels, info: rawInfo } = await sharp(imagePath)
+    .extract(extractRegion)
     .resize(ocrWidth, ocrHeight, { fit: 'fill', kernel: 'nearest' })
     .removeAlpha()
     .raw()
