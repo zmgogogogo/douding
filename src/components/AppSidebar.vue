@@ -158,9 +158,9 @@ function goProfile() {
 }
 .menu-item:hover { @apply bg-slate-50 text-slate-700; }
 .menu-item.active {
-  @apply bg-blue-50 text-[#2563eb] font-semibold;
+  @apply bg-green-50 text-green-600 font-semibold;
 }
-.menu-item.active:hover { @apply bg-blue-100 text-[#2563eb]; }
+.menu-item.active:hover { @apply bg-green-100 text-green-600; }
 .logout-btn {
   @apply text-slate-400 hover:text-red-500;
 }

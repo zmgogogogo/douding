@@ -31,8 +31,8 @@
             <div class="text-[11px] font-semibold text-[var(--ui-text-primary)] truncate">{{ curColor?.name || '未选择' }}</div>
             <div class="text-[10px] text-[var(--ui-text-tertiary)] font-mono">{{ curColor?.hex || '–' }}</div>
           </div>
-          <button class="text-[9px] text-[var(--ui-text-tertiary)] hover:text-[var(--ui-text-primary)] px-1.5 py-0.5 rounded bg-[var(--ui-bg-tertiary)]"
-            @click="swapFgBg" title="交换前景色/背景色">X</button>
+          <!-- V3.0 阶段一暂不实现背景色互换，隐藏按钮 -->
+          <!-- <button class="text-[9px] ... @click="swapFgBg">X</button> -->
         </div>
       </div>
 
@@ -70,6 +70,15 @@
             :style="{ background: c.hex }" :title="c.name"
             @click="$emit('selectColor', c)" />
         </div>
+        <!-- 豆仓限定开关 -->
+        <label v-if="Object.keys(inventory).length" class="flex items-center gap-1.5 cursor-pointer">
+          <input type="checkbox" :checked="warehouseOnly"
+            class="w-3 h-3 rounded border-slate-300 text-[var(--ui-accent)]"
+            @change="$emit('update:warehouseOnly', $event.target.checked)" />
+          <span class="text-[10px] text-[var(--ui-text-tertiary)]">
+            📦 仅豆仓颜色 ({{ Object.values(inventory).filter(v=>v>0).length }}色)
+          </span>
+        </label>
       </div>
 
       <!-- 颜色网格 -->
@@ -77,13 +86,23 @@
         <div class="grid grid-cols-7 gap-1">
           <button v-for="c in colors" :key="c.id"
             class="aspect-square rounded-lg transition-all duration-150 relative hover:scale-115 hover:z-10 hover:shadow-md flex items-end justify-center overflow-hidden"
-            :class="curColor?.id === c.id ? 'ring-2 ring-[var(--ui-accent)] ring-offset-1 scale-110 z-10' : 'ring-1 ring-black/5'"
-            :title="c.name + ' ' + c.hex"
+            :class="[
+              curColor?.id === c.id ? 'ring-2 ring-[var(--ui-accent)] ring-offset-1 scale-110 z-10' : 'ring-1 ring-black/5',
+              getStock(c.id) === 0 ? 'opacity-50 ring-red-400' : ''
+            ]"
+            :title="c.name + ' ' + c.hex + (getStock(c.id) != null ? ' · 库存' + getStock(c.id) : '')"
             @click="$emit('selectColor', c)">
             <div class="checkerboard-bg absolute inset-0 rounded-lg" />
             <div class="absolute inset-0 rounded-lg" :style="{ background: c.hex }" />
             <span class="relative text-[7px] font-semibold text-white/90 bg-black/25 rounded-sm px-0.5 leading-tight mb-0.5 select-none"
               style="text-shadow: 0 1px 2px rgba(0,0,0,0.4)">{{ c.name.length > 4 ? c.name.slice(0,4) : c.name }}</span>
+            <!-- 库存徽标 -->
+            <span v-if="getStock(c.id) != null && getStock(c.id) > 0"
+              class="absolute top-0.5 right-0.5 text-[7px] font-bold bg-white/90 text-green-600 rounded-full
+                     w-3.5 h-3.5 flex items-center justify-center shadow-sm select-none"
+              :class="getStock(c.id) <= 50 ? 'text-amber-600' : ''">
+              {{ getStock(c.id) >= 100 ? '✓' : '' }}
+            </span>
           </button>
         </div>
       </div>
@@ -203,7 +222,7 @@
     <!-- ========== 色板面板 ========== -->
     <div v-if="activeTab === 'swatch'" class="flex-1 flex flex-col overflow-hidden">
       <div class="p-2 border-b border-[var(--ui-border)]">
-        <select class="w-full h-7 border border-[var(--ui-border)] rounded-md text-[10px] px-1.5 bg-[var(--ui-bg-base)] text-[var(--ui-text-primary)] outline-none">
+        <select class="w-full h-7 border border-[var(--ui-border)] rounded-md text-[10px] px-1.5 bg-[var(--ui-bg-base)] text-[var(--ui-text-primary)] outline-none cursor-not-allowed opacity-50" disabled title="色板切换功能即将开放">
           <option>官方色板</option>
           <option>自定义色板</option>
         </select>
@@ -315,6 +334,8 @@ const props = defineProps({
   brandColorCounts: { type: Object, default: () => ({}) },
   searchText: { type: String, default: '' },
   recentColors: { type: Array, default: () => [] },
+  inventory: { type: Object, default: () => ({}) },
+  warehouseOnly: { type: Boolean, default: false },
 
   // 图层面板
   layers: { type: Array, default: () => [] },
@@ -340,6 +361,7 @@ const emit = defineEmits([
   'update:activeTab',
   'update:brand', 'update:seriesActive', 'update:searchText', 'update:brushSize',
   'selectColor', 'highlightColor',
+  'update:warehouseOnly',
   'addLayer', 'removeLayer', 'selectLayer', 'toggleVisibility', 'toggleLock',
   'setOpacity', 'setBlendMode',
   'addMask', 'removeMask', 'applyMask', 'toggleMaskEdit',
@@ -348,6 +370,12 @@ const emit = defineEmits([
 ])
 
 const statsExpanded = ref(false)
+
+/** 获取某颜色的库存量，未加载库存返回 null */
+function getStock(colorId) {
+  const qty = props.inventory[colorId]
+  return qty != null ? qty : null
+}
 
 const selectedLayer = computed(() =>
   props.layers.find(l => l.id === props.currentLayerId) || null
@@ -388,11 +416,5 @@ function layerPreviewColor(layer) {
 function getStepLabel(i) {
   if (i === 0) return '初始状态'
   return `步骤 ${i}`
-}
-
-// 交换前景色（暂时无背景色概念，仅占位）
-function swapFgBg() {
-  // V3.0 文档 5.1：前景色/背景色互换，按 X 键
-  // 阶段一暂不实现背景色，仅做占位
 }
 </script>

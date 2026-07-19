@@ -118,6 +118,7 @@ const MAX_HISTORY = 200
 // 珠子数据
 const beadData = ref([])       // 从服务器加载的颜色列表
 const inventory = ref({})      // color_id -> quantity
+const warehouseOnly = ref(false) // 仅显示豆仓已有颜色
 
 // 保存状态
 const editId = ref(null)
@@ -201,6 +202,11 @@ const filteredColors = computed(() => {
   // 仅显示有编号的色卡（名称中包含数字，如 S01、H01、M-01）
   if (codeOnly.value) {
     result = result.filter(c => /\d/.test(c.name))
+  }
+
+  // 豆仓限定：仅显示库存中有的颜色
+  if (warehouseOnly.value && Object.keys(inventory.value).length > 0) {
+    result = result.filter(c => inventory.value[c.id] > 0)
   }
 
   return result
@@ -953,7 +959,7 @@ export function useEditor() {
     guideAutoPlay, guideSpeed, guideGroupBy,
     guideJumpTo, toggleAutoPlay, stopAutoPlay, setGuideSpeed,
     historyArr, historyIdx,
-    beadData, inventory,
+    beadData, inventory, warehouseOnly,
     editId, editTitle, hasUnsavedChanges, lastSavedTime, autoSaveKey,
     showInfo, showSizeDialog, sizeDialogW, sizeDialogH,
     showExportMenu, showColorStats,

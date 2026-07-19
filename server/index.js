@@ -98,6 +98,10 @@ app.use('/api', printRoutes)
 // 版本 + 公告
 app.use('/api', publicRoutes)
 
+// 首页（Banner / 推荐 / 内容流）
+import homeRoutes from './routes/home.js'
+app.use('/api', homeRoutes)
+
 // Multer / API 错误处理（避免返回 HTML 导致前端 JSON 解析失败）
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

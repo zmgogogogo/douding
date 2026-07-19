@@ -107,8 +107,8 @@ export class CanvasRenderer {
     const w = this.gridW, h = this.gridH
     const ctx = this.ctx
 
-    // 清空 + 底板色
-    ctx.fillStyle = '#e8eaed'
+    // 清空 + 底板色（白色底板，珠子绘制区域）
+    ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, w * z, h * z)
 
     // 按颜色分组，合批渲染

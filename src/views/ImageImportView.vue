@@ -134,6 +134,21 @@
             </div>
           </section>
 
+          <!-- 豆仓限定模式 -->
+          <section>
+            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+              📦 豆仓限定 <span class="text-primary font-normal normal-case tracking-normal ml-1">— 仅用已有豆色</span>
+            </h3>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input v-model="warehouseLimited" type="checkbox"
+                class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
+              <span class="text-xs text-slate-600">仅使用我豆仓内的颜色生成图纸</span>
+            </label>
+            <p v-if="warehouseLimited" class="text-[10px] text-slate-400 mt-1">
+              开启后，转图结果仅使用你库存中已有的珠子颜色，无需补豆即可制作
+            </p>
+          </section>
+
           <!-- Q 版风格选择 -->
           <section>
             <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
@@ -277,6 +292,7 @@ const selectedStyle = computed(() => qStyles.value.find(s => s.style_id === qSty
 // 参数
 const targetW = ref(58), targetH = ref(58)
 const brand = ref('全部')
+const warehouseLimited = ref(false)
 const beadBrands = ref([])
 const allColors = ref([])
 
@@ -451,6 +467,7 @@ async function generate() {
     form.append('cropW', String(oc.w))
     form.append('cropH', String(oc.h))
     form.append('brand', brand.value)
+    if (warehouseLimited.value) form.append('warehouseLimited', 'true')
     if (qStyle.value) form.append('qStyle', qStyle.value)
 
     const res = await API.upload('/api/image-to-grid', form, auth.isLoggedIn.value)

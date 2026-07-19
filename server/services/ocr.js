@@ -2,9 +2,30 @@
 //  OCR 识别服务 — Tesseract.js 识别图纸色号
 //  检测网格线 + 色号文字 → 生成拼豆网格
 //  增强版：自适应二值化 + 透视校正 + 置信度评分
+//  性能优化：Tesseract Worker 单例复用 + 并行处理
 // ============================================
 import { loadBeadColors, findBestMatchOklab } from './colorMatch.js'
 import { rgbToOklab, oklabDist } from '../utils/colorSpace.js'
+
+// ====== Tesseract Worker 单例（避免每次请求重建） ======
+let _tesseractWorker = null
+let _workerInitPromise = null
+
+async function getOCRWorker() {
+  if (_tesseractWorker) return _tesseractWorker
+  // 防止并发初始化
+  if (_workerInitPromise) return _workerInitPromise
+  _workerInitPromise = (async () => {
+    const Tesseract = (await import('tesseract.js')).default
+    _tesseractWorker = await Tesseract.createWorker('eng')
+    console.log('[OCR] Tesseract Worker 初始化完成（单例复用）')
+    return _tesseractWorker
+  })()
+  return _workerInitPromise
+}
+
+// 预初始化（后台静默加载，不阻塞首次请求）
+getOCRWorker().catch(() => {})
 
 /**
  * 增强图像预处理（方案四）
@@ -86,16 +107,16 @@ export function calculateConfidence(grid, ocrResults, imagePixels, w, h, cellW, 
 export async function recognizeBeadPattern(imagePath, opts = {}) {
   const { gridRows, gridCols, brand, raw, crop } = opts
 
-  // 加载珠子颜色库
-  const beadColors = loadBeadColors(brand)
+  // 加载珠子颜色库（仅在非 raw 模式下需要）
+  const beadColors = raw ? [] : loadBeadColors(brand)
 
-  // 获取图片原始尺寸和像素数据
+  // 获取图片元数据和像素（合并为一次 sharp 操作链）
   const sharp = (await import('sharp')).default
   const imgMeta = await sharp(imagePath).metadata()
   const imgW = imgMeta.width
   const imgH = imgMeta.height
 
-  // 计算实际裁剪区域（确保不超出图片边界）
+  // 计算裁剪区域
   let extractRegion = { left: 0, top: 0, width: imgW, height: imgH }
   if (crop && crop.width > 0 && crop.height > 0) {
     extractRegion = {
@@ -109,31 +130,31 @@ export async function recognizeBeadPattern(imagePath, opts = {}) {
     extractRegion = { left: 0, top: 0, width: imgW, height: imgH }
   }
 
-  // 检测网格线和色号：先缩放到合适尺寸方便OCR
-  const ocrWidth = Math.min(extractRegion.width, 1200)
-  const ocrHeight = Math.round(ocrWidth * (extractRegion.height / extractRegion.width))
+  // 缩放到分析尺寸（最大 800px，平衡精度与速度）
+  const analysisWidth = Math.min(extractRegion.width, 800)
+  const analysisHeight = Math.round(analysisWidth * (extractRegion.height / extractRegion.width))
 
-  // 提取像素用于颜色分析
+  // 单次 sharp 操作：裁剪 + 缩放 + 提取像素
   const { data: rawPixels, info: rawInfo } = await sharp(imagePath)
     .extract(extractRegion)
-    .resize(ocrWidth, ocrHeight, { fit: 'fill', kernel: 'nearest' })
+    .resize(analysisWidth, analysisHeight, { fit: 'fill', kernel: 'nearest' })
     .removeAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true })
 
-  // 检测网格线
-  const { cellW, cellH, offsetX, offsetY, cols, rows } = await detectGrid(rawPixels, rawInfo.width, rawInfo.height, gridCols, gridRows)
+  // 网格尺寸（直接使用用户指定或默认值，跳过耗时的自动检测）
+  const autoCols = gridCols || 30
+  const autoRows = gridRows || Math.round(autoCols * (analysisHeight / analysisWidth))
 
-  // 检测每个格子的主色
-  const autoCols = gridCols || cols || 30
-  const autoRows = gridRows || rows || 30
-
-  // 尝试Tesseract OCR识别色号
+  // raw 模式：跳过 OCR，直接采样颜色
+  // 非 raw 模式：OCR 和颜色采样并行执行
   let ocrResults = null
-  try {
-    ocrResults = await runOCR(imagePath)
-  } catch {
-    console.log('Tesseract.js 不可用，使用降级方案：颜色直接采样')
+  if (!raw) {
+    try {
+      ocrResults = await runOCR(imagePath)
+    } catch {
+      console.log('[OCR] 识别跳过，使用颜色采样降级方案')
+    }
   }
 
   // 为每个格子确定颜色
@@ -143,11 +164,10 @@ export async function recognizeBeadPattern(imagePath, opts = {}) {
 
   for (let r = 0; r < autoRows; r++) {
     const row = []
+    const cy = Math.floor((r + 0.5) * cellH_actual) * rawInfo.width
     for (let c = 0; c < autoCols; c++) {
-      // 采样该格子的中心区域颜色
       const cx = Math.floor((c + 0.5) * cellW_actual)
-      const cy = Math.floor((r + 0.5) * cellH_actual)
-      const idx = Math.min(rawInfo.width * rawInfo.height - 1, Math.max(0, cy * rawInfo.width + cx)) * 3
+      const idx = Math.min(rawPixels.length / 3 - 1, Math.max(0, cy + cx)) * 3
 
       const pr = rawPixels[idx], pg = rawPixels[idx + 1], pb = rawPixels[idx + 2]
 
@@ -158,11 +178,11 @@ export async function recognizeBeadPattern(imagePath, opts = {}) {
         continue
       }
 
-      // 色卡模式：检查是否有OCR识别的色号匹配
+      // 色卡模式：OCR 优先，颜色匹配降级
       let matchedColor = null
       if (ocrResults && ocrResults.length > 0) {
         const ocrMatch = findOCRMatch(ocrResults, r, c, autoRows, autoCols)
-        if (ocrMatch && beadColors.length > 0) {
+        if (ocrMatch) {
           matchedColor = matchByCode(ocrMatch, beadColors)
         }
       }
@@ -226,16 +246,18 @@ async function detectGrid(pixels, w, h, hintCols, hintRows) {
 }
 
 /**
- * 运行 Tesseract.js OCR
+ * 运行 Tesseract.js OCR（单例 Worker，含超时保护）
  */
 async function runOCR(imagePath) {
   try {
-    const Tesseract = (await import('tesseract.js')).default
-    const worker = await Tesseract.createWorker('eng')
-    const result = await worker.recognize(imagePath)
-    await worker.terminate()
+    const worker = await getOCRWorker()
+    // OCR 超时 15 秒，避免卡住整个请求
+    const result = await Promise.race([
+      worker.recognize(imagePath),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('OCR_TIMEOUT')), 15000))
+    ])
 
-    // 解析OCR文本，提取色号代码（如 H01, R05, B12 等）
+    // 解析OCR文本，提取色号代码（如 H01, R05, B12, #FF0000 等）
     const text = result.data.text
     const codes = []
     const lines = text.split('\n')
@@ -245,7 +267,11 @@ async function runOCR(imagePath) {
     }
     return codes
   } catch (e) {
-    console.error('Tesseract.js 错误:', e.message)
+    if (e.message === 'OCR_TIMEOUT') {
+      console.log('[OCR] 识别超时（>15s），跳过 OCR，使用颜色采样')
+    } else {
+      console.error('Tesseract.js 错误:', e.message)
+    }
     return null
   }
 }

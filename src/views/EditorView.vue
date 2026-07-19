@@ -295,6 +295,8 @@
         :brandColorCounts="brandColorCounts"
         :searchText="colorSearch"
         :recentColors="recentColors"
+        :inventory="inventory"
+        :warehouseOnly="warehouseOnly"
         :grid="compositeGrid"
         :layers="layers"
         :currentLayerId="currentLayerId"
@@ -312,6 +314,7 @@
         @update:seriesActive="seriesActive = $event"
         @update:searchText="colorSearch = $event"
         @update:brushSize="brushSize = $event"
+        @update:warehouseOnly="warehouseOnly = $event"
         @selectColor="onSelectColor"
         @highlightColor="onHighlightColor"
         @addLayer="addLayer('新图层'); renderAll()"
@@ -442,7 +445,7 @@ const {
   replaceSourceHex,
   guideColorIdx, guideDone, guideColors, guideCurrentColor, guideProgress,
   historyArr, historyIdx,
-  beadData, inventory,
+  beadData, inventory, warehouseOnly,
   editId, editTitle, hasUnsavedChanges, autoSaveKey,
   showInfo, showSizeDialog, sizeDialogW, sizeDialogH,
   showColorStats,
@@ -458,7 +461,7 @@ const {
   maskEditMode,
   addMask, removeMask, applyMask, toggleMaskEnabled, setMaskCell, getMaskHex,
   initGrid, resetEditorSession, getCell, setCell, expandGridToFit,
-  saveSnapshot, undo, redo,
+  saveSnapshot, undo, redo, restoreSnapshot,
   cycleSymmetry, cycleRefOpacity, setRefOpacity, toggleRefLock,
   toggleGuideMode, guidePrev, guideNext,
   guideAutoPlay, guideSpeed, guideGroupBy,
@@ -530,48 +533,89 @@ function onGrayscale() {
 // ---- AI 增强处理 ----
 function onApplyAIEnhance(enhancedGrid) {
   if (!enhancedGrid || !Array.isArray(enhancedGrid)) return
-  // 修改前先保存快照，确保可以撤销 AI 操作
-  saveSnapshot()
-  const layer = layers.value.find(l => l.id === currentLayerId.value)
-  if (!layer) return
-  // 先清空当前图层所有格子，再写入增强结果
-  for (let r = 0; r < gridH.value; r++) {
-    for (let c = 0; c < gridW.value; c++) {
-      layer.grid[r][c] = null
+  try {
+    saveSnapshot()
+    const layer = layers.value.find(l => l.id === currentLayerId.value)
+    if (!layer) return
+    for (let r = 0; r < gridH.value; r++) {
+      for (let c = 0; c < gridW.value; c++) {
+        layer.grid[r][c] = null
+      }
     }
-  }
-  const maxR = Math.min(gridH.value, enhancedGrid.length)
-  const maxC = Math.min(gridW.value, enhancedGrid[0]?.length || 0)
-  for (let r = 0; r < maxR; r++) {
-    for (let c = 0; c < maxC; c++) {
-      if (enhancedGrid[r]?.[c]) layer.grid[r][c] = { ...enhancedGrid[r][c] }
+    const maxR = Math.min(gridH.value, enhancedGrid.length)
+    const maxC = Math.min(gridW.value, enhancedGrid[0]?.length || 0)
+    for (let r = 0; r < maxR; r++) {
+      for (let c = 0; c < maxC; c++) {
+        if (enhancedGrid[r]?.[c]) layer.grid[r][c] = { ...enhancedGrid[r][c] }
+      }
     }
+    hasUnsavedChanges.value = true
+    renderAll()
+  } catch (e) {
+    console.error('AI 增强失败:', e)
+    toast.show('AI 增强处理失败，请重试')
   }
-  renderAll()
 }
 
 function onApplyAIGenerate(newGrid, w, h) {
   if (!newGrid || !Array.isArray(newGrid)) return
-  // 修改前先保存快照
-  saveSnapshot()
-  gridW.value = w || newGrid[0]?.length || gridW.value
-  gridH.value = h || newGrid.length || gridH.value
-  initGrid(gridW.value, gridH.value)
-  const layer = layers.value.find(l => l.id === currentLayerId.value)
-  if (layer) {
-    for (let r = 0; r < gridH.value; r++) {
-      for (let c = 0; c < gridW.value; c++) {
-        if (newGrid[r]?.[c]) layer.grid[r][c] = { ...newGrid[r][c] }
+  try {
+    saveSnapshot()
+    gridW.value = w || newGrid[0]?.length || gridW.value
+    gridH.value = h || newGrid.length || gridH.value
+    initGrid(gridW.value, gridH.value)
+    const layer = layers.value.find(l => l.id === currentLayerId.value)
+    if (layer) {
+      for (let r = 0; r < gridH.value; r++) {
+        for (let c = 0; c < gridW.value; c++) {
+          if (newGrid[r]?.[c]) layer.grid[r][c] = { ...newGrid[r][c] }
+        }
       }
     }
+    hasUnsavedChanges.value = true
+    saveSnapshot(); renderAll()
+  } catch (e) {
+    console.error('AI 生成失败:', e)
+    toast.show('AI 生成处理失败，请重试')
   }
-  saveSnapshot(); renderAll()
 }
 
 function onApplyPalette(colors) {
   if (!colors?.length) return
-  // 将推荐配色方案应用到色板（占位）
-  console.log('[AI] 应用配色方案:', colors.length + '色')
+  // 将推荐配色方案中的颜色逐个匹配到珠子颜色并选中
+  const matched = []
+  for (const c of colors) {
+    const bead = findClosestBead(c.hex || c)
+    if (bead) matched.push(bead)
+  }
+  if (matched.length > 0) {
+    // 将匹配到的颜色加入最近使用
+    for (const m of matched) addRecentColor(m)
+    // 选中第一个匹配颜色
+    curColor.value = matched[0]
+    toast.show(`已应用 ${matched.length} 种配色到色板`)
+  } else {
+    toast.show('未找到匹配的珠子颜色')
+  }
+}
+
+/** 在珠子颜色列表中查找最接近的颜色（简易实现） */
+function findClosestBead(hex) {
+  if (!hex || !beadData.value?.length) return null
+  const targetHex = hex.replace('#', '').toUpperCase()
+  const targetR = parseInt(targetHex.slice(0, 2), 16)
+  const targetG = parseInt(targetHex.slice(2, 4), 16)
+  const targetB = parseInt(targetHex.slice(4, 6), 16)
+  let best = null, bestDist = Infinity
+  for (const b of beadData.value) {
+    const h = b.hex.replace('#', '')
+    const dr = targetR - parseInt(h.slice(0, 2), 16)
+    const dg = targetG - parseInt(h.slice(2, 4), 16)
+    const db = targetB - parseInt(h.slice(4, 6), 16)
+    const dist = dr * dr * 2 + dg * dg * 3 + db * db
+    if (dist < bestDist) { bestDist = dist; best = b }
+  }
+  return best
 }
 
 // ---- 创作入口页状态 ----
@@ -822,23 +866,7 @@ function onJumpToHistory(index) {
   if (index === historyIdx.value) return
   historyIdx.value = index
   restoreSnapshot(historyArr.value[index])
-  // 重新连接 grid 引用
-  const activeLayer = layers.value.find(l => l.id === currentLayerId.value)
-  if (activeLayer) grid.value = activeLayer.grid
   nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
-}
-
-function restoreSnapshot(snapshot) {
-  gridW.value = snapshot.w
-  gridH.value = snapshot.h
-  grid.value = snapshot.grid.map(r => r ? r.map(c => c ? { ...c } : null) : [])
-  if (snapshot.layers) {
-    layers.value = snapshot.layers.map(l => ({
-      ...l,
-      grid: l.grid.map(r => r ? r.map(c => c ? { ...c } : null) : [])
-    }))
-    currentLayerId.value = snapshot.currentLayerId || layers.value[0]?.id
-  }
 }
 
 // ---- 导出 ----
@@ -1064,7 +1092,8 @@ async function saveDesign() {
     const payload = {
       title: editTitle.value, gridWidth: gridW.value, gridHeight: gridH.value,
       gridData: JSON.stringify(cg), beadCount: beadCount.value,
-      colorCount: gridColorStats.value.length
+      colorCount: gridColorStats.value.length,
+      isPublic: true
     }
     if (editId.value) {
       await API.put(`/api/designs/${editId.value}`, payload, true)
@@ -1097,9 +1126,10 @@ function clearAutoSave() {
 }
 
 // ---- 退出 ----
-function exitEditor() {
+async function exitEditor() {
   if (hasUnsavedChanges.value) {
-    if (!window.confirm('有未保存的更改，确定退出吗？')) return
+    const ok = await dialog.confirm('有未保存的更改，确定退出吗？', '退出编辑器')
+    if (!ok) return
   }
   clearAutoSave()
   hasUnsavedChanges.value = false

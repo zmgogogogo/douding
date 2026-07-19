@@ -162,12 +162,80 @@ export function initDB() {
       is_read INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    -- 包装规格库（系统预置 + 用户可扩展）
+    CREATE TABLE IF NOT EXISTS package_specs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      brand TEXT NOT NULL,
+      size REAL NOT NULL,
+      package_name TEXT NOT NULL,
+      default_count INTEGER,
+      default_weight REAL,
+      reference_price REAL,
+      status INTEGER DEFAULT 1
+    );
+
+    -- 多豆仓管理（会员功能）
+    CREATE TABLE IF NOT EXISTS warehouse_info (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      default_spec REAL DEFAULT 5,
+      default_brand TEXT DEFAULT '',
+      is_default INTEGER DEFAULT 0,
+      status INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    -- 用户自定义色号
+    CREATE TABLE IF NOT EXISTS user_custom_colors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      color_name TEXT NOT NULL,
+      hex TEXT NOT NULL,
+      lab_l REAL, lab_a REAL, lab_b REAL,
+      remark TEXT DEFAULT '',
+      is_public INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    -- 心愿单
+    CREATE TABLE IF NOT EXISTS wishlist_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      color_id INTEGER REFERENCES bead_colors(id) ON DELETE SET NULL,
+      custom_color_id INTEGER REFERENCES user_custom_colors(id) ON DELETE SET NULL,
+      priority INTEGER DEFAULT 0,
+      notes TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','purchased','cancelled')),
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    -- 跨品牌同色映射
+    CREATE TABLE IF NOT EXISTS cross_brand_mappings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_color_id INTEGER NOT NULL REFERENCES bead_colors(id) ON DELETE CASCADE,
+      target_color_id INTEGER NOT NULL REFERENCES bead_colors(id) ON DELETE CASCADE,
+      delta_e REAL,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(source_color_id, target_color_id)
+    );
   `)
 
   // 数据库迁移：为旧表安全添加新列（忽略已存在列的错误）
   const migrations = [
     'ALTER TABLE user_bead_inventory ADD COLUMN min_threshold INTEGER DEFAULT 0',
     'ALTER TABLE user_bead_inventory ADD COLUMN transit_quantity INTEGER DEFAULT 0',
+    // 豆仓 V2.0：色板升级 — LAB 色彩空间 + 颜色分类
+    'ALTER TABLE bead_colors ADD COLUMN lab_l REAL',
+    'ALTER TABLE bead_colors ADD COLUMN lab_a REAL',
+    'ALTER TABLE bead_colors ADD COLUMN lab_b REAL',
+    'ALTER TABLE bead_colors ADD COLUMN color_type INTEGER DEFAULT 1',
+    'ALTER TABLE bead_colors ADD COLUMN is_hot INTEGER DEFAULT 0',
+    'ALTER TABLE bead_colors ADD COLUMN is_discontinued INTEGER DEFAULT 0',
+    // 豆仓 V2.0：成本核算 + 分装位置
+    'ALTER TABLE user_bead_inventory ADD COLUMN unit_cost REAL DEFAULT 0',
+    'ALTER TABLE user_bead_inventory ADD COLUMN location TEXT DEFAULT \'\'',
   ]
   for (const sql of migrations) {
     try { db.exec(sql) } catch (e) {

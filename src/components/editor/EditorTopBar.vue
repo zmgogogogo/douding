@@ -39,6 +39,10 @@
         :disabled="!canRedo" @click="$emit('redo')" title="重做 (Ctrl+Y)">
         <RedoIcon :size="16" />
       </button>
+      <!-- 保存 -->
+      <button class="topbar-action-btn" @click="$emit('save')" title="保存 (Ctrl+S)">
+        <SaveIcon :size="16" />
+      </button>
 
       <div class="w-px h-5 bg-[var(--ui-border)] mx-1" />
 

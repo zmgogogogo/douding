@@ -6,7 +6,7 @@
     <!-- Tab 切换 -->
     <div class="flex items-center gap-1 px-4 pt-3 pb-2 border-b border-slate-100 bg-white flex-shrink-0">
       <button v-for="t in tabs" :key="t.key" class="tab-btn" :class="{ active: activeTab === t.key }"
-        @click="activeTab = t.key; activeTab === 'inventory' && loadInventory(); activeTab === 'purchases' && loadPurchaseLists(); activeTab === 'stats' && loadStats()">
+        @click="activeTab = t.key; activeTab === 'purchases' && loadPurchaseLists(); activeTab === 'stats' && loadStats()">
         {{ t.icon }} {{ t.label }}
         <span v-if="t.key === 'inventory' && alertCount" class="tab-badge">{{ alertCount }}</span>
       </button>
@@ -15,118 +15,25 @@
     <!-- ====== 📦 库存管理 ====== -->
     <div v-if="activeTab === 'inventory'" class="flex-1 overflow-y-auto p-4">
       <div id="scan-reader" v-show="scanning" class="max-w-sm mx-auto mb-3 rounded-xl overflow-hidden" />
-      <!-- 顶部操作栏 -->
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-          <h2 class="text-lg font-bold">📦 珠子库存</h2>
-          <span class="text-xs text-slate-400">
-            {{ stats?.totalColors || 0 }}色 · {{ (stats?.totalBeads || 0).toLocaleString() }}颗
-            <span v-if="stats?.totalTransit" class="text-amber-500"> + {{ stats.totalTransit }}运输中</span>
-          </span>
-        </div>
-        <div class="flex gap-2">
-          <button class="btn-sm-outline" @click="startScan">📷 扫码</button>
-          <button class="btn-sm-outline" @click="showAddDialog = true">+ 入库</button>
-          <button class="btn-sm-outline" @click="exportCSV">📥 CSV</button>
-          <button class="btn-sm-outline" @click="loadInventory">🔄</button>
-        </div>
-        <!-- 扫码状态 -->
-        <div v-if="scanning" class="text-[10px] text-blue-500 mt-1">📷 对准条形码...</div>
-        <div v-if="scanResult" class="text-[10px] text-emerald-500 mt-1">✅ {{ scanResult }}</div>
+      <!-- 扫码结果反馈 -->
+      <div v-if="scanResult" class="max-w-sm mx-auto mb-3 px-3 py-2 rounded-lg text-xs text-center font-medium"
+        :class="scanResult.includes('已入库') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'">
+        {{ scanResult }}
       </div>
-
-      <!-- 预警提示条 -->
-      <div v-if="alerts.length" class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-sm">
-        <span class="font-semibold text-amber-700">⚠️ {{ alerts.length }} 种颜色需补豆：</span>
-        <span class="text-amber-600">
-          <span v-if="outOfStock.length">{{ outOfStock.length }}种已用尽</span>
-          <span v-if="outOfStock.length && runningLow.length">，</span>
-          <span v-if="runningLow.length">{{ runningLow.length }}种库存偏低</span>
-        </span>
-      </div>
-
-      <!-- 库存列表 -->
-      <div v-if="inventory.length" class="bg-white rounded-xl border border-slate-100 overflow-hidden">
-        <table class="w-full text-xs">
-          <thead class="bg-slate-50 border-b border-slate-100">
-            <tr class="text-slate-500">
-              <th class="px-3 py-2 text-left w-8">#</th>
-              <th class="px-3 py-2 text-left">颜色</th>
-              <th class="px-3 py-2 text-right w-16">库存</th>
-              <th class="px-3 py-2 text-right w-16">运输中</th>
-              <th class="px-3 py-2 text-right w-12">预警</th>
-              <th class="px-3 py-2 text-right w-20">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(item, i) in inventory" :key="item.color_id"
-              class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
-              :class="{ 'bg-red-50/50': item.quantity === 0 && item.min_threshold > 0, 'bg-amber-50/30': item.quantity > 0 && item.min_threshold > 0 && item.quantity <= item.min_threshold }">
-              <td class="px-3 py-2 text-slate-400">{{ i + 1 }}</td>
-              <td class="px-3 py-2 flex items-center gap-2">
-                <div class="w-5 h-5 rounded ring-1 ring-black/10 flex-shrink-0" :style="{ background: item.hex }" />
-                <span class="font-medium text-slate-700">{{ item.name }}</span>
-                <span class="text-[10px] text-slate-400 font-mono">{{ item.hex }}</span>
-              </td>
-              <td class="px-3 py-2 text-right font-mono font-semibold"
-                :class="item.quantity === 0 && item.min_threshold > 0 ? 'text-red-500' : 'text-slate-700'">
-                {{ item.quantity }}
-              </td>
-              <td class="px-3 py-2 text-right text-slate-400">
-                <span v-if="item.transit_quantity">{{ item.transit_quantity }}</span>
-                <span v-else class="text-slate-300">-</span>
-              </td>
-              <td class="px-3 py-2 text-right">
-                <input type="number" :value="item.min_threshold || ''"
-                  class="w-10 h-6 text-center border border-slate-200 rounded text-[10px] outline-none focus:border-primary"
-                  placeholder="-" min="0"
-                  @blur="setThreshold(item.color_id, $event.target.value)" />
-              </td>
-              <td class="px-3 py-2 text-right">
-                <div class="flex items-center justify-end gap-1">
-                  <input type="number"
-                    class="w-12 h-6 text-center border border-slate-200 rounded text-[10px] outline-none focus:border-primary"
-                    placeholder="数量" min="1"
-                    @keydown.enter="addStock(item.color_id, $event.target.value, $event)" />
-                  <button class="text-[10px] text-primary hover:underline flex-shrink-0"
-                    @click="addStock(item.color_id, 100)">+100</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div v-else class="text-center py-16 text-slate-400">
-        <div class="text-5xl mb-3">📦</div>
-        <p class="text-sm">还没有库存记录，点击"+ 入库"添加珠子</p>
-      </div>
-
-      <!-- 入库弹窗 -->
-      <div v-if="showAddDialog" class="fixed inset-0 z-[150] flex items-center justify-center bg-black/30 backdrop-blur-sm"
-        @click.self="showAddDialog = false">
-        <div class="bg-white rounded-2xl shadow-xl p-5 w-[360px] max-w-[90vw] space-y-4 animate-bounce-in">
-          <h3 class="font-bold text-slate-800">入库珠子</h3>
-          <div class="space-y-2">
-            <select v-model="addForm.colorId" class="w-full h-9 border border-slate-200 rounded-lg text-xs px-2 bg-slate-50">
-              <option :value="null">选择颜色...</option>
-              <option v-for="c in allColors" :key="c.id" :value="c.id">{{ c.brand }} · {{ c.name }} {{ c.hex }}</option>
-            </select>
-            <div class="flex gap-2">
-              <input v-model.number="addForm.quantity" type="number" min="1"
-                class="flex-1 h-9 border border-slate-200 rounded-lg text-xs px-2 text-center" placeholder="数量" />
-              <input v-model.number="addForm.threshold" type="number" min="0"
-                class="w-20 h-9 border border-slate-200 rounded-lg text-xs px-2 text-center" placeholder="预警值" />
-            </div>
-            <input v-model="addForm.note" placeholder="备注（可选）"
-              class="w-full h-9 border border-slate-200 rounded-lg text-xs px-2" />
-          </div>
-          <div class="flex gap-2">
-            <button class="flex-1 h-9 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium" @click="showAddDialog = false">取消</button>
-            <button class="flex-1 h-9 rounded-xl bg-primary text-white text-xs font-medium" @click="doAddStock">确认入库</button>
-          </div>
-        </div>
-      </div>
+      <ColorCardGrid ref="cardGridRef"
+        @select-color="openColorDetail"
+        @scan="startScan"
+        @export="exportCSV"
+        @updated="onInventoryUpdated" />
     </div>
+    <!-- 色号详情弹窗 -->
+    <ColorDetailDialog
+      :color-id="detailColorId"
+      :visible="showDetailDialog"
+      :inventory-item="detailItem"
+      @close="showDetailDialog = false"
+      @updated="onInventoryUpdated"
+      @select-substitute="onSelectSubstitute" />
 
     <!-- ====== 🎨 图纸管理 ====== -->
     <div v-if="activeTab === 'designs'" class="flex flex-1 overflow-hidden">
@@ -194,21 +101,7 @@
         <div class="stat-card"><div class="stat-num text-amber-500">{{ statsData?.overview?.total_in_transit || 0 }}</div><div class="stat-label">运输中</div></div>
         <div class="stat-card"><div class="stat-num text-blue-500">{{ alertCount }}</div><div class="stat-label">需补豆</div></div>
       </div>
-      <div v-if="statsData?.topConsumed?.length" class="bg-white rounded-xl border border-slate-100 p-4">
-        <h3 class="font-semibold text-sm text-slate-700 mb-2">🔥 消耗最多颜色 Top 10</h3>
-        <div class="space-y-1">
-          <div v-for="(c, i) in statsData.topConsumed" :key="i"
-            class="flex items-center gap-2 text-xs">
-            <span class="text-slate-400 w-4">{{ i+1 }}</span>
-            <div class="w-4 h-4 rounded-sm ring-1 ring-black/10" :style="{background:c.hex}" />
-            <span class="flex-1 text-slate-600">{{ c.name }}</span>
-            <span class="font-mono text-slate-500">{{ c.total }}颗</span>
-            <div class="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div class="h-full bg-primary rounded-full" :style="{width: (c.total/(statsData.topConsumed[0]?.total||1)*100)+'%'}" />
-            </div>
-          </div>
-        </div>
-      </div>
+      <StatsCharts />
     </div>
   </div>
   <div v-else class="flex items-center justify-center h-full text-slate-400">请先登录</div>
@@ -222,6 +115,9 @@ import { useAuth } from '@/composables/useAuth.js'
 import { useToast } from '@/composables/useToast.js'
 import { useDialog } from '@/composables/useDialog.js'
 import DesignCard from '@/components/DesignCard.vue'
+import ColorCardGrid from '@/components/inventory/ColorCardGrid.vue'
+import ColorDetailDialog from '@/components/inventory/ColorDetailDialog.vue'
+import StatsCharts from '@/components/inventory/StatsCharts.vue'
 
 let html5QrCode = null
 
@@ -238,16 +134,11 @@ const tabs = [
 ]
 const activeTab = ref('inventory')
 
-// 库存
-const inventory = ref([])
-const stats = ref(null)
-const alerts = ref([])
-const outOfStock = computed(() => alerts.value.filter(i => i.quantity === 0))
-const runningLow = computed(() => alerts.value.filter(i => i.quantity > 0))
-const alertCount = computed(() => alerts.value.length)
-const allColors = ref([])
-const showAddDialog = ref(false)
-const addForm = ref({ colorId: null, quantity: 10, threshold: 0, note: '' })
+// 色号详情弹窗
+const cardGridRef = ref(null)
+const showDetailDialog = ref(false)
+const detailColorId = ref(null)
+const detailItem = ref(null)
 
 // 图纸
 const folders = ref([])
@@ -259,10 +150,36 @@ const purchaseLists = ref([])
 
 // 统计
 const statsData = ref(null)
+const alertCount = ref(0)
 
 // 扫码
 const scanning = ref(false)
 const scanResult = ref('')
+
+// 色号详情
+function openColorDetail(item) {
+  detailColorId.value = item.color_id
+  detailItem.value = item
+  showDetailDialog.value = true
+}
+
+function onInventoryUpdated() {
+  cardGridRef.value?.refresh()
+  loadAlertsForBadge()
+}
+
+function onSelectSubstitute(alt) {
+  // 选中替代色后，打开替代色的详情
+  detailColorId.value = alt.colorId
+  detailItem.value = { color_id: alt.colorId, ...alt }
+}
+
+async function loadAlertsForBadge() {
+  try {
+    const res = await API.get('/api/inventory/alerts', true)
+    if (res.code === 200) alertCount.value = (res.data?.items || []).length
+  } catch (_) {}
+}
 
 async function startScan() {
   if (scanning.value) { stopScan(); return }
@@ -288,7 +205,7 @@ async function startScan() {
         if (found) {
           await API.post('/api/inventory', { colorId: found.id, quantity: 100, note: '扫码入库' }, true)
           scanResult.value = `已入库: ${found.name} +100颗`
-          await loadInventory()
+          cardGridRef.value?.refresh()
           setTimeout(() => { scanResult.value = '' }, 2000)
         } else {
           scanResult.value = `未找到色号: ${searchTerm}`
@@ -333,30 +250,8 @@ onUnmounted(() => { stopScan() })
 
 onMounted(async () => {
   if (!auth.isLoggedIn.value) return
-  await Promise.all([loadInventory(), loadAlerts(), loadAllColors(), loadFolders(), loadDesigns()])
+  await Promise.all([loadAlertsForBadge(), loadFolders(), loadDesigns()])
 })
-
-async function loadInventory() {
-  try {
-    const res = await API.get('/api/inventory', true)
-    if (res.code === 200) { inventory.value = res.data?.items || []; stats.value = res.data?.stats }
-    else toast.show(res.message || '加载库存失败')
-  } catch (e) { toast.show('加载库存失败: ' + (e.message || '网络错误')) }
-}
-
-async function loadAlerts() {
-  try {
-    const res = await API.get('/api/inventory/alerts', true)
-    if (res.code === 200) { alerts.value = res.data.items || [] }
-  } catch (_) {}
-}
-
-async function loadAllColors() {
-  try {
-    const res = await API.get('/api/beads/colors')
-    if (res.code === 200) allColors.value = res.data || []
-  } catch (_) {}
-}
 
 async function loadPurchaseLists() {
   try {
@@ -369,45 +264,6 @@ async function loadStats() {
   try {
     const res = await API.get('/api/inventory/stats', true)
     if (res.code === 200) statsData.value = res.data
-  } catch (_) {}
-}
-
-async function addStock(colorId, qty, event) {
-  if (!qty || qty <= 0) return
-  try {
-    await API.post('/api/inventory', { colorId, quantity: parseInt(qty) }, true)
-    toast.show(`入库 ${qty} 颗`)
-    await loadInventory()
-    if (event) event.target.value = ''
-  } catch (e) { toast.show(e.message) }
-}
-
-async function doAddStock() {
-  if (!addForm.value.colorId) { toast.show('请选择颜色'); return }
-  if (!addForm.value.quantity || addForm.value.quantity <= 0) { toast.show('请输入有效数量'); return }
-  try {
-    const res = await API.post('/api/inventory', {
-      colorId: parseInt(addForm.value.colorId),
-      quantity: parseInt(addForm.value.quantity),
-      minThreshold: addForm.value.threshold || 0,
-      note: addForm.value.note || ''
-    }, true)
-    if (res.code === 200) {
-      toast.show(`入库 ${addForm.value.quantity} 颗`)
-      showAddDialog.value = false
-      addForm.value = { colorId: null, quantity: 10, threshold: 0, note: '' }
-      await loadInventory()
-    } else {
-      toast.show(res.message || '入库失败')
-    }
-  } catch (e) { toast.show(e.message || '入库失败，请稍后重试') }
-}
-
-async function setThreshold(colorId, value) {
-  const v = parseInt(value) || 0
-  try {
-    await API.put(`/api/inventory/${colorId}`, { minThreshold: v }, true)
-    await loadInventory(); await loadAlerts()
   } catch (_) {}
 }
 

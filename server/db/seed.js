@@ -3,9 +3,10 @@
 //  数据来源：maxcleme/beadcolors (GitHub)
 //           HansBug/pindou-color-data (GitHub)
 //           Artkal 官方色卡
-//  收录 9 大品牌 2500+ 种珠子颜色
+//  收录 8 大品牌 1900+ 种珠子颜色
 // ============================================
 import db from './connection.js'
+import { rgbToLab } from '../utils/colorSpace.js'
 
 /** 清空色卡表并重新导入（会清除用户库存等关联数据） */
 export function reseedBeads() {
@@ -23,9 +24,13 @@ export function reseedBeads() {
   seedBeads(true)
 }
 
-/** 预置 9 品牌 × 2500+ 种珠子颜色（涵盖国内外主流品牌） */
+/** 预置 8 品牌 1900+ 种珠子颜色（涵盖国内外主流品牌） */
 export function seedBeads(force = false) {
   const count = db.prepare('SELECT COUNT(*) as c FROM bead_brands').get()
+
+  // 每次启动都检查并回填 LAB 值（幂等，仅更新 NULL 行）
+  backfillLabValues()
+
   if (!force && count.c > 0) return
 
   const brands = [
@@ -2619,4 +2624,104 @@ export function seedBeads(force = false) {
   })
   tx()
   console.log(`珠子数据库已初始化：${brands.length} 个品牌`)
+
+  // 新种子数据后自动回填 LAB 值
+  backfillLabValues()
+  // 预置包装规格数据
+  seedPackageSpecs()
+}
+
+// ============================================
+//  预置包装规格数据
+// ============================================
+function seedPackageSpecs() {
+  const count = db.prepare('SELECT COUNT(*) as c FROM package_specs').get()
+  if (count.c > 0) return
+
+  const specs = [
+    { brand: 'Hama', size: 5, name: '100颗装', count: 100, weight: 10, price: 8 },
+    { brand: 'Hama', size: 5, name: '500颗装', count: 500, weight: 50, price: 30 },
+    { brand: 'Hama', size: 5, name: '1000颗装', count: 1000, weight: 100, price: 55 },
+    { brand: 'Hama', size: 2.6, name: '500颗装', count: 500, weight: 10, price: 35 },
+    { brand: 'Perler', size: 5, name: '100颗装', count: 100, weight: 10, price: 9 },
+    { brand: 'Perler', size: 5, name: '500颗装', count: 500, weight: 50, price: 32 },
+    { brand: 'Perler', size: 5, name: '1000颗装', count: 1000, weight: 100, price: 58 },
+    { brand: 'Artkal', size: 5, name: '100颗装', count: 100, weight: 10, price: 7 },
+    { brand: 'Artkal', size: 5, name: '500颗装', count: 500, weight: 50, price: 28 },
+    { brand: 'Artkal', size: 5, name: '1000颗装', count: 1000, weight: 100, price: 50 },
+    { brand: 'Artkal', size: 2.6, name: '500颗装', count: 500, weight: 10, price: 32 },
+    { brand: 'MARD', size: 5, name: '100颗装', count: 100, weight: 10, price: 6 },
+    { brand: 'MARD', size: 5, name: '500颗装', count: 500, weight: 50, price: 25 },
+    { brand: 'MARD', size: 5, name: '1000颗装', count: 1000, weight: 100, price: 45 },
+    { brand: 'MARD', size: 2.6, name: '500颗装', count: 500, weight: 10, price: 28 },
+  ]
+  const insert = db.prepare('INSERT INTO package_specs (brand, size, package_name, default_count, default_weight, reference_price) VALUES (?,?,?,?,?,?)')
+  for (const s of specs) insert.run(s.brand, s.size, s.name, s.count, s.weight, s.price)
+  console.log(`包装规格已预置：${specs.length} 条`)
+}
+
+// ============================================
+//  根据系列/颜色名称推断颜色类型
+//  基于现有种子数据中系列名关键词匹配
+// ============================================
+function inferColorType(seriesName, colorName) {
+  const text = (seriesName + ' ' + colorName).toLowerCase()
+  // 夜光 / Glow
+  if (/夜光|glow|y系列.*夜光/.test(text)) return 5
+  // 荧光 / Neon
+  if (/荧光|霓虹|neon|n系列.*霓虹/.test(text)) return 2
+  // 透明 / Transparent / Translucent
+  if (/透明|transparent|translucent|r系列.*透明|t系列.*透明/.test(text)) return 3
+  // 金属 / Metallic
+  if (/金属|metallic/.test(text)) return 4
+  // 磨砂 / Matt
+  if (/磨砂|matt/.test(text)) return 6
+  // 其余为基础纯色
+  return 1
+}
+
+// ============================================
+//  批量回填 bead_colors 的 LAB 值 + color_type
+//  仅更新 NULL 字段，已回填的行跳过（幂等）
+// ============================================
+function backfillLabValues() {
+  // 检查是否需要回填
+  const needBackfill = db.prepare(
+    'SELECT COUNT(*) as c FROM bead_colors WHERE lab_l IS NULL'
+  ).get()
+  if (!needBackfill || needBackfill.c === 0) return
+
+  console.log(`开始回填 ${needBackfill.c} 个颜色的 LAB 值...`)
+
+  // 预加载所有系列名（用于 inferColorType）
+  const seriesMap = {}
+  const allSeries = db.prepare('SELECT id, name FROM bead_series').all()
+  for (const s of allSeries) seriesMap[s.id] = s.name
+
+  const colors = db.prepare('SELECT id, series_id, name, hex FROM bead_colors WHERE lab_l IS NULL').all()
+  const update = db.prepare('UPDATE bead_colors SET lab_l=?, lab_a=?, lab_b=?, color_type=? WHERE id=?')
+
+  let count = 0
+  const tx = db.transaction(() => {
+    for (const c of colors) {
+      const hex = c.hex.replace('#', '')
+      if (hex.length !== 6) continue
+      const r = parseInt(hex.substring(0, 2), 16)
+      const g = parseInt(hex.substring(2, 4), 16)
+      const b = parseInt(hex.substring(4, 6), 16)
+      const lab = rgbToLab(r, g, b)
+      const seriesName = seriesMap[c.series_id] || ''
+      const colorType = inferColorType(seriesName, c.name)
+      update.run(
+        Math.round(lab.L * 100) / 100,
+        Math.round(lab.a * 100) / 100,
+        Math.round(lab.b * 100) / 100,
+        colorType,
+        c.id
+      )
+      count++
+    }
+  })
+  tx()
+  console.log(`LAB 值回填完成：${count} 个颜色`)
 }

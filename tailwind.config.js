@@ -8,11 +8,11 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#3b82f6',  // ohmybead 蓝色强调
-          rgb: '59, 130, 246',
-          light: '#dbeafe',
-          lighter: '#eff6ff',
-          dark: '#2563eb',
+          DEFAULT: '#22C55E',  // 拼豆品牌绿色强调
+          rgb: '34, 197, 94',
+          light: '#dcfce7',
+          lighter: '#f0fdf4',
+          dark: '#16a34a',
         },
         surface: {
           DEFAULT: '#ffffff',
@@ -67,8 +67,8 @@ export default {
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
         'glow-pulse': {
-          '0%, 100%': { boxShadow: '0 0 12px rgba(59,130,246,0.15)' },
-          '50%': { boxShadow: '0 0 24px rgba(59,130,246,0.35)' },
+          '0%, 100%': { boxShadow: '0 0 12px rgba(34,197,94,0.15)' },
+          '50%': { boxShadow: '0 0 24px rgba(34,197,94,0.35)' },
         },
         'slide-up': {
           '0%': { transform: 'translateY(100%)' },

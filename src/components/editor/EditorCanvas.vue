@@ -17,7 +17,7 @@
     <canvas ref="globalGridCanvas" class="absolute inset-0 pointer-events-none" style="z-index:0" />
 
     <!-- === 顶层：白底 + 珠子 + 参考图 + 范围网格 + 色号 === -->
-    <canvas ref="mainCanvas" class="absolute" style="background:#e8eaed;z-index:1" />
+    <canvas ref="mainCanvas" class="absolute" style="background:#ffffff;z-index:1" />
 
     <!-- 画笔大小预览 — 网格点阵 -->
     <div v-if="showBrushPreview" class="absolute pointer-events-none z-20"
@@ -474,7 +474,6 @@ function renderGlobalGrid() {
 function initCanvas() {
   if (!mainCanvas.value) {
     console.warn('[EditorCanvas] Canvas 元素未就绪，延迟初始化')
-    // 重试：最多等 500ms
     let retries = 0
     const maxRetries = 10
     const retry = () => {
@@ -489,6 +488,8 @@ function initCanvas() {
     setTimeout(retry, 50)
     return
   }
+  // 幂等：若已初始化则跳过，避免 resize() 清空画布
+  if (renderer) return
   _doInitCanvas()
 }
 
@@ -502,7 +503,7 @@ function _doInitCanvas() {
 }
 
 onMounted(() => {
-  nextTick(() => { initCanvas(); positionCanvas() })
+  nextTick(() => { initCanvas(); renderAll(); positionCanvas() })
 })
 
 watch([() => props.gridW, () => props.gridH], ([w, h]) => {

@@ -27,9 +27,9 @@
   --ui-border-strong: #cbd5e1;
 
   /* 强调色 */
-  --ui-accent: #3b82f6;
-  --ui-accent-hover: #2563eb;
-  --ui-primary: #3b82f6;
+  --ui-accent: #22C55E;
+  --ui-accent-hover: #16a34a;
+  --ui-primary: #22C55E;
 
   /* 状态色 */
   --ui-status-success: #10b981;
@@ -38,8 +38,8 @@
   --ui-status-warning-bg: rgba(245, 158, 11, 0.1);
   --ui-status-danger: #f43f5e;
   --ui-status-danger-bg: rgba(244, 63, 94, 0.1);
-  --ui-status-info: #3b82f6;
-  --ui-status-info-bg: rgba(59, 130, 246, 0.1);
+  --ui-status-info: #22C55E;
+  --ui-status-info-bg: rgba(34, 197, 94, 0.1);
 
   /* ====== 阴影系统（5级） ====== */
   --ui-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
@@ -97,9 +97,9 @@
   --ui-border: #2d3140;
   --ui-border-strong: #404558;
 
-  --ui-accent: #60a5fa;
-  --ui-accent-hover: #93bbfc;
-  --ui-primary: #60a5fa;
+  --ui-accent: #4ade80;
+  --ui-accent-hover: #86efac;
+  --ui-primary: #4ade80;
 
   --ui-status-warning-bg: rgba(245, 158, 11, 0.15);
   --ui-status-danger-bg: rgba(244, 63, 94, 0.15);
@@ -194,7 +194,7 @@
   }
   .chip:hover { @apply bg-slate-100 text-slate-700; }
   .chip.active {
-    @apply bg-blue-50 text-blue-600 border-blue-200 font-semibold;
+    @apply bg-green-50 text-green-600 border-green-200 font-semibold;
   }
 
   /* 像素缩略图 */

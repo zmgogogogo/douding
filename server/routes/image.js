@@ -2,6 +2,7 @@
 //  图片处理路由 — 上传 + 图片转拼豆图纸 + Q版转换
 // ============================================
 import { Router } from 'express'
+import db from '../db/connection.js'
 import { upload } from '../middleware/upload.js'
 import { authRequired, authOptional } from '../middleware/auth.js'
 import { DEFAULT_GRID_SIZE } from '../config.js'
@@ -198,8 +199,38 @@ router.post('/image-to-grid', authOptional, upload.single('file'), async (req, r
       workingPixels = unsharpMask(workingPixels, workingW, workingH, { amount: 0.3, radius: 1, threshold: 0 })
     }
 
-    // 加载珠子颜色
-    const labColors = loadBeadColors(brand)
+    // 加载珠子颜色（支持豆仓限定模式）
+    const warehouseLimited = req.body.warehouseLimited === 'true' || req.body.warehouseLimited === '1'
+    let labColors
+
+    if (warehouseLimited && req.user) {
+      // 豆仓限定模式：仅使用用户库存中已有的颜色作为色板
+      const userColors = db.prepare(`
+        SELECT c.id, c.name, c.hex, b.name as brand, c.lab_l, c.lab_a, c.lab_b
+        FROM user_bead_inventory i
+        JOIN bead_colors c ON i.color_id=c.id
+        JOIN bead_series s ON c.series_id=s.id
+        JOIN bead_brands b ON s.brand_id=b.id
+        WHERE i.user_id=? AND i.quantity>0
+        ORDER BY c.id
+      `).all(req.user.id)
+
+      // 转换为 loadBeadColors 统一格式：{id, name, hex, brand, lab: {L,a,b}, oklab: {L,a,b}}
+      labColors = userColors.map(c => {
+        const hex = c.hex.replace('#', '')
+        const r = parseInt(hex.substring(0, 2), 16)
+        const g = parseInt(hex.substring(2, 4), 16)
+        const b = parseInt(hex.substring(4, 6), 16)
+        return {
+          id: c.id, name: c.name, hex: c.hex, brand: c.brand,
+          lab: { L: c.lab_l || 0, a: c.lab_a || 0, b: c.lab_b || 0 },
+          oklab: rgbToOklab(r, g, b)
+        }
+      })
+      console.log(`豆仓限定模式：${labColors.length} 种颜色`)
+    } else {
+      labColors = loadBeadColors(brand)
+    }
 
     // ============================================
     //  二、核心第一步：语义分区掩码生成

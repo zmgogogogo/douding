@@ -50,6 +50,9 @@
           {{ c.name }} ×{{ c.count }}
         </span>
       </div>
+
+      <!-- 豆仓匹配栏 -->
+      <WarehouseMatchBar v-if="design" :design-id="design.id" :design-title="design.title" />
     </div>
 
     <!-- 加载/错误 -->
@@ -62,6 +65,7 @@
 import { ref, onMounted, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import API from '@/api/index.js'
+import WarehouseMatchBar from '@/components/inventory/WarehouseMatchBar.vue'
 import { useAuth } from '@/composables/useAuth.js'
 import { useToast } from '@/composables/useToast.js'
 import { useDialog } from '@/composables/useDialog.js'
