@@ -38,8 +38,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 后端框架 | Express 4               | Node.js Web 框架            |
 | 数据库   | SQLite (better-sqlite3) | 零配置，嵌入式              |
 | 认证     | JWT (jsonwebtoken)      | 30 天过期                   |
-| 图片处理 | sharp                   | 高性能图片缩放和像素提取    |
+| 图片处理 | sharp + Python FastAPI   | Node.js 代理到 Python 引擎 |
 | 图标库   | Lucide Vue              | 轻量开源图标                |
+| 测试框架 | Vitest                  | 单元测试 + 组件测试         |
+| 代码规范 | ESLint + Prettier       | 统一代码风格                |
 
 ---
 
@@ -59,24 +61,35 @@ douding/
 │   ├── config.js           # 配置常量
 │   ├── db/
 │   │   ├── connection.js   # 数据库连接
-│   │   ├── schema.js       # 建表语句
+│   │   ├── schema.js       # 迁移调度入口（调用 migrate.js）
+│   │   ├── migrate.js      # 版本化迁移引擎
+│   │   ├── migrations.js   # 迁移定义（v1-v4 DDL）
 │   │   └── seed.js         # 珠子数据初始化
 │   ├── middleware/
 │   │   ├── auth.js         # JWT 认证中间件
-│   │   └── upload.js       # Multer 上传配置
+│   │   ├── upload.js       # Multer 上传配置
+│   │   ├── errorHandler.js # 统一错误处理（AppError 捕获）
+│   │   └── logger.js       # 请求日志（方法/路径/耗时）
 │   ├── routes/             # 路由层（参数校验 + 响应格式化）
 │   │   ├── auth.js, beads.js, designs.js, explore.js
 │   │   ├── folders.js, inventory.js, image.js
-│   │   ├── export.js       # 高清导出路由
-│   │   ├── ocr.js          # OCR 识别路由
-│   │   ├── crawler.js      # 外部链接导入路由
-│   │   └── public.js       # 版本 + 公告
+│   │   ├── export.js, ocr.js, crawler.js
+│   │   ├── ai.js, palette.js, print.js, home.js
+│   │   ├── challenges.js   # 每日挑战
+│   │   └── public.js       # 版本 + 公告 + 健康检查
 │   ├── services/           # 业务逻辑层
-│   │   ├── colorMatch.js   # 珠子颜色匹配
-│   │   ├── dither.js       # Floyd-Steinberg 抖动算法
+│   │   ├── colorMatch.js   # CIEDE2000 珠子颜色匹配
 │   │   ├── export.js       # Sharp 高清导出
 │   │   ├── ocr.js          # Tesseract.js OCR
-│   │   └── crawler.js      # 网页爬虫
+│   │   ├── crawler.js      # 网页爬虫
+│   │   └── ... (20+ 模块)
+│   ├── utils/
+│   │   ├── colorSpace.js   # Lab/Oklab/CIEDE2000/hexToRgb
+│   │   ├── helpers.js      # userPublic, formatDesign 等
+│   │   ├── jwt.js          # JWT 签发/验证
+│   │   ├── response.js     # 统一响应格式 (success/fail/paginated)
+│   │   └── AppError.js     # 业务异常类
+│   └── ws/                 # WebSocket 协作
 │   └── utils/
 │       ├── helpers.js      # userPublic, formatDesign 等
 │       ├── jwt.js          # JWT 签发/验证
@@ -135,6 +148,12 @@ npm run dev          # 启动 Vite 开发服务器（前端 :5173）
 node server/index.js # 启动后端（:3456）
 npm run build        # 生产构建到 dist/
 npm start            # 生产模式启动后端 + serve 前端
+npm run lint         # ESLint 代码检查
+npm run lint:fix     # ESLint 自动修复
+npm run format       # Prettier 格式化
+npm run test         # 运行 Vitest 测试
+npm run test:watch   # 测试监听模式
+npm run typecheck    # TypeScript 类型检查
 ```
 
 开发时 Vite 自动代理 `/api` 到后端 `:3456`，避免跨域问题。生产模式后端直接 serve `dist/` 目录。
@@ -256,13 +275,11 @@ user_bead_inventory — user_id, color_id, quantity (联合主键)
 
 ## 颜色匹配算法
 
-加权欧几里得距离（人眼对绿色更敏感）：
+使用 CIEDE2000 色差公式（当前最精确的感知色差算法），在 Oklab 色彩空间中预计算珠子颜色。
 
-```
-distance = dr² × 2 + dg² × 3 + db² × 1
-```
+算法位于 `server/utils/colorSpace.js`（hexToRgb / rgbToLab / rgbToOklab / deltaE2000 / rgbDeltaE2000 / oklabDist）。
 
-遍历所有珠子颜色，取距离最小的作为匹配结果。
+核心服务 `server/services/colorMatch.js` 使用 CIEDE2000 匹配像素到最近珠子颜色。
 
 ---
 
