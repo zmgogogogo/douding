@@ -1,0 +1,47 @@
+# ============================================
+#  豆丁 (Douding) Docker Compose 部署
+#  一键启动：docker-compose up -d
+# ============================================
+
+services:
+  # ---- Node.js 后端 (Express API + 前端静态文件) ----
+  app:
+    build: .
+    container_name: douding-app
+    ports:
+      - '3456:3456'
+    environment:
+      - NODE_ENV=production
+      - PORT=3456
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - REPLICATE_API_KEY=${REPLICATE_API_KEY:-}
+    volumes:
+      # 持久化数据库和上传文件
+      - app-data:/app/public/uploads
+      - ./douding.db:/app/douding.db
+    depends_on:
+      python-engine:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - douding
+
+  # ---- Python 智能转图引擎 (FastAPI + OpenCV) ----
+  python-engine:
+    build:
+      context: ./server-python
+      dockerfile: Dockerfile.python
+    container_name: douding-python
+    ports:
+      - '3457:3457'
+    restart: unless-stopped
+    networks:
+      - douding
+
+volumes:
+  app-data:
+    driver: local
+
+networks:
+  douding:
+    driver: bridge
