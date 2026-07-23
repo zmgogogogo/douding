@@ -2,6 +2,16 @@
 //  色彩空间工具 — RGB ↔ CIE Lab 转换
 // ============================================
 
+/** Hex 颜色 → RGB 分量 */
+export function hexToRgb(hex) {
+  const h = hex.replace('#', '')
+  return {
+    r: parseInt(h.substring(0, 2), 16),
+    g: parseInt(h.substring(2, 4), 16),
+    b: parseInt(h.substring(4, 6), 16),
+  }
+}
+
 /** sRGB → CIE Lab（感知均匀色彩空间） */
 export function rgbToLab(r, g, b) {
   // sRGB 线性化

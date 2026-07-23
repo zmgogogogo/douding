@@ -3,17 +3,7 @@
 //  纯算法实现：调色板推荐 + 和谐度 + 色弱 + 自动填充
 // ============================================
 
-/**
- * 将 hex 颜色转换为 RGB
- */
-function hexToRgb(hex) {
-  const h = hex.replace('#', '')
-  return {
-    r: parseInt(h.substring(0, 2), 16),
-    g: parseInt(h.substring(2, 4), 16),
-    b: parseInt(h.substring(4, 6), 16),
-  }
-}
+import { hexToRgb } from '../utils/colorSpace.js'
 
 /**
  * RGB → HSL（用于色轮计算）

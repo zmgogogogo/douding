@@ -4,6 +4,7 @@
 // ============================================
 import sharp from 'sharp'
 import { loadBeadColors } from './colorMatch.js'
+import { hexToRgb } from '../utils/colorSpace.js'
 
 /**
  * 文字 → 拼豆图案
@@ -293,11 +294,4 @@ function hexDistance(h1, h2) {
   return Math.sqrt((c1.r - c2.r) ** 2 * 2 + (c1.g - c2.g) ** 2 * 3 + (c1.b - c2.b) ** 2)
 }
 
-function hexToRgb(hex) {
-  const h = hex.replace('#', '')
-  return {
-    r: parseInt(h.substring(0, 2), 16),
-    g: parseInt(h.substring(2, 4), 16),
-    b: parseInt(h.substring(4, 6), 16),
-  }
-}
+// hexToRgb 已迁移到 server/utils/colorSpace.js

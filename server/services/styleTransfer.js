@@ -2,6 +2,7 @@
 //  styleTransfer — AI 风格迁移与图案增强（轻量版）
 //  图案简化 + 轮廓增强 + 无缝平铺
 // ============================================
+import { hexToRgb } from '../utils/colorSpace.js'
 
 /**
  * K-Means 颜色聚类 + 图案简化
@@ -243,14 +244,7 @@ function applyNeon(hex) {
 
 // ---- 工具函数 ----
 
-function hexToRgb(hex) {
-  const h = hex.replace('#', '')
-  return {
-    r: parseInt(h.substring(0, 2), 16),
-    g: parseInt(h.substring(2, 4), 16),
-    b: parseInt(h.substring(4, 6), 16),
-  }
-}
+// hexToRgb 已迁移到 server/utils/colorSpace.js
 
 function hexDist(h1, h2) {
   const c1 = hexToRgb(h1),

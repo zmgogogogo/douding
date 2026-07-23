@@ -29,6 +29,8 @@ import crawlerRoutes from './routes/crawler.js'
 import aiRoutes from './routes/ai.js'
 import paletteRoutes from './routes/palette.js'
 import publicRoutes from './routes/public.js'
+import { responseMiddleware } from './utils/response.js'
+import { errorHandler } from './middleware/errorHandler.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -74,8 +76,9 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter)
 app.use('/api/auth/register', authLimiter)
 
-// Body 解析
+// Body 解析 + 响应格式统一
 app.use(express.json({ limit: '50mb' }))
+app.use(responseMiddleware)
 app.use(express.static(path.join(__dirname, '..', 'public')))
 
 // 数据库初始化
@@ -192,20 +195,8 @@ app.use('/api', publicRoutes)
 import homeRoutes from './routes/home.js'
 app.use('/api', homeRoutes)
 
-// Multer / API 错误处理（避免返回 HTML 导致前端 JSON 解析失败）
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(413).json({ code: 413, message: '图片过大，请压缩后重试（最大 30MB）' })
-    }
-    return res.status(400).json({ code: 400, message: err.message || '上传失败' })
-  }
-  if (req.path.startsWith('/api/')) {
-    console.error('API 错误:', err)
-    return res.status(500).json({ code: 500, message: err.message || '服务器错误' })
-  }
-  next(err)
-})
+// 统一错误处理（捕获 AppError + Multer 错误 + 未预期异常）
+app.use(errorHandler)
 
 // ============================================
 //  生产模式：Serve 构建后的前端 SPA
