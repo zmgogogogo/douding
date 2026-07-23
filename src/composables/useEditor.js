@@ -66,7 +66,7 @@ const clipboard = ref(null) // {grid, w, h}
 
 // 颜色搜索和最近使用
 const colorSearch = ref('')
-const codeOnly = ref(true) // 默认仅显示有编号色卡
+// 强制仅显示有正式编号的色卡（名称中含数字，如 S01、H01、A-1 等）
 const recentColors = ref([]) // 最近使用的颜色 [{name, hex, brand, series}]
 const MAX_RECENT = 12
 
@@ -200,10 +200,8 @@ const filteredColors = computed(() => {
     )
   }
 
-  // 仅显示有编号的色卡（名称中包含数字，如 S01、H01、M-01）
-  if (codeOnly.value) {
-    result = result.filter((c) => /\d/.test(c.name))
-  }
+  // 仅显示有正式编号的色卡（名称中含数字，如 S01、H01、A1）
+  result = result.filter((c) => /\d/.test(c.name))
 
   // 豆仓限定：仅显示库存中有的颜色
   if (warehouseOnly.value && Object.keys(inventory.value).length > 0) {
@@ -1101,7 +1099,6 @@ export function useEditor() {
     colorSearch,
     recentColors,
     addRecentColor,
-    codeOnly,
     mousePos,
     crossCol,
     crossRow,

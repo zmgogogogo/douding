@@ -620,7 +620,6 @@ const {
   colorSearch,
   recentColors,
   addRecentColor,
-  codeOnly,
   autoFitGrid,
   layers,
   currentLayerId,
