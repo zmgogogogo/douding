@@ -954,10 +954,10 @@ function toggleFullscreen() {
 }
 
 function onInvertColors() {
-  const comp = getCompositeGrid()
+  // 修复：遍历当前图层而非复合网格，确保 setCell 操作正确的图层
   for (let r = 0; r < gridH.value; r++) {
     for (let c = 0; c < gridW.value; c++) {
-      const cell = comp[r]?.[c]
+      const cell = getCell(r, c)
       if (cell?.hex) {
         const h = cell.hex.replace('#', '')
         const inv =
@@ -966,7 +966,6 @@ function onInvertColors() {
           (255 - parseInt(h.slice(2, 4), 16)).toString(16).padStart(2, '0') +
           (255 - parseInt(h.slice(4, 6), 16)).toString(16).padStart(2, '0')
         setCell(r, c, { ...cell, hex: inv })
-        getCell(r, c) // trigger reactivity
       }
     }
   }

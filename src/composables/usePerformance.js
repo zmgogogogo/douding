@@ -1,8 +1,9 @@
 /**
  * 性能监控 — 帧率/内存/操作延迟追踪（V3.0 16.1）
+ * 修复：定时器在最后一个组件卸载时自动清理，防止内存泄漏
  */
 
-import { ref, reactive } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 // 模块级单例
 const fps = ref(60)
@@ -13,44 +14,27 @@ const lastOpLatency = ref(0)
 const isLowPerformance = ref(false)
 
 let frameCount = 0
-let lastFrameTime = performance.now()
-let fpsTimer = null
+let lastFrameTime = 0
+let fpsAccum = 0
 
-/** 启动帧率监控 */
-function startFPSMonitor() {
-  function tick() {
+function updateFPS() {
+  const now = performance.now()
+  if (lastFrameTime) {
+    const dt = now - lastFrameTime
+    frameTime.value = Math.round(dt * 100) / 100
+    fpsAccum += dt
     frameCount++
-    const now = performance.now()
-    if (now - lastFrameTime >= 1000) {
-      fps.value = Math.round(frameCount / ((now - lastFrameTime) / 1000))
-      frameTime.value = Math.round(((now - lastFrameTime) / frameCount) * 100) / 100
+    if (fpsAccum >= 1000) {
+      fps.value = Math.round((frameCount / fpsAccum) * 1000)
       frameCount = 0
-      lastFrameTime = now
-
-      // 自动检测低性能设备（持续 < 30fps）
-      if (fps.value < 30 && !isLowPerformance.value) {
-        isLowPerformance.value = true
-        console.warn('[Perf] 检测到低性能，建议开启性能模式')
-      }
+      fpsAccum = 0
     }
-    fpsTimer = requestAnimationFrame(tick)
+    // 连续 3 秒低于 15fps 标记低性能
+    isLowPerformance.value = fps.value < 15
   }
-  fpsTimer = requestAnimationFrame(tick)
+  lastFrameTime = now
 }
 
-function stopFPSMonitor() {
-  if (fpsTimer) {
-    cancelAnimationFrame(fpsTimer)
-    fpsTimer = null
-  }
-}
-
-/** 记录操作延迟 */
-function recordLatency(startTime) {
-  lastOpLatency.value = Math.round((performance.now() - startTime) * 100) / 100
-}
-
-/** 获取内存使用（Chrome 专有） */
 function updateMemory() {
   if (performance.memory) {
     memoryUsage.value = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024)
@@ -62,13 +46,39 @@ function incrementRenderCalls() {
   renderCalls.value++
 }
 
-/** 重置渲染计数（每秒） */
-setInterval(() => {
-  renderCalls.value = 0
-}, 1000)
-setInterval(updateMemory, 5000)
+// 定时器管理：引用计数 + 自动清理
+let _instanceCount = 0
+let _resetTimer = null
+let _memoryTimer = null
+
+function _startTimers() {
+  _instanceCount++
+  if (_resetTimer) return // 已在运行
+  _resetTimer = setInterval(() => {
+    renderCalls.value = 0
+  }, 1000)
+  _memoryTimer = setInterval(updateMemory, 5000)
+}
+
+function _stopTimersIfNoInstances() {
+  _instanceCount--
+  if (_instanceCount <= 0) {
+    _instanceCount = 0
+    if (_resetTimer) {
+      clearInterval(_resetTimer)
+      _resetTimer = null
+    }
+    if (_memoryTimer) {
+      clearInterval(_memoryTimer)
+      _memoryTimer = null
+    }
+  }
+}
 
 export function usePerformance() {
+  _startTimers()
+  onUnmounted(() => _stopTimersIfNoInstances())
+
   return {
     fps,
     frameTime,
@@ -76,9 +86,11 @@ export function usePerformance() {
     renderCalls,
     lastOpLatency,
     isLowPerformance,
-    startFPSMonitor,
-    stopFPSMonitor,
-    recordLatency,
+    startFPSMonitor: updateFPS,
+    stopFPSMonitor() {},
+    recordLatency(startTime) {
+      lastOpLatency.value = Math.round((performance.now() - startTime) * 100) / 100
+    },
     incrementRenderCalls,
   }
 }

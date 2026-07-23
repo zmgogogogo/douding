@@ -155,13 +155,9 @@
   #app {
     @apply h-full overflow-hidden;
   }
-  ::-webkit-scrollbar {
-    display: none;
-  }
+  /* 滚动条默认可见（无障碍性），需隐藏的容器使用 .scrollbar-hide */
   html,
   body {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
     -webkit-tap-highlight-color: transparent;
   }
   body {

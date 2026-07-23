@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { ref, provide, onMounted } from 'vue'
+import { ref, provide, onMounted, onUnmounted } from 'vue'
 import AppSidebar from './components/AppSidebar.vue'
 import AppToast from './components/AppToast.vue'
 import AppDialog from './components/AppDialog.vue'
@@ -51,12 +51,18 @@ provide(DIALOG_KEY, dialogRef)
 const showInstall = ref(false)
 let installEvent = null
 
+function onInstallPrompt(e) {
+  e.preventDefault()
+  installEvent = e
+  showInstall.value = true
+}
+
 onMounted(() => {
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault()
-    installEvent = e
-    showInstall.value = true
-  })
+  window.addEventListener('beforeinstallprompt', onInstallPrompt)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('beforeinstallprompt', onInstallPrompt)
 })
 
 function installApp() {

@@ -75,6 +75,13 @@ const promptInput = ref(null)
 let resolvePromise = null
 
 function show(opts) {
+  // 如果已有对话框打开，先关闭旧的（防止 Promise 挂起）
+  if (visible.value && resolvePromise) {
+    const oldResolve = resolvePromise
+    resolvePromise = null
+    oldResolve(type.value === 'prompt' ? null : false)
+  }
+
   type.value = opts.type || 'alert'
   title.value = opts.title || ''
   message.value = opts.message || ''
