@@ -185,7 +185,7 @@ function requestSnapshot(io, socket) {
   }
 }
 
-module.exports = {
+export {
   joinRoom,
   leaveRoom,
   broadcastPixelChanges,

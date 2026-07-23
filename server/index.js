@@ -5,6 +5,8 @@
 import 'dotenv/config'
 import express from 'express'
 import http from 'http'
+import cors from 'cors'
+import rateLimit from 'express-rate-limit'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
@@ -36,7 +38,40 @@ const __dirname = path.dirname(__filename)
 // ============================================
 const app = express()
 
-// 中间件
+// ============================================
+//  安全与基础中间件
+// ============================================
+
+// CORS（跨域资源共享）
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://douding.com', 'https://www.douding.com']  // 生产环境白名单
+    : true,  // 开发环境允许所有来源
+  credentials: true,
+  maxAge: 86400
+}))
+
+// 全局速率限制（防止暴力攻击）
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 分钟
+  max: 500,                   // 最多 500 次请求
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: 429, message: '请求过于频繁，请稍后再试' }
+})
+app.use('/api', globalLimiter)
+
+// 认证端点严格速率限制（防止暴力破解）
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,  // 15 分钟内最多 20 次
+  skipSuccessfulRequests: true,  // 成功登录不计入限制
+  message: { code: 429, message: '登录尝试过于频繁，请15分钟后再试' }
+})
+app.use('/api/auth/login', authLimiter)
+app.use('/api/auth/register', authLimiter)
+
+// Body 解析
 app.use(express.json({ limit: '50mb' }))
 app.use(express.static(path.join(__dirname, '..', 'public')))
 

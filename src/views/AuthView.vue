@@ -84,8 +84,9 @@ function sendCode() {
   if (!/^1[3-9]\d{9}$/.test(phone.value)) return toast.show('请输入正确的手机号')
   codeSending.value = true
   codeBtnText.value = '已发送'
-  // 简化模式：生成固定验证码 123456
-  toast.show('验证码已发送（演示模式：123456）')
+  // 演示模式：生成固定验证码（生产环境需接入真实短信服务）
+  const DEMO_CODE = '123456'
+  toast.show(`📱 演示模式 — 验证码：${DEMO_CODE}`)
   let countdown = 60
   const timer = setInterval(() => {
     countdown--

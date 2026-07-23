@@ -4,8 +4,9 @@
  * 绑定到 Express HTTP Server，处理协作事件
  */
 
-const { Server } = require('socket.io')
-const collab = require('./collaboration')
+import { Server } from 'socket.io'
+import * as collab from './collaboration.js'
+import { verifyToken } from '../utils/jwt.js'
 
 /**
  * 初始化 Socket.IO
@@ -34,7 +35,6 @@ function initSocketIO(httpServer) {
     }
 
     try {
-      const { verifyToken } = require('../utils/jwt')
       const payload = verifyToken(token)
       socket.data.userId = payload.userId
       socket.data.username = payload.username
@@ -94,4 +94,4 @@ function initSocketIO(httpServer) {
   return io
 }
 
-module.exports = { initSocketIO }
+export { initSocketIO }
