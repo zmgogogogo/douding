@@ -12,14 +12,8 @@
         class="relative overflow-hidden rounded-[2rem] bg-white p-6 md:p-8 cursor-pointer active:scale-[0.98] transition-all duration-300 border border-black/[0.04]"
         style="box-shadow: var(--ui-shadow-md)"
         @click="startBlank"
-        @mouseenter="
-          $el.style.boxShadow = 'var(--ui-shadow-lg)'
-          $el.style.transform = 'translateY(-1px)'
-        "
-        @mouseleave="
-          $el.style.boxShadow = 'var(--ui-shadow-md)'
-          $el.style.transform = ''
-        "
+        @mouseenter="e => { e.currentTarget.style.boxShadow = 'var(--ui-shadow-lg)'; e.currentTarget.style.transform = 'translateY(-1px)' }"
+        @mouseleave="e => { e.currentTarget.style.boxShadow = 'var(--ui-shadow-md)'; e.currentTarget.style.transform = '' }"
       >
         <div
           class="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-50"
