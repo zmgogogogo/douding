@@ -20,15 +20,17 @@
       <!-- 上传区 -->
       <label class="cursor-pointer flex flex-col items-center text-center px-10 py-16 gap-5
                     border-2 border-dashed border-slate-200 rounded-3xl hover:border-primary/40
-                    hover:bg-blue-50/30 transition-all max-w-xl w-full">
-        <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    hover:bg-blue-50/30 transition-all max-w-xl w-full relative">
+        <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center pointer-events-none">
           <UploadIcon :size="28" class="text-primary" />
         </div>
-        <div class="space-y-1.5">
+        <div class="space-y-1.5 pointer-events-none">
           <h2 class="text-xl font-bold text-slate-800">点击上传图片</h2>
           <p class="text-sm text-slate-400">支持 JPG、PNG、WebP 格式</p>
         </div>
-        <input type="file" accept="image/*" class="hidden" @change="onFileSelect" />
+        <input type="file" accept="image/*"
+          class="absolute inset-0 opacity-0 cursor-pointer z-10"
+          @change="onFileSelect" />
       </label>
 
       <!-- 提示 -->
@@ -106,6 +108,13 @@
           <!-- 目标尺寸 -->
           <section>
             <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">目标尺寸</h3>
+            <!-- 预设尺寸快捷按钮 -->
+            <div class="flex gap-1.5 mb-3">
+              <button v-for="ps in presetSizes" :key="ps"
+                class="flex-1 h-7 rounded-lg text-[10px] font-medium transition-colors"
+                :class="targetW === ps && targetH === ps ? 'bg-primary/10 text-primary ring-1 ring-primary' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+                @click="targetW = ps; targetH = ps">{{ ps }}px</button>
+            </div>
             <div class="flex items-center gap-3">
               <div class="flex-1 space-y-1">
                 <label class="text-[10px] text-slate-400">宽度</label>
@@ -121,6 +130,17 @@
                          focus:border-primary focus:ring-1 focus:ring-primary/20" />
               </div>
             </div>
+            <!-- 颜色总数滑块 -->
+            <div class="mt-3 space-y-1.5">
+              <div class="flex justify-between text-[10px] text-slate-400">
+                <span>颜色总数</span><span class="font-mono text-slate-600">{{ colorLimit }} 色</span>
+              </div>
+              <input v-model.number="colorLimit" type="range" min="4" max="32"
+                class="w-full h-1.5 rounded-full appearance-none bg-slate-200 accent-primary
+                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4
+                       [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full
+                       [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-sm" />
+            </div>
           </section>
 
           <!-- 珠子品牌 -->
@@ -131,6 +151,24 @@
                 class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                 :class="brand === b ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
                 @click="brand = b">{{ b }}</button>
+            </div>
+          </section>
+
+          <!-- 🔧 杂点去除 -->
+          <section>
+            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">🔧 后处理</h3>
+            <div class="space-y-3">
+              <div class="space-y-1">
+                <div class="flex justify-between text-[10px] text-slate-400">
+                  <span>杂点去除</span><span>{{ ['关闭','轻度','中度','强力'][denoiseLevel] }}</span>
+                </div>
+                <div class="flex gap-1">
+                  <button v-for="(lbl, i) in ['关','轻','中','强']" :key="i"
+                    class="flex-1 h-6 rounded-lg text-[10px] font-medium transition-colors"
+                    :class="denoiseLevel === i ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+                    @click="denoiseLevel = i">{{ lbl }}</button>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -180,15 +218,33 @@
             </div>
           </section>
 
-          <!-- 预览效果 -->
+          <!-- 预览效果：原图 / 效果图 对比 -->
           <section v-if="gridPreview.length">
-            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">预览</h3>
-            <div class="bg-slate-100 rounded-xl p-3 flex items-center justify-center">
-              <canvas ref="previewCanvas" class="max-w-full max-h-[160px] rounded-lg pixel-thumb shadow-sm" />
+            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+              预览 <span class="text-primary font-normal normal-case tracking-normal ml-1">— 效果对比</span>
+            </h3>
+            <div class="grid grid-cols-2 gap-2">
+              <!-- 原图 -->
+              <div class="bg-slate-100 rounded-xl p-2 flex flex-col items-center gap-1">
+                <span class="text-[9px] text-slate-400">原图</span>
+                <canvas ref="previewOrigCanvas" class="max-w-full max-h-[100px] rounded-lg shadow-sm"
+                  style="image-rendering: auto" />
+              </div>
+              <!-- 效果图 -->
+              <div class="bg-slate-100 rounded-xl p-2 flex flex-col items-center gap-1">
+                <span class="text-[9px] text-slate-400">效果图</span>
+                <canvas ref="previewCanvas" class="max-w-full max-h-[100px] rounded-lg pixel-thumb shadow-sm" />
+              </div>
             </div>
-            <p class="text-[10px] text-slate-400 mt-1.5 text-center">
-              {{ targetW }}×{{ targetH }} · {{ colorCount }}色
-            </p>
+            <div class="flex items-center justify-between mt-1.5">
+              <p class="text-[10px] text-slate-400">
+                {{ targetW }}×{{ targetH }} · {{ colorCount }}色
+              </p>
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input v-model="showGridPreview" type="checkbox" class="w-3 h-3 rounded border-slate-300 text-primary" />
+                <span class="text-[9px] text-slate-400">网格</span>
+              </label>
+            </div>
           </section>
         </div>
 
@@ -219,6 +275,31 @@ import API from '@/api/index.js'
 import { useAuth } from '@/composables/useAuth.js'
 import { useToast } from '@/composables/useToast.js'
 import { useImageCrop } from '@/composables/useImageCrop.js'
+
+// ============================================
+//  前端轻量 Oklab 颜色匹配（与后端量化服务保持一致）
+// ============================================
+function srgbToLinear(v) {
+  v /= 255
+  return v > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92
+}
+function rgbToOklab(r, g, b) {
+  const lr = srgbToLinear(r), lg = srgbToLinear(g), lb = srgbToLinear(b)
+  const l = 0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb
+  const m = 0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb
+  const s = 0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb
+  const l_ = Math.cbrt(l), m_ = Math.cbrt(m), s_ = Math.cbrt(s)
+  return {
+    L: 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_,
+    a: 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_,
+    b: 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_
+  }
+}
+function oklabDist(l1, l2) {
+  const dL = (l1.L - l2.L) * 2  // L 通道 2× 权重：亮度正确 > 色度正确
+  const da = l1.a - l2.a, db = l1.b - l2.b
+  return Math.sqrt(dL * dL + da * da + db * db)
+}
 
 const router = useRouter()
 const auth = useAuth()
@@ -302,6 +383,13 @@ const gridPreview = ref([])
 const gridResult = ref(null)
 const colorCount = ref(0)
 const previewCanvas = ref(null)
+const previewOrigCanvas = ref(null)
+const showGridPreview = ref(false)
+
+// 后处理参数
+const denoiseLevel = ref(2)          // 杂点去除: 0关/1轻/2中/3强
+const colorLimit = ref(16)           // 颜色总数 4-32
+const presetSizes = [40, 80, 120, 200]
 
 const cropStyle = computed(() => cropCtrl.cropStyle.value)
 const handles = computed(() => cropCtrl.handles.value)
@@ -349,16 +437,20 @@ onMounted(async () => {
 })
 
 // 参数变更时实时更新预览
-watch([brand, targetW, targetH], () => {
+watch([brand, targetW, targetH, colorLimit, denoiseLevel], () => {
   updatePreview()
 })
 
 function onFileSelect(e) {
   const file = e.target.files?.[0]; if (!file) return
+  console.log('📷 图片已选择:', file.name, (file.size / 1024).toFixed(1) + 'KB', file.type)
   originalFile.value = file  // 保留原始文件，后端处理裁剪/缩放
   const reader = new FileReader()
   reader.onload = ev => { imageSrc.value = ev.target.result }
+  reader.onerror = () => { console.error('❌ 文件读取失败'); toast.show('文件读取失败，请重试') }
   reader.readAsDataURL(file)
+  // 重置 value 允许重复选择同一文件
+  e.target.value = ''
 }
 
 function onImageLoad() {
@@ -384,10 +476,15 @@ function updatePreview() {
   if (!imgLoaded.value || !previewImg.value) return
   const img = previewImg.value
   const tw = targetW.value, th = targetH.value
-  // 用离屏 canvas 采样原始图片 → 缩放到目标尺寸 → 匹配珠子颜色
+
+  // ============================================
+  //  Step 1: 最近邻下采样（对齐后端，禁用双线性插值）
+  //  文档规范：只用 INTER_NEAREST，不产生过渡混色
+  // ============================================
   const offscreen = document.createElement('canvas')
   offscreen.width = tw; offscreen.height = th
   const octx = offscreen.getContext('2d')
+  octx.imageSmoothingEnabled = false  // 🔑 关键：禁用双线性插值 → 最近邻
   octx.drawImage(img, 0, 0, tw, th)
   const imgData = octx.getImageData(0, 0, tw, th)
 
@@ -395,36 +492,145 @@ function updatePreview() {
   const palette = (brand.value === '全部' ? allColors.value : allColors.value.filter(c => c.brand === brand.value))
   if (!palette.length) return
 
-  // 构建颜色查找表（hex → 颜色对象）
-  const colorMap = palette.reduce((m, c) => { m[c.hex.toUpperCase()] = c; return m }, {})
+  // 预计算调色板所有颜色的 Oklab 值
+  const paletteOklab = palette.map(bc => {
+    const hex = bc.hex.replace('#', '')
+    const br = parseInt(hex.substring(0, 2), 16)
+    const bg = parseInt(hex.substring(2, 4), 16)
+    const bb = parseInt(hex.substring(4, 6), 16)
+    return { ...bc, oklab: rgbToOklab(br, bg, bb) }
+  })
 
+  // ============================================
+  //  Step 2: Oklab 感知距离匹配 + 颜色频率统计
+  //  带 RGB→Bead 缓存：最近邻采样会重复采样相同颜色，缓存命中率极高
+  // ============================================
+  const matchCache = new Map()  // 'r,g,b' → best bead color
   const grid = []
-  const usedHexes = new Set()
+  const hexCount = new Map()  // hex → count（用于后续颜色限制）
   for (let r = 0; r < th; r++) {
     const row = []
     for (let c = 0; c < tw; c++) {
       const i = (r * tw + c) * 4
       const pr = imgData.data[i], pg = imgData.data[i + 1], pb = imgData.data[i + 2], pa = imgData.data[i + 3]
       if (pa < 128) { row.push(null); continue }
-      // 简易加权欧几里得距离匹配最近珠子颜色
-      let best = palette[0], bestDist = Infinity
-      for (const bc of palette) {
-        const hex = bc.hex.replace('#', '')
-        const br = parseInt(hex.substring(0, 2), 16)
-        const bg = parseInt(hex.substring(2, 4), 16)
-        const bb = parseInt(hex.substring(4, 6), 16)
-        const dr = pr - br, dg = pg - bg, db = pb - bb
-        const dist = dr * dr * 2 + dg * dg * 3 + db * db * 1  // 人眼对绿色更敏感
-        if (dist < bestDist) { bestDist = dist; best = bc }
+      const cacheKey = `${pr},${pg},${pb}`
+      let best = matchCache.get(cacheKey)
+      if (!best) {
+        const pixelOklab = rgbToOklab(pr, pg, pb)
+        best = paletteOklab[0]
+        let bestDist = Infinity
+        for (const bc of paletteOklab) {
+          const dist = oklabDist(pixelOklab, bc.oklab)
+          if (dist < bestDist) { bestDist = dist; best = bc }
+        }
+        matchCache.set(cacheKey, best)
       }
       row.push(best)
-      usedHexes.add(best.hex.toUpperCase())
+      hexCount.set(best.hex.toUpperCase(), (hexCount.get(best.hex.toUpperCase()) || 0) + 1)
     }
     grid.push(row)
   }
+
+  // ============================================
+  //  Step 3: 颜色限制（模拟后端 K-Means 效果）
+  //  按频率排序，只保留 top-N 颜色（N = colorLimit）
+  //  低频颜色重新映射到最近的高频颜色
+  // ============================================
+  const limit = Math.min(colorLimit.value, hexCount.size)
+  if (hexCount.size > limit) {
+    // 按频率降序排列颜色
+    const sortedHexes = [...hexCount.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([hex]) => hex)
+    const keptHexes = new Set(sortedHexes.slice(0, limit))
+
+    // 构建被保留颜色的 Oklab 查找表
+    const keptColors = paletteOklab.filter(bc => keptHexes.has(bc.hex.toUpperCase()))
+    const discardedHexes = sortedHexes.slice(limit)
+
+    // 为每个被丢弃的颜色找到最近的保留颜色
+    const remapTable = new Map()
+    for (const dHex of discardedHexes) {
+      const dc = paletteOklab.find(bc => bc.hex.toUpperCase() === dHex)
+      if (!dc) continue
+      let best = keptColors[0], bestDist = Infinity
+      for (const kc of keptColors) {
+        const dist = oklabDist(dc.oklab, kc.oklab)
+        if (dist < bestDist) { bestDist = dist; best = kc }
+      }
+      remapTable.set(dHex, best)
+    }
+
+    // 应用颜色重映射
+    for (let r = 0; r < th; r++) {
+      for (let c = 0; c < tw; c++) {
+        const cell = grid[r][c]
+        if (!cell) continue
+        const hex = cell.hex.toUpperCase()
+        if (!keptHexes.has(hex)) {
+          grid[r][c] = remapTable.get(hex) || grid[r][c]
+        }
+      }
+    }
+  }
+
+  // ============================================
+  //  Step 4: 轻量后处理（模拟后端连通域过滤 + 杂点清除）
+  //  清除孤立像素：如果某像素的8邻域全是不同颜色 → 替换为邻域主色
+  // ============================================
+  if (denoiseLevel.value >= 1) {
+    const denoisePasses = denoiseLevel.value  // 1~3 遍
+    for (let pass = 0; pass < denoisePasses; pass++) {
+      for (let r = 0; r < th; r++) {
+        for (let c = 0; c < tw; c++) {
+          const cell = grid[r][c]
+          if (!cell) continue
+          // 统计 8 邻域颜色
+          const nb = new Map()
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              if (dx === 0 && dy === 0) continue
+              const nr = r + dy, nc = c + dx
+              if (nr < 0 || nr >= th || nc < 0 || nc >= tw) continue
+              const ncell = grid[nr][nc]
+              if (!ncell) continue
+              const key = ncell.hex.toUpperCase()
+              nb.set(key, (nb.get(key) || 0) + 1)
+            }
+          }
+          // 如果当前像素在邻域中占比 < 2（孤立点），替换为邻域主色
+          const selfCount = nb.get(cell.hex.toUpperCase()) || 0
+          if (selfCount < 2 && nb.size > 0) {
+            let bestKey = null, bestCount = 0
+            for (const [k, v] of nb) {
+              if (v > bestCount) { bestCount = v; bestKey = k }
+            }
+            // 找到该颜色的完整信息
+            for (const bc of paletteOklab) {
+              if (bc.hex.toUpperCase() === bestKey) {
+                grid[r][c] = bc
+                break
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 计算最终颜色数
+  const finalHexes = new Set()
+  for (const row of grid) {
+    for (const cell of row) {
+      if (cell?.hex) finalHexes.add(cell.hex.toUpperCase())
+    }
+  }
+
   gridPreview.value = grid
-  colorCount.value = usedHexes.size
+  colorCount.value = finalHexes.size
   renderPreviewCanvas(grid, tw, th)
+  renderOrigPreview(img, tw, th)
 }
 
 function renderPreviewCanvas(grid, w, h) {
@@ -433,19 +639,29 @@ function renderPreviewCanvas(grid, w, h) {
   canvas.width = w; canvas.height = h
   canvas.style.width = size + 'px'; canvas.style.height = (size * h / w) + 'px'
   const ctx = canvas.getContext('2d')
-  const img = ctx.createImageData(w, h)
+  const imgData = ctx.createImageData(w, h)
   for (let r = 0; r < h; r++) {
     for (let c = 0; c < w; c++) {
       const cell = grid[r]?.[c]; if (!cell?.hex) continue
       const idx = (r * w + c) * 4
       const hex = cell.hex.replace('#', '')
-      img.data[idx] = parseInt(hex.substring(0, 2), 16)
-      img.data[idx + 1] = parseInt(hex.substring(2, 4), 16)
-      img.data[idx + 2] = parseInt(hex.substring(4, 6), 16)
-      img.data[idx + 3] = 255
+      imgData.data[idx] = parseInt(hex.substring(0, 2), 16)
+      imgData.data[idx + 1] = parseInt(hex.substring(2, 4), 16)
+      imgData.data[idx + 2] = parseInt(hex.substring(4, 6), 16)
+      imgData.data[idx + 3] = 255
     }
   }
-  ctx.putImageData(img, 0, 0)
+  ctx.putImageData(imgData, 0, 0)
+}
+
+// 渲染原图缩略图用于对比
+function renderOrigPreview(img, tw, th) {
+  const canvas = previewOrigCanvas.value; if (!canvas) return
+  const size = Math.min(160, tw * 4)
+  canvas.width = tw; canvas.height = th
+  canvas.style.width = size + 'px'; canvas.style.height = (size * th / tw) + 'px'
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(img, 0, 0, tw, th)
 }
 
 // 生成图纸 — 上传原始文件 + 裁剪参数，后端完成全部图片处理
@@ -469,6 +685,10 @@ async function generate() {
     form.append('brand', brand.value)
     if (warehouseLimited.value) form.append('warehouseLimited', 'true')
     if (qStyle.value) form.append('qStyle', qStyle.value)
+
+    // 后处理参数
+    form.append('denoiseLevel', String(denoiseLevel.value))
+    form.append('colorLimit', String(colorLimit.value))
 
     const res = await API.upload('/api/image-to-grid', form, auth.isLoggedIn.value)
     if (res.code === 200) {
