@@ -1,0 +1,9 @@
+dist/
+node_modules/
+public/uploads/
+*.db
+*.db-shm
+*.db-wal
+.cache/
+server-python/.venv/
+server-python/models/
