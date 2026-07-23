@@ -1,5 +1,6 @@
 // ============================================
 //  边缘对齐最近邻像素化（Edge-Aligned Nearest Neighbor）
+//  @deprecated 核心图片处理已迁移到 Python (server-python/services/pixelize.py)
 //
 //  核心思想：
 //    普通最近邻缩放 → 轮廓线可能落在像素格中间 → 半格混色杂边

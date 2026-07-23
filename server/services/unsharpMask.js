@@ -1,4 +1,5 @@
 // ============================================
+//  @deprecated 核心图片处理已迁移到 Python (server-python/services/)
 //  Unsharp Mask 锐化 — 补偿引导滤波的柔和效应
 //  公式: output = input + amount * (input - blurred)
 //  仅对差异 > threshold 的像素生效，防止平坦区域引入噪点
