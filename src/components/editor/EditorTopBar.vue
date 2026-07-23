@@ -111,19 +111,13 @@
         >
           <button
             class="export-menu-item"
-            @click="
-              $emit('exportPNG')
-              showExport = false
-            "
+            @click="$emit('exportPNG'); showExport = false"
           >
             <ImageIcon :size="14" /><span>导出 PNG 图片</span>
           </button>
           <button
             class="export-menu-item"
-            @click="
-              $emit('exportSVG')
-              showExport = false
-            "
+            @click="$emit('exportSVG'); showExport = false"
           >
             <svg
               width="14"
@@ -142,19 +136,13 @@
           </button>
           <button
             class="export-menu-item"
-            @click="
-              $emit('exportPDF')
-              showExport = false
-            "
+            @click="$emit('exportPDF'); showExport = false"
           >
             <FileTextIcon :size="14" /><span>导出 PDF 图纸</span>
           </button>
           <button
             class="export-menu-item"
-            @click="
-              $emit('exportJSON')
-              showExport = false
-            "
+            @click="$emit('exportJSON'); showExport = false"
           >
             <CodeIcon :size="14" /><span>导出 JSON 数据</span>
           </button>
@@ -174,37 +162,25 @@
         >
           <button
             class="export-menu-item"
-            @click="
-              $emit('save')
-              showMore = false
-            "
+            @click="$emit('save'); showMore = false"
           >
             <SaveIcon :size="14" /><span>保存到云端</span>
           </button>
           <button
             class="export-menu-item"
-            @click="
-              $emit('showInfo')
-              showMore = false
-            "
+            @click="$emit('showInfo'); showMore = false"
           >
             <InfoIcon :size="14" /><span>图纸信息</span>
           </button>
           <button
             class="export-menu-item"
-            @click="
-              $emit('openSizeDialog')
-              showMore = false
-            "
+            @click="$emit('openSizeDialog'); showMore = false"
           >
             <MaximizeIcon :size="14" /><span>修改尺寸</span>
           </button>
           <button
             class="export-menu-item"
-            @click="
-              $emit('clear')
-              showMore = false
-            "
+            @click="$emit('clear'); showMore = false"
           >
             <Trash2Icon :size="14" /><span class="text-red-500">清空画布</span>
           </button>

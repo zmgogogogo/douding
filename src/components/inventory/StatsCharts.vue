@@ -16,10 +16,7 @@
             :class="
               period === p.key ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:bg-slate-50'
             "
-            @click="
-              period = p.key
-              loadTrend()
-            "
+            @click="period = p.key; loadTrend()"
           >
             {{ p.label }}
           </button>

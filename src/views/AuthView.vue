@@ -122,11 +122,7 @@
         {{ isLogin ? '还没有账号？' : '已有账号？' }}
         <button
           class="text-primary font-semibold hover:underline"
-          @click="
-            isLogin = !isLogin
-            password = ''
-            code = ''
-          "
+          @click="isLogin = !isLogin; password = ''; code = ''"
         >
           {{ isLogin ? '注册新账号' : '去登录' }}
         </button>

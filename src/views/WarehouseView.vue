@@ -12,11 +12,7 @@
         :key="t.key"
         class="tab-btn"
         :class="{ active: activeTab === t.key }"
-        @click="
-          activeTab = t.key
-          activeTab === 'purchases' && loadPurchaseLists()
-          activeTab === 'stats' && loadStats()
-        "
+        @click="activeTab = t.key; activeTab === 'purchases' && loadPurchaseLists(); activeTab === 'stats' && loadStats()"
       >
         {{ t.icon }} {{ t.label }}
         <span v-if="t.key === 'inventory' && alertCount" class="tab-badge">{{ alertCount }}</span>
