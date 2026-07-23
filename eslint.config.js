@@ -26,6 +26,8 @@ export default [
         // Node.js 全局变量
         process: 'readonly',
         console: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setInterval: 'readonly',
@@ -37,8 +39,14 @@ export default [
       'no-unused-vars': 'warn',
       'no-undef': 'warn',
       'no-console': 'off',
+      'no-empty': 'warn',           // 空 catch 块允许但警告
+      'no-control-regex': 'warn',   // 正则控制字符允许但警告
+      'no-case-declarations': 'warn', // case 块声明允许但警告
+      'preserve-caught-error': 'warn', // 无 cause 的 throw 允许但警告
+      'no-useless-assignment': 'warn', // 无用赋值允许但警告
+      'no-unused-private-class-members': 'warn', // 未使用私有成员允许但警告
       // Vue 规则
-      'vue/multi-word-component-names': 'off', // 允许单字组件名（如 App.vue）
+      'vue/multi-word-component-names': 'off', // 允许单字组件名
       'vue/no-unused-vars': 'warn',
     },
   },
