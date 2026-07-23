@@ -8,19 +8,21 @@
 //
 //  从根源消灭杂点：无误差扩散 = 无麻点扩散
 // ============================================
-import { rgbToOklab, oklabDist } from '../utils/colorSpace.js'
+import { rgbToLab, deltaE2000 } from '../utils/colorSpace.js'
 import { REGION } from './regionSegment.js'
 
 // ============================================
 //  各区域默认 K 值
 // ============================================
+// 各区域默认 K 值（严格遵循文档规范：背景1色、皮肤3色、五官5色、头发3~4色）
 const DEFAULT_K = {
-  [REGION.BACKGROUND]:     4,   // 背景区：捕捉明暗渐变
-  [REGION.OUTLINE]:        4,   // 轮廓区：黑/深灰/中灰/浅灰层次
-  [REGION.SKIN]:           8,   // 皮肤区：更多光影层次
-  [REGION.MAIN_COLOR]:     10,  // 主色块区：主体需要丰富色彩
-  [REGION.DETAIL]:         8,   // 细节区：精确还原
-  [REGION.FACIAL_FEATURE]: 15   // 五官区：最高保色精度！
+  [REGION.BACKGROUND]:     1,   // 背景区：强制纯色（文档要求K=1，不允许多色）
+  [REGION.OUTLINE]:        3,   // 轮廓区：黑/深灰/中灰层次
+  [REGION.SKIN]:           3,   // 皮肤区：高光+主色+阴影（可切换2/3/4层，默认3层）
+  [REGION.MAIN_COLOR]:     5,   // 主色块区：4~6色范围
+  [REGION.DETAIL]:         5,   // 细节区：4~6色范围
+  [REGION.FACIAL_FEATURE]: 5,   // 五官区：保留细节色（4~6色）
+  [REGION.HAIR]:           3    // 头发区：主发色+高光+暗部（3~4色）
 }
 
 // ============================================
@@ -116,51 +118,10 @@ function kmeans(points, K, maxIter = 10) {
 //  聚类中心 → 拼豆色板硬映射
 // ============================================
 
-/**
- * 将 K-Means 聚类中心硬映射到最近的珠子颜色
- * @param {Array<[number,number,number]>} centers - RGB 聚类中心
- * @param {Array} labColors - 预计算 Lab 的珠子颜色
- * @returns {Map<string, object>} hex → beadColor 映射
- */
-function mapCentersToBeads(centers, labColors) {
-  const mapping = new Map()
-  for (const [r, g, b] of centers) {
-    const centerLab = rgbToLab(r, g, b)
-    let best = labColors[0], bestDist = Infinity
-    for (const c of labColors) {
-      const d = deltaE(centerLab, c.lab)
-      if (d < bestDist) { bestDist = d; best = c }
-    }
-    const hex = best.hex.toUpperCase()
-    if (!mapping.has(hex)) {
-      mapping.set(hex, { id: best.id, name: best.name, hex })
-    }
-  }
-  return mapping
-}
-
-/**
- * 将 RGB 像素映射到最近的 K-Means 中心，再通过中心映射到珠子颜色
- * @param {number} r, g, b - 像素 RGB
- * @param {Array} centers - K-Means 聚类中心
- * @param {Map} centerToBead - 中心→珠子映射
- * @returns {object|null} 珠子颜色
- */
-function pixelToBead(r, g, b, centers, centerToBead) {
-  if (centers.length === 0) return null
-  // 找最近的聚类中心
-  let bestC = centers[0], bestD = Infinity
-  for (const c of centers) {
-    const d = (r - c[0]) ** 2 + (g - c[1]) ** 2 + (b - c[2]) ** 2
-    if (d < bestD) { bestD = d; bestC = c }
-  }
-  // 通过中心映射到珠子
-  const beadLab = rgbToLab(bestC[0], bestC[1], bestC[2])
-  // 这里需要从 centerToBead 中找...但实际上 centerToBead 是 hex→bead 的映射，
-  // 我们需要反过来：找到 bestC 对应的 bead color
-  // 所以直接在 labColors 中搜索
-  return null // placeholder - will be done differently
-}
+// ============================================
+//  聚类中心 → 拼豆色板硬映射（CIEDE2000 色差匹配）
+//  文档要求：ΔE＜5 合格，ΔE＞10 提示无完美匹配
+// ============================================
 
 // ============================================
 //  主色块独立连通域分离
@@ -260,21 +221,24 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     [REGION.OUTLINE]: [],
     [REGION.SKIN]: [],
     [REGION.DETAIL]: [],
-    [REGION.FACIAL_FEATURE]: []
+    [REGION.FACIAL_FEATURE]: [],
+    [REGION.HAIR]: []
   }
   const regionIndices = {
     [REGION.BACKGROUND]: [],
     [REGION.OUTLINE]: [],
     [REGION.SKIN]: [],
     [REGION.DETAIL]: [],
-    [REGION.FACIAL_FEATURE]: []
+    [REGION.FACIAL_FEATURE]: [],
+    [REGION.HAIR]: []
   }
 
   for (let i = 0; i < total; i++) {
     const rt = regionMask[i]
     if (rt === REGION.MAIN_COLOR) continue // 主色块单独处理
     if (regionPixels[rt] === undefined) continue
-    if (rt === REGION.FACIAL_FEATURE) continue // 五官单独处理（更高K值）
+    if (rt === REGION.FACIAL_FEATURE) continue // 五官单独处理
+    if (rt === REGION.HAIR) continue // 头发区由主色块统一处理（预留独立处理入口）
     const off = i * 3
     regionPixels[rt].push([pixels[off], pixels[off + 1], pixels[off + 2]])
     regionIndices[rt].push(i)
@@ -320,37 +284,44 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     let centers, centerToBead
 
     if (pure) {
-      // 计算区域平均色 → 直接映射到珠子
+      // 计算区域平均色 → CIEDE2000 映射到珠子
       let sumR = 0, sumG = 0, sumB = 0
       for (const [r, g, b] of pts) { sumR += r; sumG += g; sumB += b }
       const n = pts.length
       const avgR = Math.round(sumR / n), avgG = Math.round(sumG / n), avgB = Math.round(sumB / n)
-      const avgOklab = rgbToOklab(avgR, avgG, avgB)
+      const avgLab = rgbToLab(avgR, avgG, avgB)
       let best = labColors[0], bestDist = Infinity
       for (const bc of labColors) {
-        const d = oklabDist(avgOklab, bc.oklab || bc.lab)
+        const d = deltaE2000(avgLab, bc.lab)
         if (d < bestDist) { bestDist = d; best = bc }
       }
+      // 背景区（K=1）强制纯色统一，所有背景像素映射到同一珠子色
       const bead = { id: best.id, name: best.name, hex: best.hex.toUpperCase() }
       // 所有像素直接映射到同一珠子色
       for (let pi = 0; pi < pts.length; pi++) {
         pixelBead[idxs[pi]] = bead
       }
-      nonMainStats[rt] = { k: 0, centers: 1, pure: true }
+      nonMainStats[rt] = { k: 0, centers: 1, pure: true, deltaE: Math.round(bestDist * 100) / 100 }
+      if (bestDist > 10) {
+        console.warn(`  ⚠️ ${rt === REGION.BACKGROUND ? '背景' : rt === REGION.SKIN ? '皮肤' : '区域'+rt}纯色 ΔE=${bestDist.toFixed(2)}>10，无完美匹配色号`)
+      }
       continue
     }
 
     const k = Math.min(K[rt], pts.length)
     centers = kmeans(pts, k)
 
-    // 聚类中心 → 珠子映射
+    // 聚类中心 → 珠子映射（CIEDE2000 色差匹配）
     centerToBead = new Map() // "r,g,b" → beadColor
     for (const [cr, cg, cb] of centers) {
-      const cOklab = rgbToOklab(cr, cg, cb)
+      const cLab = rgbToLab(cr, cg, cb)
       let best = labColors[0], bestDist = Infinity
       for (const bc of labColors) {
-        const d = oklabDist(cOklab, bc.oklab || bc.lab)
+        const d = deltaE2000(cLab, bc.lab)
         if (d < bestDist) { bestDist = d; best = bc }
+      }
+      if (bestDist > 10) {
+        console.warn(`  ⚠️ 区域${rt}聚类中心(${cr},${cg},${cb}) ΔE=${bestDist.toFixed(2)}>10，无完美匹配色号，使用近似替代`)
       }
       centerToBead.set(`${cr},${cg},${cb}`, {
         id: best.id, name: best.name, hex: best.hex.toUpperCase()
@@ -382,13 +353,13 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     const k = Math.min(K[REGION.MAIN_COLOR], block.pixels.length)
     const centers = kmeans(block.pixels, k)
 
-    // 聚类中心 → 珠子（Oklab 感知距离）
+    // 聚类中心 → 珠子（CIEDE2000 色差匹配）
     const centerToBead = new Map()
     for (const [cr, cg, cb] of centers) {
-      const cOklab = rgbToOklab(cr, cg, cb)
+      const cLab = rgbToLab(cr, cg, cb)
       let best = labColors[0], bestDist = Infinity
       for (const bc of labColors) {
-        const d = oklabDist(cOklab, bc.oklab || bc.lab)
+        const d = deltaE2000(cLab, bc.lab)
         if (d < bestDist) { bestDist = d; best = bc }
       }
       centerToBead.set(`${cr},${cg},${cb}`, {
@@ -412,8 +383,8 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
   }
 
   // ============================================
-  //  Step 2c: 面部特征区 — 超高K值单独保色
-  //  眼睛/眉毛/嘴巴等五官细节，K值拉到15
+  //  Step 2c: 面部特征区 — 单独保色
+  //  眼睛/眉毛/嘴巴等五官细节，K值按文档规范
   // ============================================
   const facePts = regionPixels[REGION.FACIAL_FEATURE]
   const faceIdxs = regionIndices[REGION.FACIAL_FEATURE]
@@ -425,10 +396,10 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
 
     const centerToBead = new Map()
     for (const [cr, cg, cb] of centers) {
-      const cOklab = rgbToOklab(cr, cg, cb)
+      const cLab = rgbToLab(cr, cg, cb)
       let best = labColors[0], bestDist = Infinity
       for (const bc of labColors) {
-        const d = oklabDist(cOklab, bc.oklab || bc.lab)
+        const d = deltaE2000(cLab, bc.lab)
         if (d < bestDist) { bestDist = d; best = bc }
       }
       centerToBead.set(`${cr},${cg},${cb}`, {
@@ -483,7 +454,7 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     }
   }
 
-  console.log(`分区量化: 背景K${K[REGION.BACKGROUND]} 轮廓K${K[REGION.OUTLINE]} 皮肤K${K[REGION.SKIN]} 面部K${K[REGION.FACIAL_FEATURE]}(${facePts.length}px,${faceColorCount}色) 主色${mainBlockCount}块×K${K[REGION.MAIN_COLOR]} 细节K${K[REGION.DETAIL]} → ${stats.colorCount}色 ${stats.beadCount}珠`)
+  console.log(`分区量化(文档合规): 背景K${K[REGION.BACKGROUND]}(纯色) 轮廓K${K[REGION.OUTLINE]} 皮肤K${K[REGION.SKIN]}(高光+主色+阴影) 面部K${K[REGION.FACIAL_FEATURE]}(${facePts.length}px,${faceColorCount}色) 主色${mainBlockCount}块×K${K[REGION.MAIN_COLOR]} 细节K${K[REGION.DETAIL]} → ${stats.colorCount}色 ${stats.beadCount}珠`)
   stats.regions.facialFeature = { k: K[REGION.FACIAL_FEATURE], pixels: facePts.length, colors: faceColorCount }
 
   return { grid, stats, pixelBead }

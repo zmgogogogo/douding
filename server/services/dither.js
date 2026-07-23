@@ -1,6 +1,11 @@
 // ============================================
 //  Floyd-Steinberg 抖动算法 — 连续色调映射到有限色板
 //  支持区域受限调色板（防止跨区串色）
+//
+//  ⚠️ @deprecated — 按文档规范，拼豆转图流程全程禁止误差扩散抖动。
+//  文档明确要求「零抖动硬量化」，从根源杜绝椒盐杂点。
+//  当前主流程使用 regionConstrainedQuantize（纯色硬量化），
+//  本文件仅保留作为算法参考，不再被主流程调用。
 // ============================================
 import { rgbToLab, deltaE, clamp, rgbToOklab, oklabDist } from '../utils/colorSpace.js'
 

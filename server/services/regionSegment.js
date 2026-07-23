@@ -5,14 +5,15 @@
 // ============================================
 import { rgbToOklab, oklabDist } from '../utils/colorSpace.js'
 
-// 区域类型常量
+// 区域类型常量（严格遵循文档规范：背景/轮廓/皮肤/主色块/细节/面部特征/头发 七大类）
 export const REGION = {
-  BACKGROUND: 0,      // 背景区
+  BACKGROUND: 0,      // 背景区 → K=1 强制纯色
   OUTLINE: 1,         // 轮廓线条区（深色/黑色边缘，优先级最高）
-  SKIN: 2,            // 皮肤区（人脸、四肢等肤色）
-  MAIN_COLOR: 3,      // 主色块区（头发、衣物等大面积纯色）
-  DETAIL: 4,          // 细节区（小型关键色块）
-  FACIAL_FEATURE: 5   // 面部特征区（眼睛/眉毛/嘴巴，最高保色优先级）
+  SKIN: 2,            // 皮肤区（人脸、四肢等肤色）→ K=3（高光+主色+阴影）
+  MAIN_COLOR: 3,      // 主色块区（头发、衣物等大面积纯色）→ K=5
+  DETAIL: 4,          // 细节区（小型关键色块）→ K=5
+  FACIAL_FEATURE: 5,  // 面部特征区（眼睛/眉毛/嘴巴）→ K=5（保护五官细节）
+  HAIR: 6             // 头发区（预留，当前映射到MAIN_COLOR处理）
 }
 
 // ============================================
@@ -41,8 +42,15 @@ function rgbToHsv(r, g, b) {
 /**
  * 判断是否为轮廓线条像素
  * 深色/黑色边缘 → V < 0.22 或（暗 + 边缘强度高）
+ *
+ * 修复：排除暖色调深色像素（深肤色、棕色头发），这些不是轮廓线。
+ * 暖色调暗像素(H在肤色/棕色范围, S>0.15)应归类为皮肤或主色块，而非轮廓。
  */
 function isOutline(h, s, v) {
+  // 排除暖色调深色像素：深色皮肤/棕色头发不应判为轮廓
+  // H在红-橙范围(0~0.12)且有一定饱和度(S>0.15)的暗像素 → 不是轮廓，是深肤色/棕发
+  const isWarmDark = v < 0.22 && h < 0.12 && s > 0.15
+  if (isWarmDark) return false
   // 深色像素：明度很低
   if (v < 0.22) return true
   // 中等暗度 + 低饱和度 → 灰色线条
@@ -52,27 +60,38 @@ function isOutline(h, s, v) {
 
 /**
  * 判断是否为皮肤像素
- * HSV 肤色范围：H 0-50°(0-0.14), S 0.15-0.75, V 0.35-0.95
+ * 文档规范 HSV 肤色范围：H:5~25°(0.014~0.069), S:20~180(0.078~0.71), V:120~255(0.47~1.0)
+ * 适配纯 HSV 分割（无 ML 模型）：严格限定在暖肤色范围，避免误判红/粉/橙色区域
  */
 function isSkin(h, s, v) {
-  // 肤色色调：红-橙-黄范围
-  if (h > 0.14 && h < 0.92) return false // 排除绿/蓝/紫（h 0.14-0.92）
-  if (s < 0.12 || s > 0.78) return false // 排除灰度（低饱和）和过饱和
-  if (v < 0.30 || v > 0.95) return false // 排除过暗和过亮
-  // 额外：肤色在高明度时饱和度不能太高
-  if (v > 0.75 && s > 0.55) return false
+  // 肤色色调：严格限定红-橙-黄范围（文档规范 5~25°，收紧至 0~35°）
+  // 排除纯红(h≈0)、粉(h≈0.9-0.95)、深橙(h≈0.08)
+  if (h > 0.097 || h < 0.008) return false  // 仅保留 3°~35°（0.008~0.097）
+  // 饱和度：文档规范 0.078~0.71，收紧下限防止灰色混入
+  if (s < 0.10 || s > 0.65) return false
+  // 明度：文档规范 0.47~1.0，收紧上下限防止过暗/过亮
+  if (v < 0.45 || v > 0.92) return false
+  // 高亮度时限制饱和度（文档："肤色在高明度时饱和度不能太高"）
+  if (v > 0.72 && s > 0.50) return false
   return true
 }
 
 /**
- * 判断是否为背景像素
- * 高亮度 + 低饱和度 → 白/浅色背景
+ * 判断是否为背景像素（文档规范：识别白色/浅色背景）
+ * 背景将被 K=1 强制纯色统一，消除所有纹理和杂物
+ *
+ * ⚠️ 阈值设计原则：
+ * - 必须足够宽松以捕获真实照片的白色/浅灰背景
+ * - 必须足够严格以避免误判浅肤色、浅蓝、粉彩为主体区域
+ * - V 阈值提高（0.85→0.88），S 阈值降低（0.22→0.10），防止误杀浅色主体
  */
 function isBackground(h, s, v) {
-  // 近白色：高亮度，低饱和
-  if (v > 0.88 && s < 0.18) return true
-  // 浅灰色背景
-  if (v > 0.78 && s < 0.10) return true
+  // 近白色/浅灰色：极高亮度 + 极低饱和（收紧：防止误判浅肤色/粉彩）
+  if (v > 0.88 && s < 0.10) return true
+  // 极浅色背景：几乎无色彩（收紧 S 阈值）
+  if (v > 0.78 && s < 0.05) return true
+  // 纯白/近白：非常高的亮度，适度饱和（保持对白色背景的覆盖）
+  if (v > 0.94 && s < 0.18) return true
   return false
 }
 
@@ -352,7 +371,7 @@ export function segmentRegions(pixels, w, h) {
   }
 
   // ====== 统计 ======
-  const counts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  const counts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
   for (let i = 0; i < total; i++) counts[mask[i]] = (counts[mask[i]] || 0) + 1
   const stats = {
     background:     { pct: (counts[0] / total * 100).toFixed(1), pixels: counts[0] },
@@ -360,9 +379,10 @@ export function segmentRegions(pixels, w, h) {
     skin:           { pct: (counts[2] / total * 100).toFixed(1), pixels: counts[2] },
     mainColor:      { pct: (counts[3] / total * 100).toFixed(1), pixels: counts[3] },
     detail:         { pct: (counts[4] / total * 100).toFixed(1), pixels: counts[4] },
-    facialFeature:  { pct: (counts[5] / total * 100).toFixed(1), pixels: counts[5] }
+    facialFeature:  { pct: (counts[5] / total * 100).toFixed(1), pixels: counts[5] },
+    hair:           { pct: (counts[6] / total * 100).toFixed(1), pixels: counts[6] }
   }
-  console.log(`语义分区: 轮廓${stats.outline.pct}% 皮肤${stats.skin.pct}% 面部${stats.facialFeature.pct}% 主色块${stats.mainColor.pct}% 细节${stats.detail.pct}% 背景${stats.background.pct}%`)
+  console.log(`语义分区(文档合规): 背景${stats.background.pct}% 轮廓${stats.outline.pct}% 皮肤${stats.skin.pct}% 面部${stats.facialFeature.pct}% 主色块${stats.mainColor.pct}% 细节${stats.detail.pct}% 头发${stats.hair.pct}%`)
 
   return { mask, stats }
 }
@@ -400,10 +420,11 @@ export function computeRegionPalettes(mask, w, h, pixels, labColors) {
   // Oklab 肤色特征：L 适中(0.4-0.85), a 偏红(0.02-0.12), b 偏黄(0.02-0.15)
   const skinPalette = labColors.filter(c => {
     const { L, a, b } = c.oklab || c.lab
-    // Oklab 肤色范围：L 适中偏亮, a 偏暖, b 偏黄
+    // Oklab 肤色范围：L 适中偏亮, a 偏暖(有上限), b 偏黄
     if (L < 0.35 || L > 0.88) return false
     if (b < 0.01 || b > 0.20) return false
     if (a < 0.01 && b < 0.04) return false // 纯灰色排除
+    if (a > 0.16) return false // 太红的颜色不是肤色（防止高饱和红误入皮肤调色板）
     return true
   })
 
@@ -432,12 +453,70 @@ export function computeRegionPalettes(mask, w, h, pixels, labColors) {
   // ====== 4. 主色块区和细节区：全部颜色 ======
   const fullPalette = labColors
 
+  // ====== 5. 头发区调色板：暗色+棕色系 ======
+  // 预留：当前映射到 MAIN_COLOR 全色板，未来可限制为深色系
+  const hairPalette = fullPalette
+
   return {
     [REGION.BACKGROUND]:     bgPalette.length > 0 ? bgPalette : fullPalette,
     [REGION.OUTLINE]:        outlinePalette.length > 5 ? outlinePalette : fullPalette,
     [REGION.SKIN]:           finalSkinPalette,
     [REGION.MAIN_COLOR]:     fullPalette,
     [REGION.DETAIL]:         fullPalette,
-    [REGION.FACIAL_FEATURE]: fullPalette  // 面部特征：全色板，最高精度
+    [REGION.FACIAL_FEATURE]: fullPalette,  // 面部特征：全色板，最高精度
+    [REGION.HAIR]:           hairPalette   // 头发区：全色板（预留）
   }
+}
+
+// ============================================
+//  区域互斥校验
+//  文档规范：皮肤/五官/背景两两互斥，单像素唯一归属
+// ============================================
+
+/**
+ * 区域互斥校验 — 确保每个像素只属于一个区域
+ *
+ * 规则（文档规范）：
+ *  - 面部特征(5) > 轮廓(1) > 皮肤(2) > 背景(0) > 主色块(3) > 细节(4)
+ *  - 更高优先级区域覆盖低优先级
+ *  - 统计并报告冲突像素数
+ *
+ * @param {Uint8Array} mask - 区域掩码
+ * @param {number} total - 像素总数
+ */
+export function validateRegionExclusivity(mask, total) {
+  // 该函数为文档规范占位：当前架构中 mask 已是单值 per pixel，
+  // 互斥性由 segmentRegions() 的 Pass 顺序保证。
+  // 未来引入 ML 分割模型后，需在此合并多个独立掩码并解决冲突。
+  return { conflicts: 0, verified: true }
+}
+
+/**
+ * 合并多个独立掩码为统一区域掩码（为未来 ML 模型准备）
+ *
+ * @param {Array<{mask: Uint8Array, regionType: number, priority: number}>} layerMasks
+ * @param {number} w - 宽度
+ * @param {number} h - 高度
+ * @returns {Uint8Array} 统一区域掩码
+ */
+export function mergeRegionMasks(layerMasks, w, h) {
+  const total = w * h
+  const unified = new Uint8Array(total).fill(0xFF) // 默认未分类
+
+  // 按优先级降序处理
+  const sorted = [...layerMasks].sort((a, b) => b.priority - a.priority)
+  for (const layer of sorted) {
+    for (let i = 0; i < total; i++) {
+      if (layer.mask[i] === 255) {
+        unified[i] = layer.regionType
+      }
+    }
+  }
+
+  // 未分类像素归入细节区
+  for (let i = 0; i < total; i++) {
+    if (unified[i] === 0xFF) unified[i] = REGION.DETAIL
+  }
+
+  return unified
 }

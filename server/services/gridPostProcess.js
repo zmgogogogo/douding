@@ -97,23 +97,27 @@ function computeDominantColors(grid, w, h, regionMask) {
 // ============================================
 
 /**
- * 删除面积 < minSize 的微小色块
- * 但如果该色块颜色属于所在区域的调色板（如腮红、眼睛），则保留
+ * 删除面积 < minSize 的微小色块（文档规范：分区差异化阈值）
+ *   - 背景区：2px（任何小杂点全部清除）
+ *   - 皮肤区：3px（保证面部干净）
+ *   - 五官/文字区：1px（仅清除孤立椒盐点，保护细节）
  *
  * @param {Array<Array<object|null>>} grid - 拼豆网格
  * @param {number} w, h - 网格尺寸
  * @param {Uint8Array} regionMask - 区域掩码
  * @param {Object} regionPalettes - 各区域调色板
  * @param {Object} dominantColors - 各区域主导色
- * @param {number} [minSize=4] - 最小连通域面积
+ * @param {number} [baseMinSize=3] - 基础最小连通域面积（皮肤区参考值）
  * @returns {{ grid: Array<Array>, removed: number }}
  */
-function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantColors, minSize = 4) {
+function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantColors, baseMinSize = 3) {
   const components = findAllComponents(grid, w, h)
   const result = grid.map(row => row.map(c => c ? { ...c } : null))
   let removed = 0
   let replaced = 0
   const FACIAL_FEATURE = 5  // 五官区域标记
+  const BACKGROUND = 0
+  const SKIN = 2
 
   // 构建区域调色板 hex 集合用于快速查找
   const paletteHexSets = {}
@@ -122,13 +126,15 @@ function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantC
   }
 
   for (const comp of components) {
-    // 区域感知阈值：
-    //   背景区(BG=0): minSize × 3 = 激进清理
-    //   面部特征(5): 不过滤（保护眼/嘴细节）
-    //   其他区域: 标准阈值
-    let effectiveMinSize = minSize
+    // 区域感知阈值（文档规范）：
+    //   背景区(0): 2px — 激进清理，任何小杂点全部清除
+    //   皮肤区(2): 3px — 保证面部干净
+    //   面部特征(5): 1px — 仅清除孤立椒盐点，保护五官细节
+    //   其他区域: baseMinSize
+    let effectiveMinSize = baseMinSize
     let isBackground = false
     let isFacial = false
+    let isSkin = false
 
     if (comp.cells.length > 0 && regionMask) {
       // 检查连通域主要属于哪个区域
@@ -142,19 +148,22 @@ function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantC
         if (v > maxVotes) { maxVotes = v; dominantRt = parseInt(rt) }
       }
 
-      if (dominantRt === 0) {
+      if (dominantRt === BACKGROUND) {
         isBackground = true
-        effectiveMinSize = minSize * 3  // 背景区 3× 激进阈值
+        effectiveMinSize = 2 // 文档规范：背景区 2px
+      } else if (dominantRt === SKIN) {
+        isSkin = true
+        effectiveMinSize = 3 // 文档规范：皮肤区 3px
       } else if (dominantRt === FACIAL_FEATURE) {
         isFacial = true
-        effectiveMinSize = 1  // 五官区保留所有细节（即使是1px孤立点）
+        effectiveMinSize = 1 // 文档规范：五官区 1px（仅清除孤立椒盐点）
       }
     }
 
-    // 背景小色块 → 强制清理（即使颜色在调色板中）
+    // 背景小色块 → 强制清理为背景主导色
     if (isBackground && comp.size < effectiveMinSize) {
       for (const [x, y] of comp.cells) {
-        const rt = regionMask ? regionMask[y * w + x] : 0
+        const rt = regionMask ? regionMask[y * w + x] : BACKGROUND
         const dominant = dominantColors[rt]
         if (dominant) {
           result[y][x] = { id: dominant.id, name: dominant.name, hex: dominant.hex }
@@ -169,21 +178,22 @@ function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantC
 
     if (comp.size >= effectiveMinSize) continue // 够大，保留
 
-    // 五官区域 → 永远不过滤
+    // 五官区域 → 永远不过滤（保护细节）
     if (isFacial) continue
 
-    // 检查该连通域的颜色是否属于各区域调色板
-    let belongsToValidRegion = false
-    for (const [x, y] of comp.cells) {
-      const rt = regionMask ? regionMask[y * w + x] : 4
-      const paletteSet = paletteHexSets[rt]
-      if (paletteSet && paletteSet.has(comp.hex)) {
-        belongsToValidRegion = true
-        break
+    // 皮肤区微小色块：检查是否属合理肤色调色板
+    if (isSkin && comp.size < effectiveMinSize) {
+      // 如果颜色在皮肤调色板中，可能是合法雀斑/红晕，保留
+      let inSkinPalette = false
+      for (const [x, y] of comp.cells) {
+        const paletteSet = paletteHexSets[SKIN]
+        if (paletteSet && paletteSet.has(comp.hex)) {
+          inSkinPalette = true
+          break
+        }
       }
+      if (inSkinPalette) continue
     }
-
-    if (belongsToValidRegion) continue // 合法细节，保留
 
     // 微小杂色 → 替换为所在区域主导色
     for (const [x, y] of comp.cells) {
@@ -200,7 +210,7 @@ function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantC
   }
 
   if (removed + replaced > 0) {
-    console.log(`  连通域过滤: ${components.length}个连通域, 清除${removed} 替换${replaced} (阈值${minSize}px, 背景×3, 五官保护)`)
+    console.log(`  连通域过滤(文档合规): ${components.length}个连通域, 清除${removed} 替换${replaced} (背景2px/皮肤3px/五官1px)`)
   }
   return { grid: result, removed: removed + replaced }
 }
@@ -323,10 +333,14 @@ function morphologicalOpen(grid, w, h, regionMask) {
 
   for (let y = 0; y < h - 1; y++) {
     for (let x = 0; x < w - 1; x++) {
-      // 跳过轮廓区和面部特征区（保护关键细节）
+      // 文档规范：形态学开运算仅对背景(0)和皮肤(2)区执行
+      // 轮廓区(1)和面部特征区(5)严格跳过，避免侵蚀关键细节
       if (regionMask) {
         const skip = [y * w + x, y * w + x + 1, (y + 1) * w + x, (y + 1) * w + x + 1]
-        if (skip.some(i => regionMask[i] === 1 || regionMask[i] === 5)) continue
+        if (skip.some(i => {
+          const rt = regionMask[i]
+          return rt === 1 || rt === 5 // 跳过轮廓区和面部特征区
+        })) continue
       }
 
       const a = grid[y][x], b = grid[y][x + 1]

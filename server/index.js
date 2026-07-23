@@ -4,6 +4,7 @@
 // ============================================================
 import 'dotenv/config'
 import express from 'express'
+import http from 'http'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
@@ -46,6 +47,57 @@ seedBeads()
 // 确保上传目录存在
 const uploadsDir = path.join(__dirname, '..', 'public', 'uploads')
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
+
+// ============================================
+//  图片转换代理 → Python 后端 (端口 3457)
+//  文档规范：图像转换算法使用 Python 3.10+ 实现
+//  Node.js 仅作为反向代理，将请求流式转发到 Python FastAPI
+// ============================================
+
+/**
+ * 将请求代理到 Python 后端的中间件
+ * 直接 pipe 原始请求流（保留 multipart 文件上传），不经过 Express body parser
+ */
+function proxyToPython(targetPath) {
+  return (req, res) => {
+    const options = {
+      hostname: 'localhost',
+      port: 3457,
+      path: targetPath || req.originalUrl,
+      method: req.method,
+      headers: { ...req.headers, host: 'localhost:3457' }
+    }
+
+    const proxyReq = http.request(options, (proxyRes) => {
+      // 转发响应头和状态码
+      res.writeHead(proxyRes.statusCode, proxyRes.headers)
+      proxyRes.pipe(res)
+    })
+
+    proxyReq.on('error', (err) => {
+      console.error(`[代理] Python 后端连接失败: ${err.message}`)
+      res.status(502).json({
+        code: 502,
+        message: 'Python 转换服务未启动，请确保 Python 后端运行在端口 3457'
+      })
+    })
+
+    // 设置超时（图片转换可能需要较长时间）
+    proxyReq.setTimeout(120000, () => {
+      proxyReq.destroy()
+      if (!res.headersSent) {
+        res.status(504).json({ code: 504, message: '转换超时，请尝试更小的图片或关闭智能优化' })
+      }
+    })
+
+    // 将原始请求流 pipe 到 Python（保留 multipart body）
+    req.pipe(proxyReq)
+  }
+}
+
+// 图像转换相关路由 → 全部代理到 Python
+app.use('/api/image-to-grid', proxyToPython())
+app.use('/api/convert', proxyToPython())
 
 // ============================================
 //  路由挂载
