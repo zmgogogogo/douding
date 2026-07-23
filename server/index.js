@@ -31,6 +31,7 @@ import paletteRoutes from './routes/palette.js'
 import publicRoutes from './routes/public.js'
 import { responseMiddleware } from './utils/response.js'
 import { errorHandler } from './middleware/errorHandler.js'
+import { requestLogger } from './middleware/logger.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -76,7 +77,8 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter)
 app.use('/api/auth/register', authLimiter)
 
-// Body 解析 + 响应格式统一
+// 请求日志 + Body 解析 + 响应格式统一
+app.use(requestLogger)
 app.use(express.json({ limit: '50mb' }))
 app.use(responseMiddleware)
 app.use(express.static(path.join(__dirname, '..', 'public')))
