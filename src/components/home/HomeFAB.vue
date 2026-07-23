@@ -45,7 +45,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { PlusIcon, ImageIcon, PenIcon, SparklesIcon, TypeIcon } from 'lucide-vue-next'
+import { PlusIcon, ImageIcon, PenIcon, TypeIcon } from 'lucide-vue-next'
 
 const router = useRouter()
 const visible = ref(true)
@@ -54,7 +54,6 @@ const menuOpen = ref(false)
 const createOptions = [
   { label: '图片转拼豆', icon: ImageIcon, color: '#16a34a', route: '/image-import' },
   { label: '空白创作', icon: PenIcon, color: '#2563eb', route: '/editor' },
-  { label: 'Q版生成', icon: SparklesIcon, color: '#d97706', route: '/editor?mode=qstyle' },
   { label: '文字转拼豆', icon: TypeIcon, color: '#7c3aed', route: '/editor?mode=text' },
 ]
 

@@ -123,12 +123,6 @@ const router = useRouter()
 // ====== Banner（首版硬编码，后续接后台） ======
 const banners = ref([
   { bgColor: '#22c55e', title: '欢迎来到豆丁', subtitle: '开始你的拼豆创作之旅', link: '/editor' },
-  {
-    bgColor: '#8b5cf6',
-    title: 'Q版生成上线',
-    subtitle: '一键生成Q版拼豆图纸',
-    link: '/editor?mode=qstyle',
-  },
 ])
 
 // ====== 分类与数据 ======

@@ -1,6 +1,6 @@
 <!-- ============================================
   HomeCoreTools.vue — 核心功能入口（四大金刚）
-  文档 3.4：图片转拼豆 / 空白创作 / Q版生成 / 辅助拼豆
+  文档 3.4：图片转拼豆 / 空白创作 / 辅助拼豆
   48px图标 + 圆角背景 + 不同主题色，点击缩放反馈
 ============================================ -->
 <template>
@@ -30,7 +30,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { ImageIcon, PenIcon, SparklesIcon, Grid3X3Icon } from 'lucide-vue-next'
+import { ImageIcon, PenIcon, Grid3X3Icon } from 'lucide-vue-next'
 
 const router = useRouter()
 
@@ -48,13 +48,6 @@ const tools = [
     bgColor: '#dbeafe',
     iconColor: '#2563eb',
     route: '/editor',
-  },
-  {
-    name: 'Q版生成',
-    icon: SparklesIcon,
-    bgColor: '#fef3c7',
-    iconColor: '#d97706',
-    route: '/editor?mode=qstyle',
   },
   {
     name: '辅助拼豆',

@@ -89,28 +89,6 @@
 
           <!-- 参数设置 -->
           <div class="space-y-3">
-            <!-- Q版风格 -->
-            <div>
-              <label class="text-[10px] font-bold uppercase text-slate-400"
-                >✨ Q版风格
-                <span class="text-primary font-normal normal-case ml-1">— 可选</span></label
-              >
-              <div class="flex flex-wrap gap-1 mt-1">
-                <button
-                  v-for="s in qStyles"
-                  :key="s.style_id"
-                  class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors"
-                  :class="
-                    qStyle === s.style_id
-                      ? 'bg-primary/10 text-primary ring-1 ring-primary'
-                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                  "
-                  @click="selectQStyle(s)"
-                >
-                  {{ s.style_name }}
-                </button>
-              </div>
-            </div>
 
             <div>
               <label class="text-[10px] font-bold uppercase text-slate-400">珠子品牌</label>
@@ -228,11 +206,6 @@ const imgDisplayW = ref(0)
 const imgDisplayH = ref(0)
 const brand = ref('全部')
 const brands = ref([])
-const qStyle = ref(null)
-const qStyles = ref([])
-function selectQStyle(s) {
-  qStyle.value = s.style_id
-}
 const manualRows = ref(0)
 const manualCols = ref(0)
 const recognizing = ref(false)
@@ -241,8 +214,6 @@ const previewCanvas = ref(null)
 
 onMounted(async () => {
   try {
-    const r = await API.get('/api/image/qstyles', false)
-    if (r.code === 200) qStyles.value = r.data || []
   } catch (_) {}
   try {
     const res = await API.get('/api/beads/colors', false)
@@ -289,7 +260,6 @@ async function startRecognize() {
       form.append('cropH', String(oc.h))
     }
     if (brand.value && brand.value !== '全部') form.append('brand', brand.value)
-    if (qStyle.value) form.append('qStyle', qStyle.value)
     if (manualRows.value > 0) form.append('gridRows', String(manualRows.value))
     if (manualCols.value > 0) form.append('gridCols', String(manualCols.value))
 

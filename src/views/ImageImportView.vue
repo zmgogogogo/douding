@@ -281,70 +281,6 @@
             </p>
           </section>
 
-          <!-- Q 版风格选择 -->
-          <section>
-            <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
-              ✨ Q版风格
-              <span class="text-primary font-normal normal-case tracking-normal ml-1">— 可选</span>
-            </h3>
-            <div class="flex flex-wrap gap-1.5">
-              <button
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                :class="
-                  !qStyle
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                "
-                @click="qStyle = null"
-              >
-                无（标准转换）
-              </button>
-              <button
-                v-for="s in qStyles"
-                :key="s.style_id"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors relative"
-                :class="
-                  qStyle === s.style_id
-                    ? 'bg-primary/10 text-primary ring-1 ring-primary'
-                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                "
-                @click="selectQStyle(s)"
-              >
-                {{ s.style_name }}
-              </button>
-            </div>
-            <!-- 选中风格预览 -->
-            <div
-              v-if="selectedStyle"
-              class="mt-2 p-2 bg-blue-50 rounded-lg text-[10px] text-slate-600 leading-relaxed space-y-1"
-            >
-              <div class="flex items-center gap-2">
-                <div
-                  class="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-2xl shadow-sm"
-                >
-                  {{
-                    {
-                      q_big_head: '👶',
-                      cute_sticker: '🪄',
-                      simple_line: '🎨',
-                      pet_cute: '🐱',
-                      couple_double: '💑',
-                    }[selectedStyle.style_id] || '✨'
-                  }}
-                </div>
-                <div class="flex-1">
-                  <span class="font-semibold text-primary">{{ selectedStyle.style_name }}</span
-                  >：{{ selectedStyle.description }}
-                </div>
-              </div>
-              <div class="text-slate-400">
-                {{ selectedStyle.recommend_size[0] }}×{{ selectedStyle.recommend_size[1] }} ·
-                {{ selectedStyle.difficulty }} · 约{{ selectedStyle.estimate_beads }}颗 ·
-                {{ selectedStyle.tags.join('、') }}
-              </div>
-            </div>
-          </section>
-
           <!-- 预览效果：原图 / 效果图 对比 -->
           <section v-if="gridPreview.length">
             <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
@@ -517,10 +453,6 @@ function onPanEnd() {
   document.removeEventListener('pointerup', onPanEnd)
 }
 
-// Q版风格
-const qStyle = ref(null)
-const qStyles = ref([])
-const selectedStyle = computed(() => qStyles.value.find((s) => s.style_id === qStyle.value) || null)
 
 // 参数
 const targetW = ref(58),
@@ -566,22 +498,7 @@ const previewStyle = computed(() => {
   }
 })
 
-// Q版风格
-function selectQStyle(s) {
-  qStyle.value = s.style_id
-  targetW.value = s.recommend_size[0]
-  targetH.value = s.recommend_size[1]
-}
-
-async function loadQStyles() {
-  try {
-    const res = await API.get('/api/image/qstyles', false)
-    if (res.code === 200) qStyles.value = res.data || []
-  } catch (_) {}
-}
-
 onMounted(async () => {
-  loadQStyles()
   try {
     const res = await API.get('/api/beads/colors', false)
     allColors.value = res.data || []
@@ -876,7 +793,6 @@ async function generate() {
     form.append('cropH', String(oc.h))
     form.append('brand', brand.value)
     if (warehouseLimited.value) form.append('warehouseLimited', 'true')
-    if (qStyle.value) form.append('qStyle', qStyle.value)
 
     // 后处理参数
     form.append('denoiseLevel', String(denoiseLevel.value))

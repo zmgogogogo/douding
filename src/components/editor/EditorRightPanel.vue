@@ -526,17 +526,6 @@
       </div>
     </div>
 
-    <!-- ========== AI 面板 ========== -->
-    <EditorAIPanel
-      v-if="activeTab === 'ai'"
-      :grid="grid"
-      :gridW="gridW"
-      :gridH="gridH"
-      :gridColorStats="stats"
-      @applyEnhance="(grid) => $emit('applyAIEnhance', grid)"
-      @applyGenerate="(grid, w, h) => $emit('applyAIGenerate', grid, w, h)"
-      @applyPalette="(colors) => $emit('applyPalette', colors)"
-    />
   </aside>
 </template>
 
@@ -550,7 +539,6 @@ import {
   LockIcon,
   UnlockIcon,
 } from 'lucide-vue-next'
-import EditorAIPanel from './EditorAIPanel.vue'
 
 const props = defineProps({
   // 标签页
@@ -614,8 +602,6 @@ const emit = defineEmits([
   'toggleMaskEdit',
   'jumpToHistory',
   'createSnapshot',
-  'applyAIEnhance',
-  'applyAIGenerate',
   'applyPalette',
 ])
 
@@ -637,7 +623,6 @@ const tabs = [
   { id: 'swatch', label: '🎨 色板' },
   { id: 'history', label: '📜 历史' },
   { id: 'properties', label: '📐 属性' },
-  { id: 'ai', label: '🤖 AI' },
 ]
 
 const toolLabels = {

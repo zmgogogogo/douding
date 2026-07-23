@@ -86,28 +86,6 @@
             </div>
             <ChevronRightIcon :size="16" class="text-slate-300" />
           </div>
-          <div class="tool-card" @click="showAiPrompt = true">
-            <div
-              class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style="
-                background: linear-gradient(
-                  135deg,
-                  rgba(255, 214, 102, 0.2),
-                  rgba(255, 214, 102, 0.05)
-                );
-              "
-            >
-              <Wand2Icon :size="20" class="text-amber-500" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="font-bold text-sm text-slate-800">AI 生成</div>
-              <div class="text-[11px] text-slate-400 mt-0.5">输入描述文字，AI 自动生成图案</div>
-            </div>
-            <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 text-[9px] font-bold"
-              >AI</span
-            >
-            <ChevronRightIcon :size="16" class="text-slate-300" />
-          </div>
         </div>
         <div class="tool-card" @click="$router.push('/ocr')">
           <div
@@ -211,73 +189,6 @@
         </div>
       </div>
 
-      <!-- AI 生成弹窗 -->
-      <div
-        v-if="showAiPrompt"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-md animate-fade-in"
-        @click.self="showAiPrompt = false"
-      >
-        <div
-          class="bg-white rounded-[2rem] p-6 w-[380px] max-w-[90vw] space-y-4 animate-scale-in"
-          style="box-shadow: var(--ui-shadow-xl)"
-        >
-          <div class="flex items-center gap-2">
-            <Wand2Icon :size="20" class="text-amber-500" />
-            <h3 class="font-bold text-slate-800">AI 生成拼豆图案</h3>
-          </div>
-          <p class="text-xs text-slate-500">
-            输入图案描述，AI
-            将自动生成拼豆图纸。支持的关键词：猫、狗、兔子、草莓、爱心、星星、蘑菇等。
-          </p>
-          <div class="flex flex-wrap gap-1">
-            <button
-              v-for="kw in ['猫', '狗', '草莓', '爱心', '星星', '蘑菇', '笑脸', '太阳']"
-              :key="kw"
-              class="px-2 py-1 rounded-md text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
-              @click="aiPrompt = kw"
-            >
-              {{ kw }}
-            </button>
-          </div>
-          <input
-            v-model="aiPrompt"
-            type="text"
-            placeholder="例如：可爱的小猫咪"
-            class="w-full h-10 px-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-primary transition-colors"
-            @keydown.enter="generateAi"
-          />
-          <div class="flex gap-2">
-            <select
-              v-model="aiBrand"
-              class="flex-1 h-9 border border-slate-200 rounded-lg text-xs px-2 bg-slate-50"
-            >
-              <option v-for="b in brands" :key="b" :value="b">{{ b }}</option>
-            </select>
-            <input
-              v-model.number="aiSize"
-              type="number"
-              min="8"
-              max="64"
-              class="w-16 h-9 border border-slate-200 rounded-lg text-xs text-center"
-            />
-          </div>
-          <button
-            class="w-full h-10 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            :disabled="!aiPrompt.trim() || aiGenerating"
-            @click="generateAi"
-          >
-            <LoaderIcon v-if="aiGenerating" :size="14" class="animate-spin" />
-            <Wand2Icon v-else :size="14" />
-            {{ aiGenerating ? '生成中...' : '开始生成' }}
-          </button>
-          <button
-            class="w-full text-xs text-slate-400 hover:text-slate-600"
-            @click="showAiPrompt = false"
-          >
-            取消
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -488,8 +399,6 @@
         @removeMask="removeMask($event); renderAll()"
         @applyMask="applyMask($event); renderAll()"
         @toggleMaskEdit="maskEditMode = !maskEditMode"
-        @applyAIEnhance="onApplyAIEnhance"
-        @applyAIGenerate="onApplyAIGenerate"
         @applyPalette="onApplyPalette"
         @jumpToHistory="onJumpToHistory"
         @createSnapshot="saveSnapshot"
@@ -624,8 +533,6 @@ import {
   ScanTextIcon,
   ChevronRightIcon,
   ClockIcon,
-  LoaderIcon,
-  Wand2Icon,
 } from 'lucide-vue-next'
 
 import EditorTopBar from '@/components/editor/EditorTopBar.vue'
@@ -844,55 +751,6 @@ function onGrayscale() {
 }
 
 // ---- AI 增强处理 ----
-function onApplyAIEnhance(enhancedGrid) {
-  if (!enhancedGrid || !Array.isArray(enhancedGrid)) return
-  try {
-    saveSnapshot()
-    const layer = layers.value.find((l) => l.id === currentLayerId.value)
-    if (!layer) return
-    for (let r = 0; r < gridH.value; r++) {
-      for (let c = 0; c < gridW.value; c++) {
-        layer.grid[r][c] = null
-      }
-    }
-    const maxR = Math.min(gridH.value, enhancedGrid.length)
-    const maxC = Math.min(gridW.value, enhancedGrid[0]?.length || 0)
-    for (let r = 0; r < maxR; r++) {
-      for (let c = 0; c < maxC; c++) {
-        if (enhancedGrid[r]?.[c]) layer.grid[r][c] = { ...enhancedGrid[r][c] }
-      }
-    }
-    hasUnsavedChanges.value = true
-    renderAll()
-  } catch (e) {
-    console.error('AI 增强失败:', e)
-    toast.show('AI 增强处理失败，请重试')
-  }
-}
-
-function onApplyAIGenerate(newGrid, w, h) {
-  if (!newGrid || !Array.isArray(newGrid)) return
-  try {
-    saveSnapshot()
-    gridW.value = w || newGrid[0]?.length || gridW.value
-    gridH.value = h || newGrid.length || gridH.value
-    initGrid(gridW.value, gridH.value)
-    const layer = layers.value.find((l) => l.id === currentLayerId.value)
-    if (layer) {
-      for (let r = 0; r < gridH.value; r++) {
-        for (let c = 0; c < gridW.value; c++) {
-          if (newGrid[r]?.[c]) layer.grid[r][c] = { ...newGrid[r][c] }
-        }
-      }
-    }
-    hasUnsavedChanges.value = true
-    saveSnapshot()
-    renderAll()
-  } catch (e) {
-    console.error('AI 生成失败:', e)
-    toast.show('AI 生成处理失败，请重试')
-  }
-}
 
 function onApplyPalette(colors) {
   if (!colors?.length) return
@@ -939,13 +797,8 @@ function findClosestBead(hex) {
 // ---- 创作入口页状态 ----
 const inEditor = ref(false)
 const recentDesigns = ref([])
-const showAiPrompt = ref(false)
 const rightPanelTab = ref(activePanelTab)
 const showSizePanel = ref(false)
-const aiPrompt = ref('')
-const aiBrand = ref('Hama')
-const aiSize = ref(32)
-const aiGenerating = ref(false)
 
 // 同步 rightPanelTab 到 composable（使模式标签在状态栏正确显示）
 watch(rightPanelTab, (v) => {
@@ -1428,36 +1281,6 @@ function renderRecentThumb(el, design) {
       }
     }
   })
-}
-
-async function generateAi() {
-  if (!aiPrompt.value.trim() || aiGenerating.value) return
-  aiGenerating.value = true
-  try {
-    const res = await API.post('/api/ai/generate', {
-      prompt: aiPrompt.value,
-      brand: aiBrand.value,
-      width: aiSize.value,
-      height: aiSize.value,
-    })
-    if (res.code === 200 && res.data?.grid) {
-      gridW.value = res.data.gridWidth || aiSize.value
-      gridH.value = res.data.gridHeight || aiSize.value
-      grid.value = res.data.grid
-      editId.value = null
-      editTitle.value = aiPrompt.value
-      showAiPrompt.value = false
-      inEditor.value = true
-      saveSnapshot()
-      nextTick(() => {
-        editorCanvasRef.value?.initCanvas()
-        renderAll()
-      })
-    }
-  } catch (_) {
-    toast.show('AI 生成失败，请稍后重试')
-  }
-  aiGenerating.value = false
 }
 
 // ---- 修改尺寸 ----
