@@ -300,129 +300,35 @@
       @exportJSON="exportJSONFile"
       @undo="undo"
       @redo="redo"
-      @cut="
-        copySelection()
-        deleteSelection()
-        scheduleRender()
-      "
+      @cut="copySelection(); deleteSelection(); scheduleRender()"
       @copy="copySelection()"
-      @paste="
-        pasteSelection()
-        saveSnapshot()
-        renderAll()
-      "
-      @selectAll="
-        selectionRect = { r1: 0, c1: 0, r2: gridH - 1, c2: gridW - 1 }
-        scheduleRender()
-      "
-      @deselect="
-        selectionRect = null
-        scheduleRender()
-      "
-      @flipH="
-        flipSelectionH()
-        scheduleRender()
-      "
-      @flipV="
-        flipSelectionV()
-        scheduleRender()
-      "
+      @paste="pasteSelection(); saveSnapshot(); renderAll()"
+      @selectAll="selectionRect = { r1: 0, c1: 0, r2: gridH - 1, c2: gridW - 1 }; scheduleRender()"
+      @deselect="selectionRect = null; scheduleRender()"
+      @flipH="flipSelectionH(); scheduleRender()"
+      @flipV="flipSelectionV(); scheduleRender()"
       @zoomIn="zoom = Math.min(30, zoom * 1.25)"
       @zoomOut="zoom = Math.max(0.5, zoom / 1.25)"
-      @zoomFit="
-        zoom = Math.min(
-          30,
-          Math.floor(Math.min(canvasContainerW / gridW, canvasContainerH / gridH) * 0.9)
-        )
-      "
+      @zoomFit="zoom = Math.min(; 30,; Math.floor(Math.min(canvasContainerW / gridW, canvasContainerH / gridH) * 0.9); )"
       @zoomActual="zoom = 10"
       @toggleGrid="showGrid = !showGrid"
       @print="showPrintPreview = true"
       @fullscreen="toggleFullscreen"
-      @autoFit="
-        autoFitGrid(4)
-        renderAll()
-      "
+      @autoFit="autoFitGrid(4); renderAll()"
       @openSizeDialog="openSizeDialog()"
       @invertColors="onInvertColors"
       @grayscale="onGrayscale"
-      @addLayer="
-        addLayer('新图层')
-        renderAll()
-      "
-      @removeLayer="
-        removeLayer(currentLayerId)
-        renderAll()
-      "
-      @mergeDown="
-        mergeLayerDown(currentLayerId)
-        renderAll()
-      "
-      @addMask="
-        addMask(currentLayerId)
-        renderAll()
-      "
+      @addLayer="addLayer('新图层'); renderAll()"
+      @removeLayer="removeLayer(currentLayerId); renderAll()"
+      @mergeDown="mergeLayerDown(currentLayerId); renderAll()"
+      @addMask="addMask(currentLayerId); renderAll()"
       @toggleMaskEdit="maskEditMode = !maskEditMode"
-      @alignLeft="
-        alignLayers(
-          layers
-            .filter((l) => l.id !== currentLayerId)
-            .map((l) => l.id)
-            .concat([currentLayerId]),
-          'left'
-        )
-        renderAll()
-      "
-      @alignCenter="
-        alignLayers(
-          layers
-            .filter((l) => l.id !== currentLayerId)
-            .map((l) => l.id)
-            .concat([currentLayerId]),
-          'center'
-        )
-        renderAll()
-      "
-      @alignRight="
-        alignLayers(
-          layers
-            .filter((l) => l.id !== currentLayerId)
-            .map((l) => l.id)
-            .concat([currentLayerId]),
-          'right'
-        )
-        renderAll()
-      "
-      @alignTop="
-        alignLayers(
-          layers
-            .filter((l) => l.id !== currentLayerId)
-            .map((l) => l.id)
-            .concat([currentLayerId]),
-          'top'
-        )
-        renderAll()
-      "
-      @alignMiddle="
-        alignLayers(
-          layers
-            .filter((l) => l.id !== currentLayerId)
-            .map((l) => l.id)
-            .concat([currentLayerId]),
-          'middle'
-        )
-        renderAll()
-      "
-      @alignBottom="
-        alignLayers(
-          layers
-            .filter((l) => l.id !== currentLayerId)
-            .map((l) => l.id)
-            .concat([currentLayerId]),
-          'bottom'
-        )
-        renderAll()
-      "
+      @alignLeft="alignLayers(; layers; .filter((l) => l.id !== currentLayerId); .map((l) => l.id); .concat([currentLayerId]),; 'left'; ); renderAll()"
+      @alignCenter="alignLayers(; layers; .filter((l) => l.id !== currentLayerId); .map((l) => l.id); .concat([currentLayerId]),; 'center'; ); renderAll()"
+      @alignRight="alignLayers(; layers; .filter((l) => l.id !== currentLayerId); .map((l) => l.id); .concat([currentLayerId]),; 'right'; ); renderAll()"
+      @alignTop="alignLayers(; layers; .filter((l) => l.id !== currentLayerId); .map((l) => l.id); .concat([currentLayerId]),; 'top'; ); renderAll()"
+      @alignMiddle="alignLayers(; layers; .filter((l) => l.id !== currentLayerId); .map((l) => l.id); .concat([currentLayerId]),; 'middle'; ); renderAll()"
+      @alignBottom="alignLayers(; layers; .filter((l) => l.id !== currentLayerId); .map((l) => l.id); .concat([currentLayerId]),; 'bottom'; ); renderAll()"
       @shortcuts="showShortcuts = true"
     />
 
@@ -436,14 +342,8 @@
       :refOpacity="refOpacity"
       @back="exitEditor"
       @update:title="editTitle = $event"
-      @undo="
-        undo
-        renderAll()
-      "
-      @redo="
-        redo
-        renderAll()
-      "
+      @undo="undo; renderAll()"
+      @redo="redo; renderAll()"
       @toggleGrid="showGrid = !showGrid"
       @toggleRef="cycleRefOpacity"
       @exportPNG="exportPNG"
@@ -520,17 +420,8 @@
           @setRefOpacity="setRefOpacity"
           @refZoomIn="refScale = Math.min(3, (refScale || 1) * 1.25)"
           @refZoomOut="refScale = Math.max(0.25, (refScale || 1) * 0.8)"
-          @refMove="
-            (dx, dy) => {
-              refOffsetX += dx
-              refOffsetY += dy
-            }
-          "
-          @refReset="
-            refScale = 1
-            refOffsetX = 0
-            refOffsetY = 0
-          "
+          @refMove="(dx, dy) => {; refOffsetX += dx; refOffsetY += dy; }"
+          @refReset="refScale = 1; refOffsetX = 0; refOffsetY = 0"
           @toggleGuide="toggleGuideMode"
           @guidePrev="guidePrev"
           @guideNext="guideNext"
@@ -586,47 +477,16 @@
         @update:warehouseOnly="warehouseOnly = $event"
         @selectColor="onSelectColor"
         @highlightColor="onHighlightColor"
-        @addLayer="
-          addLayer('新图层')
-          renderAll()
-        "
-        @removeLayer="
-          removeLayer($event)
-          renderAll()
-        "
-        @selectLayer="
-          selectLayer($event)
-          renderAll()
-        "
-        @toggleVisibility="
-          toggleLayerVisibility($event)
-          renderAll()
-        "
+        @addLayer="addLayer('新图层'); renderAll()"
+        @removeLayer="removeLayer($event); renderAll()"
+        @selectLayer="selectLayer($event); renderAll()"
+        @toggleVisibility="toggleLayerVisibility($event); renderAll()"
         @toggleLock="toggleLayerLock"
-        @setOpacity="
-          (v) => {
-            setLayerOpacity(currentLayerId, v)
-            renderAll()
-          }
-        "
-        @setBlendMode="
-          (v) => {
-            setLayerBlendMode(currentLayerId, v)
-            renderAll()
-          }
-        "
-        @addMask="
-          addMask($event)
-          renderAll()
-        "
-        @removeMask="
-          removeMask($event)
-          renderAll()
-        "
-        @applyMask="
-          applyMask($event)
-          renderAll()
-        "
+        @setOpacity="(v) => {; setLayerOpacity(currentLayerId, v); renderAll(); }"
+        @setBlendMode="(v) => {; setLayerBlendMode(currentLayerId, v); renderAll(); }"
+        @addMask="addMask($event); renderAll()"
+        @removeMask="removeMask($event); renderAll()"
+        @applyMask="applyMask($event); renderAll()"
         @toggleMaskEdit="maskEditMode = !maskEditMode"
         @applyAIEnhance="onApplyAIEnhance"
         @applyAIGenerate="onApplyAIGenerate"
@@ -729,11 +589,7 @@
       v-if="focusMode && focusColor"
       :focusColor="focusColor"
       :beadCount="focusBeadCount"
-      @exit="
-        focusMode = false
-        highlightHex = null
-        renderAll()
-      "
+      @exit="focusMode = false; highlightHex = null; renderAll()"
     />
   </div>
 
