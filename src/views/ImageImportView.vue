@@ -503,6 +503,8 @@ onMounted(async () => {
     const res = await API.get('/api/beads/colors', false)
     allColors.value = res.data || []
     beadBrands.value = [...new Set(allColors.value.map((c) => c.brand))].sort()
+    // 颜色加载完成后刷新预览（图片可能先于颜色加载完成）
+    nextTick(updatePreview)
   } catch {
     /* ignore */
   }
