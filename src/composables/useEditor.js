@@ -672,7 +672,25 @@ function getSymmetryCells(r, c) {
 }
 
 // ---- 历史快照 ----
+// 每个快照约 gridW×gridH×layerCount 个 cell，估算快照大小防止内存溢出
+const MAX_SNAPSHOT_CELLS = 50000 // 50,000 cell = 约 200 个快照→10M cell，内存可控
+
+function _estimateCells() {
+  let total = gridW.value * gridH.value
+  for (const l of layers.value) total += l.grid.length * (l.grid[0]?.length || 0)
+  return total
+}
+
 function saveSnapshot() {
+  const cells = _estimateCells()
+
+  // 超大型画布限制历史数量
+  const effectiveMax = cells > MAX_SNAPSHOT_CELLS ? Math.max(10, Math.floor(MAX_HISTORY * MAX_SNAPSHOT_CELLS / cells)) : MAX_HISTORY
+
+  if (cells > MAX_SNAPSHOT_CELLS && historyArr.value.length >= effectiveMax) {
+    console.warn(`[性能] 大型画布(${gridW.value}×${gridH.value}, ${cells.toLocaleString()} cell)，历史限制为 ${effectiveMax} 步`)
+  }
+
   const snapshot = {
     grid: grid.value.map((r) => (r ? r.map((c) => (c ? { ...c } : null)) : [])),
     layers: layers.value.map((l) => ({
@@ -686,8 +704,8 @@ function saveSnapshot() {
   // 清除当前位置之后的历史
   historyArr.value = historyArr.value.slice(0, historyIdx.value + 1)
   historyArr.value.push(snapshot)
-  // 限制历史长度
-  if (historyArr.value.length > MAX_HISTORY) historyArr.value.shift()
+  // 限制历史长度（大型画布动态缩小上限）
+  while (historyArr.value.length > effectiveMax) historyArr.value.shift()
   historyIdx.value = historyArr.value.length - 1
   hasUnsavedChanges.value = true
 }

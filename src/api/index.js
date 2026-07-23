@@ -4,25 +4,47 @@
 
 const BASE = ''
 
-// 认证状态由 useAuth composable 管理，这里通过函数获取
-let getToken = () => null
+// 认证状态由 useAuthStore (Pinia) 管理，这里通过函数获取
+let getToken = () => {
+  // 优先从 localStorage 直接读（兼容 Pinia 未初始化的情况）
+  return localStorage.getItem('douding_token') || null
+}
 
+/**
+ * 设置自定义 token 获取函数（useAuth 适配层使用）
+ * @deprecated 新代码请使用 useAuthStore (Pinia)
+ */
 export function setTokenGetter(fn) {
   getToken = fn
 }
 
-async function request(method, url, body, auth = true) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } }
-  const token = getToken()
-  if (auth && token) opts.headers['Authorization'] = 'Bearer ' + token
-  if (body && method !== 'GET') opts.body = JSON.stringify(body)
+// 默认请求超时（30秒）
+const DEFAULT_TIMEOUT = 30000
 
-  const res = await fetch(BASE + url, opts)
-  const data = await res.json()
-  if (!res.ok && data.code !== 200) {
-    throw new Error(data.message || '请求失败')
+async function request(method, url, body, auth = true, timeout = DEFAULT_TIMEOUT) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeout)
+
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' }, signal: controller.signal }
+    const token = getToken()
+    if (auth && token) opts.headers['Authorization'] = 'Bearer ' + token
+    if (body && method !== 'GET') opts.body = JSON.stringify(body)
+
+    const res = await fetch(BASE + url, opts)
+    const data = await res.json()
+    if (!res.ok && data.code !== 200) {
+      throw new Error(data.message || '请求失败')
+    }
+    return data
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      throw new Error('请求超时，请检查网络后重试')
+    }
+    throw e
+  } finally {
+    clearTimeout(timer)
   }
-  return data
 }
 
 // 带文件上传的请求

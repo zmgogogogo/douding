@@ -23,6 +23,15 @@ const routes = [
     name: 'linkImport',
     component: () => import('./views/LinkImportView.vue'),
   },
+  // 占位路由（ProfileView 等页面引用的路径，功能待实现）
+  { path: '/likes', name: 'likes', component: () => import('./views/PlaceholderView.vue') },
+  { path: '/tutorial', name: 'tutorial', component: () => import('./views/PlaceholderView.vue') },
+  { path: '/changelog', name: 'changelog', component: () => import('./views/PlaceholderView.vue') },
+  { path: '/feedback', name: 'feedback', component: () => import('./views/PlaceholderView.vue') },
+  { path: '/about', name: 'about', component: () => import('./views/PlaceholderView.vue') },
+  { path: '/messages', name: 'messages', component: () => import('./views/PlaceholderView.vue') },
+  // 404 兜底路由
+  { path: '/:pathMatch(.*)*', name: 'notFound', component: () => import('./views/NotFoundView.vue') },
 ]
 
 const router = createRouter({
