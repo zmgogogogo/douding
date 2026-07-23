@@ -1,39 +1,31 @@
 # ============================================
 # 豆丁智能转图 — Python 后端依赖
-# Python 3.10+ | FastAPI | OpenCV | PaddleSeg
+# Python 3.9+ (推荐 3.12) | FastAPI | OpenCV
 # ============================================
 
 # --- Web 框架 ---
-fastapi==0.115.0
-uvicorn[standard]==0.30.0
-python-multipart==0.0.12
-python-jose[cryptography]==3.3.0
+fastapi>=0.100.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
 
 # --- 图像处理 ---
-opencv-python-headless==4.10.0
-numpy==2.1.0
-scikit-learn==1.5.0
-scipy==1.14.0
-Pillow==10.4.0
+opencv-python-headless>=4.8.0
+numpy>=1.24.0,<2.0
+scikit-learn>=1.3.0
+scipy>=1.10.0
+Pillow>=10.0.0
 
 # --- 语义分割（可选：需要下载模型） ---
-# paddleseg  # 需要配置 PaddlePaddle 环境
-onnxruntime==1.19.0
+# paddleseg  # 需要 PaddlePaddle 环境
+onnxruntime>=1.17.0
 
 # --- 人脸检测（可选：需要下载模型） ---
 # retina-face  # 需要 PyTorch
 
 # --- OCR 文字检测（可选：需要下载模型） ---
-# paddleocr  # 需要配置 PaddlePaddle 环境
-
-# --- 数据库 ---
-# 使用 SQLite（Python 内置 sqlite3）
-# 生产环境可替换为 PostgreSQL + asyncpg
-
-# --- 任务队列（可选） ---
-# celery==5.4.0
-# redis==5.0.0
+# paddleocr  # 需要 PaddlePaddle 环境
 
 # --- 工具 ---
-python-dotenv==1.0.0
-aiofiles==24.1.0
+python-dotenv>=1.0.0
+aiofiles>=23.0.0

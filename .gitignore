@@ -8,3 +8,4 @@ public/uploads/*
 .DS_Store
 .env
 .cache/
+server-python/.venv/

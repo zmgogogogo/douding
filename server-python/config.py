@@ -19,7 +19,14 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", 3457))
 
 # --- 认证 ---
-JWT_SECRET = os.getenv("JWT_SECRET", "douding-secret-key-change-in-production")
+_JWT_DEFAULT = os.getenv("NODE_ENV", "") != "production"
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    if _JWT_DEFAULT:
+        print("⚠️  [config] 未设置 JWT_SECRET 环境变量，使用开发默认值")
+        JWT_SECRET = "douding-dev-secret-not-for-production"
+    else:
+        raise RuntimeError("❌ JWT_SECRET 环境变量未设置！生产环境必须配置 JWT_SECRET")
 JWT_EXPIRES_IN = 30 * 24 * 3600  # 30 天
 BCRYPT_ROUNDS = 10
 

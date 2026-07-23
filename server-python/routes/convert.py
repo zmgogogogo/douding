@@ -233,6 +233,48 @@ def _image_to_grid(
     })
     print(f"  3.3 后处理: {time.time()-t1:.2f}s")
 
+    # ================================================
+    #  4.5 可选后处理：像素字体替换 + 五官修复
+    # ================================================
+    if opts.get('pixelFontReplace') or opts.get('faceRepair'):
+        t_opt = time.time()
+        try:
+            from services.pixel_font import replace_text_with_pixel_font
+            from services.ocr_detect import detect_text_regions
+            from services.feature_repair import check_eye_symmetry, repair_mouth_contour
+
+            # 像素字体替换（OCR 检测 → 像素字体渲染）
+            if opts.get('pixelFontReplace'):
+                text_regions = detect_text_regions(image)
+                if text_regions:
+                    print(f"  [像素字体] 检测到 {len(text_regions)} 个文字区域")
+                    image = replace_text_with_pixel_font(image, text_regions)
+                    final_grid = _pixels_to_grid(
+                        edge_aligned_pixelize(quantized, target_w, target_h)['pixels'],
+                        bead_colors
+                    )
+                    print(f"  [像素字体] 替换完成")
+                else:
+                    print(f"  [像素字体] 未检测到文字区域")
+
+            # 五官修复
+            if opts.get('faceRepair'):
+                from services.face_detection import detect_faces
+                faces = detect_faces(image)
+                for face in faces:
+                    landmarks = face.get('landmarks')
+                    if landmarks and len(landmarks) >= 68:
+                        sym = check_eye_symmetry(np.array(landmarks))
+                        if sym['needs_correction']:
+                            print(f"  [五官修复] 左右眼不对称: 评分{sym['symmetry_score']:.2f}")
+                        final_grid = repair_mouth_contour(final_grid, fw, fh, np.array(landmarks))
+                        print(f"  [五官修复] 完成 ({len(faces)} 张人脸)")
+                        break  # 当前只处理第一张脸
+
+            stage_times['像素字体+五官修复'] = round(time.time() - t_opt, 2)
+        except Exception as e:
+            print(f"  [可选后处理] 跳过: {e}")
+
     # 颜色统计
     t1 = time.time()
     bead_list = _compute_bead_list_from_grid(final_grid)
@@ -269,6 +311,8 @@ async def smart_submit(
     brand: str = Form("全部"),
     denoiseLevel: int = Form(2),
     colorLimit: int = Form(16),
+    pixelFontReplace: bool = Form(False),
+    faceRepair: bool = Form(False),
 ):
     """转图提交（异步）— 返回 task_id"""
     file_bytes = await file.read()
@@ -279,6 +323,8 @@ async def smart_submit(
         'denoiseLevel': denoiseLevel,
         'colorLimit': colorLimit,
         'prefilter': True,
+        'pixelFontReplace': pixelFontReplace,
+        'faceRepair': faceRepair,
     }
 
     task_id = submit_convert_task(file_bytes, params)
@@ -394,9 +440,11 @@ async def image_to_grid(
     cropH: int = Form(0),
     denoiseLevel: int = Form(2),
     colorLimit: int = Form(16),
+    pixelFontReplace: bool = Form(False),
+    faceRepair: bool = Form(False),
 ):
     """
-    图片转拼豆网格（纯算法，无 AI）。
+    图片转拼豆网格（纯算法，可选 AI 增强）。
 
     参数：
       - targetWidth/targetHeight: 目标尺寸
@@ -444,6 +492,8 @@ async def image_to_grid(
             'denoiseLevel': denoiseLevel,
             'colorLimit': colorLimit,
             'prefilter': True,
+            'pixelFontReplace': pixelFontReplace,
+            'faceRepair': faceRepair,
         })
         set_cached(cache_key, result)
         return {'code': 200, 'data': result}
@@ -453,5 +503,57 @@ async def image_to_grid(
         print(tb)
         return JSONResponse(
             {'code': 500, 'message': f'图片处理失败: {e}'},
+            status_code=500
+        )
+
+
+# ============================================
+#  POST /api/convert/detect-faces — 人脸检测（用于前端框选 UI）
+# ============================================
+@router.post("/convert/detect-faces")
+async def detect_faces_endpoint(file: UploadFile = File(...)):
+    """
+    检测图片中的人脸，返回所有人脸的位置和编号。
+
+    用于前端展示人脸选择 UI，支持用户手动框选/调参。
+    """
+    try:
+        file_bytes = await file.read()
+        img_array = np.frombuffer(file_bytes, np.uint8)
+        image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+        if image is None:
+            return JSONResponse({'code': 400, 'message': '无法解析图片'}, status_code=400)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # 缩放到 512px 以内提速
+        h, w = image.shape[:2]
+        scale = min(1.0, 512 / max(h, w))
+        if scale < 1.0:
+            image = cv2.resize(image, (int(w * scale), int(h * scale)))
+
+        from services.face_detection import detect_faces
+        faces = detect_faces(image)
+
+        return {
+            'code': 200,
+            'data': {
+                'faces': [
+                    {
+                        'index': i,
+                        'bbox': f['bbox'],
+                        'landmarks': f.get('landmarks', []),
+                        'confidence': f.get('confidence', 0),
+                    }
+                    for i, f in enumerate(faces)
+                ],
+                'image_scale': scale,
+                'total': len(faces),
+            },
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            {'code': 500, 'message': f'人脸检测失败: {e}'},
             status_code=500
         )
