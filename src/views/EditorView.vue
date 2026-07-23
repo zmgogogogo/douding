@@ -378,10 +378,7 @@
         :currentTool="tool"
         :symmetryMode="symmetryMode"
         @update:activeTab="rightPanelTab = $event"
-        @update:brand="
-          brand = $event
-          seriesActive = ''
-        "
+        @update:brand="brand = $event; seriesActive = ''"
         @update:seriesActive="seriesActive = $event"
         @update:searchText="colorSearch = $event"
         @update:brushSize="brushSize = $event"
