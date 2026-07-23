@@ -89,7 +89,11 @@ router.get('/home/init', authOptional, (req, res) => {
     const designs = db
       .prepare(
         `
-      SELECT d.*, u.username, u.nickname, u.avatar
+      SELECT d.id, d.user_id, d.folder_id, d.title, d.description,
+        d.grid_width, d.grid_height, d.thumbnail, d.is_public,
+        d.bead_count, d.color_count, d.likes_count, d.views_count,
+        d.brand, d.created_at, d.updated_at,
+        u.username, u.nickname, u.avatar
       FROM designs d JOIN users u ON d.user_id = u.id
       WHERE d.is_public = 1
       ORDER BY d.likes_count DESC
@@ -149,7 +153,11 @@ router.get('/home/content/list', authOptional, (req, res) => {
     const designs = db
       .prepare(
         `
-      SELECT d.*, u.username, u.nickname, u.avatar
+      SELECT d.id, d.user_id, d.folder_id, d.title, d.description,
+        d.grid_width, d.grid_height, d.thumbnail, d.is_public,
+        d.bead_count, d.color_count, d.likes_count, d.views_count,
+        d.brand, d.created_at, d.updated_at,
+        u.username, u.nickname, u.avatar
       FROM designs d JOIN users u ON d.user_id = u.id
       WHERE d.is_public = 1
       ORDER BY ${orderBy}
@@ -164,7 +172,7 @@ router.get('/home/content/list', authOptional, (req, res) => {
       code: 200,
       data: {
         list: designs.map((d) => ({
-          ...formatDesign(d),
+          ...formatDesign({ ...d, grid_data: '[]' }),
           type: 'works',
           author: {
             id: d.user_id,
