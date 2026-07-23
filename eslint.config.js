@@ -38,20 +38,13 @@ export default [
       'no-undef': 'warn',
       'no-console': 'off',
       // Vue 规则
-      'vue/multi-word-component-names': 'off',  // 允许单字组件名（如 App.vue）
+      'vue/multi-word-component-names': 'off', // 允许单字组件名（如 App.vue）
       'vue/no-unused-vars': 'warn',
     },
   },
 
   // 忽略配置
   {
-    ignores: [
-      'dist/**',
-      'node_modules/**',
-      'public/uploads/**',
-      '*.db',
-      '*.db-shm',
-      '*.db-wal',
-    ],
+    ignores: ['dist/**', 'node_modules/**', 'public/uploads/**', '*.db', '*.db-shm', '*.db-wal'],
   },
 ]

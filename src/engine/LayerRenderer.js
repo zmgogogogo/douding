@@ -153,8 +153,8 @@ export class LayerRenderer {
 
     // 从 Canvas 创建新纹理
     const texture = Texture.from(this.#canvas, {
-      scaleMode: 'nearest',  // 像素艺术关键 — 无模糊
-      mipmap: false,          // 像素艺术不需要 mipmap
+      scaleMode: 'nearest', // 像素艺术关键 — 无模糊
+      mipmap: false, // 像素艺术不需要 mipmap
     })
 
     this.#sprite.texture = texture
@@ -163,10 +163,14 @@ export class LayerRenderer {
   // ==================== 属性设置 ====================
 
   /** @param {boolean} v */
-  setVisible(v) { this.container.visible = v }
+  setVisible(v) {
+    this.container.visible = v
+  }
 
   /** @param {number} v 0-1 */
-  setOpacity(v) { this.container.alpha = v }
+  setOpacity(v) {
+    this.container.alpha = v
+  }
 
   /**
    * 设置混合模式（16 种）
@@ -179,7 +183,9 @@ export class LayerRenderer {
   }
 
   /** 获取图层宽高 */
-  get size() { return { w: this.#w, h: this.#h } }
+  get size() {
+    return { w: this.#w, h: this.#h }
+  }
 
   // ==================== 销毁 ====================
 

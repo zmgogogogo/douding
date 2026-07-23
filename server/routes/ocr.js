@@ -26,7 +26,8 @@ router.post('/ocr/recognize', authOptional, upload.single('file'), async (req, r
       gridCols: gridCols > 0 ? gridCols : null,
       brand,
       raw,
-      crop: cropW > 0 && cropH > 0 ? { left: cropX, top: cropY, width: cropW, height: cropH } : null
+      crop:
+        cropW > 0 && cropH > 0 ? { left: cropX, top: cropY, width: cropW, height: cropH } : null,
     })
 
     res.json({
@@ -35,8 +36,8 @@ router.post('/ocr/recognize', authOptional, upload.single('file'), async (req, r
         grid: result.grid,
         gridWidth: result.gridWidth,
         gridHeight: result.gridHeight,
-        confidence: result.confidence
-      }
+        confidence: result.confidence,
+      },
     })
   } catch (e) {
     console.error('OCR 识别失败:', e)
@@ -46,7 +47,7 @@ router.post('/ocr/recognize', authOptional, upload.single('file'), async (req, r
       return res.status(503).json({
         code: 503,
         message: 'OCR 引擎未安装',
-        hint: '请运行 npm install tesseract.js 安装 OCR 引擎'
+        hint: '请运行 npm install tesseract.js 安装 OCR 引擎',
       })
     }
 

@@ -6,8 +6,12 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as echarts from 'echarts'
 
 // 亮色/暗色主题文本色
-function textColor(dark) { return dark ? '#94a3b8' : '#64748b' }
-function borderColor(dark) { return dark ? '#1e293b' : '#e2e8f0' }
+function textColor(dark) {
+  return dark ? '#94a3b8' : '#64748b'
+}
+function borderColor(dark) {
+  return dark ? '#1e293b' : '#e2e8f0'
+}
 
 /**
  * 初始化并管理 ECharts 图表实例
@@ -19,9 +23,7 @@ export function useChart(container, options = {}) {
   const chartInstance = ref(null)
 
   onMounted(() => {
-    const el = typeof container === 'string'
-      ? document.getElementById(container)
-      : container
+    const el = typeof container === 'string' ? document.getElementById(container) : container
 
     if (!el) {
       console.warn('useChart: 容器未找到', container)
@@ -47,13 +49,18 @@ export function useChart(container, options = {}) {
 
   // 若传入 watchSource，自动监听变化
   if (options.watchSource) {
-    watch(options.watchSource, (newVal) => {
-      if (chartInstance.value) {
-        chartInstance.value.setOption(typeof options.getOption === 'function'
-          ? options.getOption(newVal)
-          : newVal, true)
-      }
-    }, { deep: true })
+    watch(
+      options.watchSource,
+      (newVal) => {
+        if (chartInstance.value) {
+          chartInstance.value.setOption(
+            typeof options.getOption === 'function' ? options.getOption(newVal) : newVal,
+            true
+          )
+        }
+      },
+      { deep: true }
+    )
   }
 
   /** 设置/更新图表配置 */
@@ -89,42 +96,42 @@ export function makeTrendOption(data, dark = false) {
     tooltip: { trigger: 'axis' },
     legend: {
       bottom: 0,
-      textStyle: { color: textColor(dark), fontSize: 11 }
+      textStyle: { color: textColor(dark), fontSize: 11 },
     },
     grid: { left: 10, right: 20, top: 20, bottom: 30 },
     xAxis: {
       type: 'category',
-      data: data.map(d => d.date),
+      data: data.map((d) => d.date),
       axisLine: { lineStyle: { color: borderColor(dark) } },
-      axisLabel: { color: textColor(dark), fontSize: 10 }
+      axisLabel: { color: textColor(dark), fontSize: 10 },
     },
     yAxis: {
       type: 'value',
       splitLine: { lineStyle: { color: borderColor(dark) } },
-      axisLabel: { color: textColor(dark), fontSize: 10 }
+      axisLabel: { color: textColor(dark), fontSize: 10 },
     },
     series: [
       {
         name: '入库',
         type: 'line',
-        data: data.map(d => d.inbound || 0),
+        data: data.map((d) => d.inbound || 0),
         smooth: true,
         lineStyle: { color: '#22c55e', width: 2 },
         itemStyle: { color: '#22c55e' },
         symbol: 'circle',
-        symbolSize: 4
+        symbolSize: 4,
       },
       {
         name: '消耗',
         type: 'line',
-        data: data.map(d => d.outbound || 0),
+        data: data.map((d) => d.outbound || 0),
         smooth: true,
         lineStyle: { color: '#ef4444', width: 2 },
         itemStyle: { color: '#ef4444' },
         symbol: 'circle',
-        symbolSize: 4
-      }
-    ]
+        symbolSize: 4,
+      },
+    ],
   }
 }
 
@@ -141,23 +148,25 @@ export function makeRankOption(data, dark = false) {
     xAxis: {
       type: 'value',
       splitLine: { lineStyle: { color: borderColor(dark) } },
-      axisLabel: { color: textColor(dark), fontSize: 10 }
+      axisLabel: { color: textColor(dark), fontSize: 10 },
     },
     yAxis: {
       type: 'category',
-      data: sorted.map(d => d.name),
+      data: sorted.map((d) => d.name),
       axisLabel: { color: textColor(dark), fontSize: 10 },
-      inverse: true
+      inverse: true,
     },
-    series: [{
-      type: 'bar',
-      data: sorted.map(d => ({
-        value: d.total,
-        itemStyle: { color: d.hex || '#3b82f6' }
-      })),
-      barWidth: 12,
-      itemStyle: { borderRadius: [0, 4, 4, 0] }
-    }]
+    series: [
+      {
+        type: 'bar',
+        data: sorted.map((d) => ({
+          value: d.total,
+          itemStyle: { color: d.hex || '#3b82f6' },
+        })),
+        barWidth: 12,
+        itemStyle: { borderRadius: [0, 4, 4, 0] },
+      },
+    ],
   }
 }
 
@@ -171,25 +180,27 @@ export function makePieOption(data, dark = false) {
     tooltip: { trigger: 'item' },
     legend: {
       bottom: 0,
-      textStyle: { color: textColor(dark), fontSize: 10 }
+      textStyle: { color: textColor(dark), fontSize: 10 },
     },
-    series: [{
-      type: 'pie',
-      radius: ['45%', '75%'],
-      center: ['50%', '45%'],
-      data: data.map(d => ({
-        ...d,
-        itemStyle: { borderRadius: 3, borderColor: dark ? '#0f172a' : '#fff', borderWidth: 2 }
-      })),
-      label: {
-        show: true,
-        formatter: '{b}\n{d}%',
-        fontSize: 10,
-        color: textColor(dark)
+    series: [
+      {
+        type: 'pie',
+        radius: ['45%', '75%'],
+        center: ['50%', '45%'],
+        data: data.map((d) => ({
+          ...d,
+          itemStyle: { borderRadius: 3, borderColor: dark ? '#0f172a' : '#fff', borderWidth: 2 },
+        })),
+        label: {
+          show: true,
+          formatter: '{b}\n{d}%',
+          fontSize: 10,
+          color: textColor(dark),
+        },
+        emphasis: {
+          label: { fontSize: 14, fontWeight: 'bold' },
+        },
       },
-      emphasis: {
-        label: { fontSize: 14, fontWeight: 'bold' }
-      }
-    }]
+    ],
   }
 }

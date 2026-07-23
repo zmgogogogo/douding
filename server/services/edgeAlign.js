@@ -30,13 +30,7 @@ function toGrayscale(pixels, w, h) {
  */
 function gaussianBlur5x5(src, w, h) {
   // 5×5 高斯核 σ=1.4 → 归一化权重
-  const kernel = [
-    2,  4,  5,  4, 2,
-    4,  9, 12,  9, 4,
-    5, 12, 15, 12, 5,
-    4,  9, 12,  9, 4,
-    2,  4,  5,  4, 2
-  ]
+  const kernel = [2, 4, 5, 4, 2, 4, 9, 12, 9, 4, 5, 12, 15, 12, 5, 4, 9, 12, 9, 4, 2, 4, 5, 4, 2]
   const kSum = 159 // kernel sum
   const dst = new Float32Array(w * h)
 
@@ -65,12 +59,21 @@ function sobelGradients(src, w, h) {
   const dir = new Float32Array(w * h) // 角度（弧度），0=水平，π/2=垂直
 
   // Sobel 3×3 核
-  const Gx = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
-  const Gy = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]]
+  const Gx = [
+    [-1, 0, 1],
+    [-2, 0, 2],
+    [-1, 0, 1],
+  ]
+  const Gy = [
+    [-1, -2, -1],
+    [0, 0, 0],
+    [1, 2, 1],
+  ]
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      let sx = 0, sy = 0
+      let sx = 0,
+        sy = 0
       for (let ky = -1; ky <= 1; ky++) {
         for (let kx = -1; kx <= 1; kx++) {
           const nx = Math.max(0, Math.min(w - 1, x + kx))
@@ -97,13 +100,17 @@ function nonMaxSuppression(mag, dir, w, h) {
     for (let x = 1; x < w - 1; x++) {
       const idx = y * w + x
       const m = mag[idx]
-      if (m === 0) { result[idx] = 0; continue }
+      if (m === 0) {
+        result[idx] = 0
+        continue
+      }
 
       // 梯度方向量化到 4 个方向：0°, 45°, 90°, 135°
       let angle = dir[idx] * (180 / Math.PI)
       if (angle < 0) angle += 180
 
-      let n1 = 0, n2 = 0
+      let n1 = 0,
+        n2 = 0
       // 0° 方向（水平边缘 → 比较上下邻居）
       if (angle < 22.5 || angle >= 157.5) {
         n1 = mag[(y - 1) * w + x]
@@ -125,7 +132,7 @@ function nonMaxSuppression(mag, dir, w, h) {
         n2 = mag[(y + 1) * w + (x + 1)]
       }
 
-      result[idx] = (m >= n1 && m >= n2) ? m : 0
+      result[idx] = m >= n1 && m >= n2 ? m : 0
     }
   }
   return result
@@ -162,7 +169,8 @@ function doubleThreshold(nms, w, h, lowThreshold = 50, highThreshold = 150) {
         for (let dx = -1; dx <= 1; dx++) {
           if (edges[(y + dy) * w + (x + dx)] === 255) {
             hasStrong = true
-            dy = 2; break
+            dy = 2
+            break
           }
         }
       }
@@ -211,7 +219,9 @@ export function findGridOffset(edgeMap, srcW, srcH, targetW, targetH) {
   const scaleX = srcW / targetW
   const scaleY = srcH / targetH
 
-  let bestOx = 0, bestOy = 0, bestScore = Infinity
+  let bestOx = 0,
+    bestOy = 0,
+    bestScore = Infinity
 
   // 搜索步长 0.1 像素（子像素精度）
   for (let ox = -0.5; ox <= 0.5; ox += 0.1) {
@@ -272,7 +282,7 @@ export function edgeAlignedResize(srcPixels, srcW, srcH, targetW, targetH, ox = 
 
       const srcIdx = (sy * srcW + sx) * 3
       const dstIdx = (ty * targetW + tx) * 3
-      dst[dstIdx]     = srcPixels[srcIdx]
+      dst[dstIdx] = srcPixels[srcIdx]
       dst[dstIdx + 1] = srcPixels[srcIdx + 1]
       dst[dstIdx + 2] = srcPixels[srcIdx + 2]
     }
@@ -309,7 +319,15 @@ export function edgeAlignedPixelize(srcPixels, srcW, srcH, targetW, targetH) {
 
   // Step 4: 边缘对齐最近邻下采样
   // 从中间图直接下采样（而非原图）
-  const resultPixels = edgeAlignedResize(midPixels, midW, midH, targetW, targetH, offset.ox, offset.oy)
+  const resultPixels = edgeAlignedResize(
+    midPixels,
+    midW,
+    midH,
+    targetW,
+    targetH,
+    offset.ox,
+    offset.oy
+  )
 
   return { pixels: resultPixels, w: targetW, h: targetH, offset }
 }
@@ -382,9 +400,13 @@ export function downsampleMask(srcMask, srcW, srcH, targetW, targetH) {
         }
       }
       // 取最多的类型
-      let bestType = 4, bestCount = 0
+      let bestType = 4,
+        bestCount = 0
       for (const [t, c] of Object.entries(counts)) {
-        if (c > bestCount) { bestCount = c; bestType = parseInt(t) }
+        if (c > bestCount) {
+          bestCount = c
+          bestType = parseInt(t)
+        }
       }
       dst[ty * targetW + tx] = bestType
     }
@@ -408,7 +430,16 @@ export function downsampleMask(srcMask, srcW, srcH, targetW, targetH) {
  * @param {number} [oy=0] - Y 子像素偏移
  * @returns {Array<Array<object|null>>} 目标尺寸拼豆网格
  */
-export function downsampleGrid(srcGrid, srcW, srcH, targetW, targetH, srcMask = null, ox = 0, oy = 0) {
+export function downsampleGrid(
+  srcGrid,
+  srcW,
+  srcH,
+  targetW,
+  targetH,
+  srcMask = null,
+  ox = 0,
+  oy = 0
+) {
   const scaleX = srcW / targetW
   const scaleY = srcH / targetH
   const grid = []
@@ -434,7 +465,10 @@ export function downsampleGrid(srcGrid, srcW, srcH, targetW, targetH, srcMask = 
         }
         let bestRc = 0
         for (const [rt, c] of Object.entries(regionCounts)) {
-          if (c > bestRc) { bestRc = c; dominantRegion = parseInt(rt) }
+          if (c > bestRc) {
+            bestRc = c
+            dominantRegion = parseInt(rt)
+          }
         }
       }
 
@@ -464,16 +498,25 @@ export function downsampleGrid(srcGrid, srcW, srcH, targetW, targetH, srcMask = 
             const cell = srcGrid[sy]?.[sx]
             if (!cell || !cell.hex) continue
             const entry = votes.get(cell.hex)
-            if (entry) { entry.count++ }
-            else { votes.set(cell.hex, { count: 1, cell }) }
+            if (entry) {
+              entry.count++
+            } else {
+              votes.set(cell.hex, { count: 1, cell })
+            }
           }
         }
       }
 
       // 取得票最多的颜色
-      let bestHex = null, bestCount = 0, bestCell = null
+      let bestHex = null,
+        bestCount = 0,
+        bestCell = null
       for (const [hex, { count, cell }] of votes) {
-        if (count > bestCount) { bestCount = count; bestHex = hex; bestCell = cell }
+        if (count > bestCount) {
+          bestCount = count
+          bestHex = hex
+          bestCell = cell
+        }
       }
 
       row.push(bestCell ? { id: bestCell.id, name: bestCell.name, hex: bestCell.hex } : null)

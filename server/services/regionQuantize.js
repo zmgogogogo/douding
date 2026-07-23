@@ -16,13 +16,13 @@ import { REGION } from './regionSegment.js'
 // ============================================
 // 各区域默认 K 值（严格遵循文档规范：背景1色、皮肤3色、五官5色、头发3~4色）
 const DEFAULT_K = {
-  [REGION.BACKGROUND]:     1,   // 背景区：强制纯色（文档要求K=1，不允许多色）
-  [REGION.OUTLINE]:        3,   // 轮廓区：黑/深灰/中灰层次
-  [REGION.SKIN]:           3,   // 皮肤区：高光+主色+阴影（可切换2/3/4层，默认3层）
-  [REGION.MAIN_COLOR]:     5,   // 主色块区：4~6色范围
-  [REGION.DETAIL]:         5,   // 细节区：4~6色范围
-  [REGION.FACIAL_FEATURE]: 5,   // 五官区：保留细节色（4~6色）
-  [REGION.HAIR]:           3    // 头发区：主发色+高光+暗部（3~4色）
+  [REGION.BACKGROUND]: 1, // 背景区：强制纯色（文档要求K=1，不允许多色）
+  [REGION.OUTLINE]: 3, // 轮廓区：黑/深灰/中灰层次
+  [REGION.SKIN]: 3, // 皮肤区：高光+主色+阴影（可切换2/3/4层，默认3层）
+  [REGION.MAIN_COLOR]: 5, // 主色块区：4~6色范围
+  [REGION.DETAIL]: 5, // 细节区：4~6色范围
+  [REGION.FACIAL_FEATURE]: 5, // 五官区：保留细节色（4~6色）
+  [REGION.HAIR]: 3, // 头发区：主发色+高光+暗部（3~4色）
 }
 
 // ============================================
@@ -44,7 +44,10 @@ function kmeans(points, K, maxIter = 10) {
     const unique = []
     for (const p of points) {
       const key = p.join(',')
-      if (!seen.has(key)) { seen.add(key); unique.push([...p]) }
+      if (!seen.has(key)) {
+        seen.add(key)
+        unique.push([...p])
+      }
     }
     return unique
   }
@@ -60,7 +63,8 @@ function kmeans(points, K, maxIter = 10) {
     for (let i = 0; i < points.length; i++) {
       let minD = Infinity
       for (const c of centers) {
-        const d = (points[i][0] - c[0]) ** 2 + (points[i][1] - c[1]) ** 2 + (points[i][2] - c[2]) ** 2
+        const d =
+          (points[i][0] - c[0]) ** 2 + (points[i][1] - c[1]) ** 2 + (points[i][2] - c[2]) ** 2
         if (d < minD) minD = d
       }
       dists[i] = minD
@@ -72,9 +76,13 @@ function kmeans(points, K, maxIter = 10) {
       break
     }
     // 选择距离已有中心最远的点
-    let maxDist = -1, maxIdx = 0
+    let maxDist = -1,
+      maxIdx = 0
     for (let i = 0; i < points.length; i++) {
-      if (dists[i] > maxDist) { maxDist = dists[i]; maxIdx = i }
+      if (dists[i] > maxDist) {
+        maxDist = dists[i]
+        maxIdx = i
+      }
     }
     centers.push([...points[maxIdx]])
   }
@@ -85,10 +93,15 @@ function kmeans(points, K, maxIter = 10) {
     // 分配：每个点找最近中心
     const clusters = Array.from({ length: K }, () => [])
     for (const p of points) {
-      let bestK = 0, bestD = Infinity
+      let bestK = 0,
+        bestD = Infinity
       for (let k = 0; k < K; k++) {
-        const d = (p[0] - centers[k][0]) ** 2 + (p[1] - centers[k][1]) ** 2 + (p[2] - centers[k][2]) ** 2
-        if (d < bestD) { bestD = d; bestK = k }
+        const d =
+          (p[0] - centers[k][0]) ** 2 + (p[1] - centers[k][1]) ** 2 + (p[2] - centers[k][2]) ** 2
+        if (d < bestD) {
+          bestD = d
+          bestK = k
+        }
       }
       clusters[bestK].push(p)
     }
@@ -163,8 +176,14 @@ function separateMainColorBlocks(pixels, w, h, mask) {
 
       while (queue.length > 0) {
         const [cx, cy] = queue.shift()
-        for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
-          const nx = cx + dx, ny = cy + dy
+        for (const [dx, dy] of [
+          [0, 1],
+          [0, -1],
+          [1, 0],
+          [-1, 0],
+        ]) {
+          const nx = cx + dx,
+            ny = cy + dy
           if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
           const ni = ny * w + nx
           if (mask[ni] === REGION.MAIN_COLOR && quantKey[ni] === key && !visited[ni]) {
@@ -222,7 +241,7 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     [REGION.SKIN]: [],
     [REGION.DETAIL]: [],
     [REGION.FACIAL_FEATURE]: [],
-    [REGION.HAIR]: []
+    [REGION.HAIR]: [],
   }
   const regionIndices = {
     [REGION.BACKGROUND]: [],
@@ -230,7 +249,7 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     [REGION.SKIN]: [],
     [REGION.DETAIL]: [],
     [REGION.FACIAL_FEATURE]: [],
-    [REGION.HAIR]: []
+    [REGION.HAIR]: [],
   }
 
   for (let i = 0; i < total; i++) {
@@ -255,17 +274,31 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
   //  跳过 K-Means，防止平坦区域被引入杂色
   // ============================================
   function isPureRegion(pts) {
-    if (pts.length < 10) return true  // 像素太少直接算纯色
+    if (pts.length < 10) return true // 像素太少直接算纯色
     // 计算 RGB 各通道方差
-    let sumR = 0, sumG = 0, sumB = 0
-    for (const [r, g, b] of pts) { sumR += r; sumG += g; sumB += b }
-    const n = pts.length
-    const meanR = sumR / n, meanG = sumG / n, meanB = sumB / n
-    let varR = 0, varG = 0, varB = 0
+    let sumR = 0,
+      sumG = 0,
+      sumB = 0
     for (const [r, g, b] of pts) {
-      varR += (r - meanR) ** 2; varG += (g - meanG) ** 2; varB += (b - meanB) ** 2
+      sumR += r
+      sumG += g
+      sumB += b
     }
-    varR /= n; varG /= n; varB /= n
+    const n = pts.length
+    const meanR = sumR / n,
+      meanG = sumG / n,
+      meanB = sumB / n
+    let varR = 0,
+      varG = 0,
+      varB = 0
+    for (const [r, g, b] of pts) {
+      varR += (r - meanR) ** 2
+      varG += (g - meanG) ** 2
+      varB += (b - meanB) ** 2
+    }
+    varR /= n
+    varG /= n
+    varB /= n
     // 标准差的平均 < 8 → 视为纯色区域（人眼不可感知的差异）
     const avgStd = (Math.sqrt(varR) + Math.sqrt(varG) + Math.sqrt(varB)) / 3
     return avgStd < 8
@@ -276,8 +309,12 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
   const nonMainStats = {}
 
   for (const rt of nonMainTypes) {
-    const pts = regionPixels[rt], idxs = regionIndices[rt]
-    if (pts.length === 0) { nonMainStats[rt] = { k: 0, centers: 0 }; continue }
+    const pts = regionPixels[rt],
+      idxs = regionIndices[rt]
+    if (pts.length === 0) {
+      nonMainStats[rt] = { k: 0, centers: 0 }
+      continue
+    }
 
     // 纯色区域保护：低方差区域跳过 K-Means，直接用平均色
     const pure = isPureRegion(pts)
@@ -285,15 +322,27 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
 
     if (pure) {
       // 计算区域平均色 → CIEDE2000 映射到珠子
-      let sumR = 0, sumG = 0, sumB = 0
-      for (const [r, g, b] of pts) { sumR += r; sumG += g; sumB += b }
+      let sumR = 0,
+        sumG = 0,
+        sumB = 0
+      for (const [r, g, b] of pts) {
+        sumR += r
+        sumG += g
+        sumB += b
+      }
       const n = pts.length
-      const avgR = Math.round(sumR / n), avgG = Math.round(sumG / n), avgB = Math.round(sumB / n)
+      const avgR = Math.round(sumR / n),
+        avgG = Math.round(sumG / n),
+        avgB = Math.round(sumB / n)
       const avgLab = rgbToLab(avgR, avgG, avgB)
-      let best = labColors[0], bestDist = Infinity
+      let best = labColors[0],
+        bestDist = Infinity
       for (const bc of labColors) {
         const d = deltaE2000(avgLab, bc.lab)
-        if (d < bestDist) { bestDist = d; best = bc }
+        if (d < bestDist) {
+          bestDist = d
+          best = bc
+        }
       }
       // 背景区（K=1）强制纯色统一，所有背景像素映射到同一珠子色
       const bead = { id: best.id, name: best.name, hex: best.hex.toUpperCase() }
@@ -303,7 +352,9 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
       }
       nonMainStats[rt] = { k: 0, centers: 1, pure: true, deltaE: Math.round(bestDist * 100) / 100 }
       if (bestDist > 10) {
-        console.warn(`  ⚠️ ${rt === REGION.BACKGROUND ? '背景' : rt === REGION.SKIN ? '皮肤' : '区域'+rt}纯色 ΔE=${bestDist.toFixed(2)}>10，无完美匹配色号`)
+        console.warn(
+          `  ⚠️ ${rt === REGION.BACKGROUND ? '背景' : rt === REGION.SKIN ? '皮肤' : '区域' + rt}纯色 ΔE=${bestDist.toFixed(2)}>10，无完美匹配色号`
+        )
       }
       continue
     }
@@ -315,26 +366,38 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     centerToBead = new Map() // "r,g,b" → beadColor
     for (const [cr, cg, cb] of centers) {
       const cLab = rgbToLab(cr, cg, cb)
-      let best = labColors[0], bestDist = Infinity
+      let best = labColors[0],
+        bestDist = Infinity
       for (const bc of labColors) {
         const d = deltaE2000(cLab, bc.lab)
-        if (d < bestDist) { bestDist = d; best = bc }
+        if (d < bestDist) {
+          bestDist = d
+          best = bc
+        }
       }
       if (bestDist > 10) {
-        console.warn(`  ⚠️ 区域${rt}聚类中心(${cr},${cg},${cb}) ΔE=${bestDist.toFixed(2)}>10，无完美匹配色号，使用近似替代`)
+        console.warn(
+          `  ⚠️ 区域${rt}聚类中心(${cr},${cg},${cb}) ΔE=${bestDist.toFixed(2)}>10，无完美匹配色号，使用近似替代`
+        )
       }
       centerToBead.set(`${cr},${cg},${cb}`, {
-        id: best.id, name: best.name, hex: best.hex.toUpperCase()
+        id: best.id,
+        name: best.name,
+        hex: best.hex.toUpperCase(),
       })
     }
 
     // 每个像素 → 最近中心 → 珠子
     for (let pi = 0; pi < pts.length; pi++) {
       const [pr, pg, pb] = pts[pi]
-      let bestC = centers[0], bestD = Infinity
+      let bestC = centers[0],
+        bestD = Infinity
       for (const c of centers) {
         const d = (pr - c[0]) ** 2 + (pg - c[1]) ** 2 + (pb - c[2]) ** 2
-        if (d < bestD) { bestD = d; bestC = c }
+        if (d < bestD) {
+          bestD = d
+          bestC = c
+        }
       }
       pixelBead[idxs[pi]] = centerToBead.get(`${bestC[0]},${bestC[1]},${bestC[2]}`)
     }
@@ -357,23 +420,33 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     const centerToBead = new Map()
     for (const [cr, cg, cb] of centers) {
       const cLab = rgbToLab(cr, cg, cb)
-      let best = labColors[0], bestDist = Infinity
+      let best = labColors[0],
+        bestDist = Infinity
       for (const bc of labColors) {
         const d = deltaE2000(cLab, bc.lab)
-        if (d < bestDist) { bestDist = d; best = bc }
+        if (d < bestDist) {
+          bestDist = d
+          best = bc
+        }
       }
       centerToBead.set(`${cr},${cg},${cb}`, {
-        id: best.id, name: best.name, hex: best.hex.toUpperCase()
+        id: best.id,
+        name: best.name,
+        hex: best.hex.toUpperCase(),
       })
     }
 
     // 逐像素映射
     for (let pi = 0; pi < block.pixels.length; pi++) {
       const [pr, pg, pb] = block.pixels[pi]
-      let bestC = centers[0], bestD = Infinity
+      let bestC = centers[0],
+        bestD = Infinity
       for (const c of centers) {
         const d = (pr - c[0]) ** 2 + (pg - c[1]) ** 2 + (pb - c[2]) ** 2
-        if (d < bestD) { bestD = d; bestC = c }
+        if (d < bestD) {
+          bestD = d
+          bestC = c
+        }
       }
       pixelBead[block.indices[pi]] = centerToBead.get(`${bestC[0]},${bestC[1]},${bestC[2]}`)
     }
@@ -397,22 +470,32 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     const centerToBead = new Map()
     for (const [cr, cg, cb] of centers) {
       const cLab = rgbToLab(cr, cg, cb)
-      let best = labColors[0], bestDist = Infinity
+      let best = labColors[0],
+        bestDist = Infinity
       for (const bc of labColors) {
         const d = deltaE2000(cLab, bc.lab)
-        if (d < bestDist) { bestDist = d; best = bc }
+        if (d < bestDist) {
+          bestDist = d
+          best = bc
+        }
       }
       centerToBead.set(`${cr},${cg},${cb}`, {
-        id: best.id, name: best.name, hex: best.hex.toUpperCase()
+        id: best.id,
+        name: best.name,
+        hex: best.hex.toUpperCase(),
       })
     }
 
     for (let pi = 0; pi < facePts.length; pi++) {
       const [pr, pg, pb] = facePts[pi]
-      let bestC = centers[0], bestD = Infinity
+      let bestC = centers[0],
+        bestD = Infinity
       for (const c of centers) {
         const d = (pr - c[0]) ** 2 + (pg - c[1]) ** 2 + (pb - c[2]) ** 2
-        if (d < bestD) { bestD = d; bestC = c }
+        if (d < bestD) {
+          bestD = d
+          bestC = c
+        }
       }
       pixelBead[faceIdxs[pi]] = centerToBead.get(`${bestC[0]},${bestC[1]},${bestC[2]}`)
     }
@@ -437,7 +520,10 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
   const colorSet = new Set()
   let beadCount = 0
   for (const pb of pixelBead) {
-    if (pb) { colorSet.add(pb.hex); beadCount++ }
+    if (pb) {
+      colorSet.add(pb.hex)
+      beadCount++
+    }
   }
 
   const stats = {
@@ -446,16 +532,25 @@ export function regionConstrainedQuantize(pixels, w, h, regionMask, labColors, o
     beadCount,
     colorCount: colorSet.size,
     regions: {
-      background:  { ...nonMainStats[REGION.BACKGROUND],  pixels: regionPixels[REGION.BACKGROUND].length },
-      outline:     { ...nonMainStats[REGION.OUTLINE],     pixels: regionPixels[REGION.OUTLINE].length },
-      skin:        { ...nonMainStats[REGION.SKIN],        pixels: regionPixels[REGION.SKIN].length },
-      detail:      { ...nonMainStats[REGION.DETAIL],      pixels: regionPixels[REGION.DETAIL].length },
-      mainColor:   { blocks: mainBlockCount, k: K[REGION.MAIN_COLOR], pixels: mainTotalPixels }
-    }
+      background: {
+        ...nonMainStats[REGION.BACKGROUND],
+        pixels: regionPixels[REGION.BACKGROUND].length,
+      },
+      outline: { ...nonMainStats[REGION.OUTLINE], pixels: regionPixels[REGION.OUTLINE].length },
+      skin: { ...nonMainStats[REGION.SKIN], pixels: regionPixels[REGION.SKIN].length },
+      detail: { ...nonMainStats[REGION.DETAIL], pixels: regionPixels[REGION.DETAIL].length },
+      mainColor: { blocks: mainBlockCount, k: K[REGION.MAIN_COLOR], pixels: mainTotalPixels },
+    },
   }
 
-  console.log(`分区量化(文档合规): 背景K${K[REGION.BACKGROUND]}(纯色) 轮廓K${K[REGION.OUTLINE]} 皮肤K${K[REGION.SKIN]}(高光+主色+阴影) 面部K${K[REGION.FACIAL_FEATURE]}(${facePts.length}px,${faceColorCount}色) 主色${mainBlockCount}块×K${K[REGION.MAIN_COLOR]} 细节K${K[REGION.DETAIL]} → ${stats.colorCount}色 ${stats.beadCount}珠`)
-  stats.regions.facialFeature = { k: K[REGION.FACIAL_FEATURE], pixels: facePts.length, colors: faceColorCount }
+  console.log(
+    `分区量化(文档合规): 背景K${K[REGION.BACKGROUND]}(纯色) 轮廓K${K[REGION.OUTLINE]} 皮肤K${K[REGION.SKIN]}(高光+主色+阴影) 面部K${K[REGION.FACIAL_FEATURE]}(${facePts.length}px,${faceColorCount}色) 主色${mainBlockCount}块×K${K[REGION.MAIN_COLOR]} 细节K${K[REGION.DETAIL]} → ${stats.colorCount}色 ${stats.beadCount}珠`
+  )
+  stats.regions.facialFeature = {
+    k: K[REGION.FACIAL_FEATURE],
+    pixels: facePts.length,
+    colors: faceColorCount,
+  }
 
   return { grid, stats, pixelBead }
 }

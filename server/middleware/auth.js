@@ -21,7 +21,9 @@ export function authRequired(req, res, next) {
 export function authOptional(req, res, next) {
   const header = req.headers.authorization
   if (header && header.startsWith('Bearer ')) {
-    try { req.user = verifyToken(header.split(' ')[1]) } catch {}
+    try {
+      req.user = verifyToken(header.split(' ')[1])
+    } catch {}
   }
   next()
 }

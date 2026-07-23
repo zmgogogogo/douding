@@ -68,7 +68,9 @@ export function useTheme() {
 
   function resetToSystem() {
     localStorage.removeItem(THEME_KEY)
-    currentTheme.value = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    currentTheme.value = window.matchMedia?.('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
   }
 
   return {

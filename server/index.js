@@ -43,30 +43,33 @@ const app = express()
 // ============================================
 
 // CORS（跨域资源共享）
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://douding.com', 'https://www.douding.com']  // 生产环境白名单
-    : true,  // 开发环境允许所有来源
-  credentials: true,
-  maxAge: 86400
-}))
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? ['https://douding.com', 'https://www.douding.com'] // 生产环境白名单
+        : true, // 开发环境允许所有来源
+    credentials: true,
+    maxAge: 86400,
+  })
+)
 
 // 全局速率限制（防止暴力攻击）
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 分钟
-  max: 500,                   // 最多 500 次请求
+  windowMs: 15 * 60 * 1000, // 15 分钟
+  max: 500, // 最多 500 次请求
   standardHeaders: true,
   legacyHeaders: false,
-  message: { code: 429, message: '请求过于频繁，请稍后再试' }
+  message: { code: 429, message: '请求过于频繁，请稍后再试' },
 })
 app.use('/api', globalLimiter)
 
 // 认证端点严格速率限制（防止暴力破解）
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,  // 15 分钟内最多 20 次
-  skipSuccessfulRequests: true,  // 成功登录不计入限制
-  message: { code: 429, message: '登录尝试过于频繁，请15分钟后再试' }
+  max: 20, // 15 分钟内最多 20 次
+  skipSuccessfulRequests: true, // 成功登录不计入限制
+  message: { code: 429, message: '登录尝试过于频繁，请15分钟后再试' },
 })
 app.use('/api/auth/login', authLimiter)
 app.use('/api/auth/register', authLimiter)
@@ -100,7 +103,7 @@ function proxyToPython(targetPath) {
       port: 3457,
       path: targetPath || req.originalUrl,
       method: req.method,
-      headers: { ...req.headers, host: 'localhost:3457' }
+      headers: { ...req.headers, host: 'localhost:3457' },
     }
 
     const proxyReq = http.request(options, (proxyRes) => {
@@ -113,7 +116,7 @@ function proxyToPython(targetPath) {
       console.error(`[代理] Python 后端连接失败: ${err.message}`)
       res.status(502).json({
         code: 502,
-        message: 'Python 转换服务未启动，请确保 Python 后端运行在端口 3457'
+        message: 'Python 转换服务未启动，请确保 Python 后端运行在端口 3457',
       })
     })
 

@@ -235,10 +235,12 @@ export function initDB() {
     'ALTER TABLE bead_colors ADD COLUMN is_discontinued INTEGER DEFAULT 0',
     // 豆仓 V2.0：成本核算 + 分装位置
     'ALTER TABLE user_bead_inventory ADD COLUMN unit_cost REAL DEFAULT 0',
-    'ALTER TABLE user_bead_inventory ADD COLUMN location TEXT DEFAULT \'\'',
+    "ALTER TABLE user_bead_inventory ADD COLUMN location TEXT DEFAULT ''",
   ]
   for (const sql of migrations) {
-    try { db.exec(sql) } catch (e) {
+    try {
+      db.exec(sql)
+    } catch (e) {
       if (!e.message.includes('duplicate column')) console.warn('迁移跳过:', e.message)
     }
   }

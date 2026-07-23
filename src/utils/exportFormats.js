@@ -39,7 +39,9 @@ export function exportMaterialList(colorStats, opts = {}) {
   const header = '色号,颜色名称,HEX,数量(颗),重量(g),预估成本(元)'
   const rows = [header]
 
-  let totalBeads = 0, totalWeight = 0, totalCost = 0
+  let totalBeads = 0,
+    totalWeight = 0,
+    totalCost = 0
 
   for (const s of colorStats) {
     const weight = s.count * gramPerBead
@@ -139,7 +141,7 @@ export function framesToDataURIs(frames, width, height) {
   canvas.height = height
   const ctx = canvas.getContext('2d')
 
-  return frames.map(frame => {
+  return frames.map((frame) => {
     canvas.width = width
     canvas.height = height
     ctx.putImageData(frame, 0, 0)
@@ -161,8 +163,11 @@ export function parseGPL(content) {
     // 格式: R G B  Name
     const match = line.match(/^\s*(\d{1,3})\s+(\d{1,3})\s+(\d{1,3})\s+(.+)/)
     if (match) {
-      const hex = '#' + [match[1], match[2], match[3]]
-        .map(v => parseInt(v).toString(16).padStart(2, '0')).join('')
+      const hex =
+        '#' +
+        [match[1], match[2], match[3]]
+          .map((v) => parseInt(v).toString(16).padStart(2, '0'))
+          .join('')
       colors.push({ name: match[4].trim(), hex })
     }
   }
@@ -179,9 +184,11 @@ export function parseACT(buffer) {
   const bytes = new Uint8Array(buffer)
   // ACT 格式：每 3 字节一组 RGB（0-255），最多 256 色
   for (let i = 0; i + 2 < bytes.length; i += 3) {
-    const r = bytes[i], g = bytes[i + 1], b = bytes[i + 2]
+    const r = bytes[i],
+      g = bytes[i + 1],
+      b = bytes[i + 2]
     if (r === 0 && g === 0 && b === 0) continue // 跳过空白
-    const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
+    const hex = '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')
     colors.push({ name: `色板_${i / 3 + 1}`, hex })
   }
   return colors
@@ -226,7 +233,7 @@ export function parseASE(buffer) {
         const r = bytes[colorOffset + 1]
         const g = bytes[colorOffset + 2]
         const b = bytes[colorOffset + 3]
-        const hex = '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
+        const hex = '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')
         colors.push({ name, hex })
       }
     }

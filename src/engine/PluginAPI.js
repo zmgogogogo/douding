@@ -154,7 +154,13 @@ class EventBus {
 
   emit(event, ...args) {
     const fns = this._listeners.get(event) || []
-    fns.forEach(fn => { try { fn(...args) } catch (e) { console.error('[Plugin]', e) } })
+    fns.forEach((fn) => {
+      try {
+        fn(...args)
+      } catch (e) {
+        console.error('[Plugin]', e)
+      }
+    })
   }
 }
 
@@ -207,7 +213,11 @@ export class PluginManager {
   deactivate(pluginId) {
     const plugin = this._plugins.get(pluginId)
     if (!plugin) return
-    try { plugin.deactivate() } catch (e) { /* 忽略 */ }
+    try {
+      plugin.deactivate()
+    } catch (e) {
+      /* 忽略 */
+    }
     this._activePlugins.delete(pluginId)
   }
 
@@ -217,17 +227,26 @@ export class PluginManager {
   }
 
   /** 获取 UI 扩展 */
-  getUIPanels() { return this._context.ui._panels }
-  getMenuItems() { return this._context.ui._menuItems }
+  getUIPanels() {
+    return this._context.ui._panels
+  }
+  getMenuItems() {
+    return this._context.ui._menuItems
+  }
 
   /** 列出已安装插件 */
   listPlugins() {
-    return [...this._plugins.values()].map(p => ({
-      id: p.id, name: p.name, version: p.version,
-      type: p.type, active: this._activePlugins.has(p.id),
+    return [...this._plugins.values()].map((p) => ({
+      id: p.id,
+      name: p.name,
+      version: p.version,
+      type: p.type,
+      active: this._activePlugins.has(p.id),
     }))
   }
 
   /** 事件总线 */
-  get events() { return this._context.events }
+  get events() {
+    return this._context.events
+  }
 }

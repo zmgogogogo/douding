@@ -11,13 +11,18 @@ function boxBlur3x3(pixels, w, h) {
   const result = new Uint8Array(w * h * 3)
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      let sr = 0, sg = 0, sb = 0, count = 0
+      let sr = 0,
+        sg = 0,
+        sb = 0,
+        count = 0
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
           const nx = Math.max(0, Math.min(w - 1, x + dx))
           const ny = Math.max(0, Math.min(h - 1, y + dy))
           const off = (ny * w + nx) * 3
-          sr += pixels[off]; sg += pixels[off + 1]; sb += pixels[off + 2]
+          sr += pixels[off]
+          sg += pixels[off + 1]
+          sb += pixels[off + 2]
           count++
         }
       }
@@ -53,19 +58,27 @@ export function unsharpMask(pixels, w, h, opts = {}) {
   const result = new Uint8Array(total)
 
   for (let i = 0; i < total; i += 3) {
-    const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2]
-    const br = blurred[i], bg = blurred[i + 1], bb = blurred[i + 2]
+    const r = pixels[i],
+      g = pixels[i + 1],
+      b = pixels[i + 2]
+    const br = blurred[i],
+      bg = blurred[i + 1],
+      bb = blurred[i + 2]
 
     // 计算差异
-    const dr = r - br, dg = g - bg, db = b - bb
+    const dr = r - br,
+      dg = g - bg,
+      db = b - bb
     const diff = Math.abs(dr) + Math.abs(dg) + Math.abs(db)
 
     if (diff < threshold) {
       // 平坦区域：原样保留，不锐化
-      result[i] = r; result[i + 1] = g; result[i + 2] = b
+      result[i] = r
+      result[i + 1] = g
+      result[i + 2] = b
     } else {
       // 边缘区域：增强对比
-      result[i]     = Math.max(0, Math.min(255, Math.round(r + amount * dr)))
+      result[i] = Math.max(0, Math.min(255, Math.round(r + amount * dr)))
       result[i + 1] = Math.max(0, Math.min(255, Math.round(g + amount * dg)))
       result[i + 2] = Math.max(0, Math.min(255, Math.round(b + amount * db)))
     }

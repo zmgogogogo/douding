@@ -12,7 +12,8 @@
         :style="{ transform: `translateX(-${currentIndex * 100}%)` }"
       >
         <div
-          v-for="(banner, i) in banners" :key="i"
+          v-for="(banner, i) in banners"
+          :key="i"
           class="w-full h-full flex-shrink-0 flex items-center justify-center cursor-pointer relative"
           :style="{ backgroundColor: banner.bgColor || '#e2e8f0' }"
           @click="onBannerClick(banner)"
@@ -28,7 +29,9 @@
           <!-- 文字叠加层 -->
           <div class="relative z-10 text-center px-8" v-if="banner.title">
             <h3 class="text-xl font-bold text-white drop-shadow-lg">{{ banner.title }}</h3>
-            <p v-if="banner.subtitle" class="text-sm text-white/80 mt-1 drop-shadow">{{ banner.subtitle }}</p>
+            <p v-if="banner.subtitle" class="text-sm text-white/80 mt-1 drop-shadow">
+              {{ banner.subtitle }}
+            </p>
           </div>
         </div>
       </div>
@@ -39,12 +42,11 @@
         class="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5"
       >
         <span
-          v-for="(b, i) in banners" :key="i"
+          v-for="(b, i) in banners"
+          :key="i"
           class="inline-block rounded-full transition-all duration-300 cursor-pointer"
           :class="[
-            i === currentIndex
-              ? 'w-4 h-1.5 bg-white'
-              : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80'
+            i === currentIndex ? 'w-4 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80',
           ]"
           @click.stop="goTo(i)"
         />
@@ -58,7 +60,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
-  banners: { type: Array, default: () => [] }
+  banners: { type: Array, default: () => [] },
 })
 
 const router = useRouter()

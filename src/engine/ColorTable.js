@@ -9,7 +9,7 @@
 
 export class ColorTable {
   /** @type {Array<{code:string, name:string, hex:string, rgb:[number,number,number], brand:string, series:string}>} */
-  #colors = []  // 索引 → 颜色对象（索引 0 为 null 占位，实际颜色从 1 开始）
+  #colors = [] // 索引 → 颜色对象（索引 0 为 null 占位，实际颜色从 1 开始）
 
   /** @type {Map<string, number>} hex → 索引（hex 统一小写无 #） */
   #hexToIndex = new Map()
@@ -36,7 +36,7 @@ export class ColorTable {
         hex: c.hex,
         rgb: this._hexToRgb(c.hex),
         brand: c.brand,
-        series: c.series
+        series: c.series,
       })
       const idx = i + 1
       this.#hexToIndex.set(this._normalizeHex(c.hex), idx)
@@ -65,10 +65,14 @@ export class ColorTable {
   // ==================== 查询 ====================
 
   /** 颜色总数（不含空格） */
-  get size() { return this.#colors.length - 1 }
+  get size() {
+    return this.#colors.length - 1
+  }
 
   /** 所有颜色数据（索引 1..n，只读副本） */
-  get colors() { return this.#colors.slice(1) }
+  get colors() {
+    return this.#colors.slice(1)
+  }
 
   /**
    * 按 hex 查找索引
@@ -126,7 +130,9 @@ export class ColorTable {
     for (let i = 1; i < this.#colors.length; i++) {
       const [tr, tg, tb] = target
       const [cr, cg, cb] = this.#colors[i].rgb
-      const dr = tr - cr, dg = tg - cg, db = tb - cb
+      const dr = tr - cr,
+        dg = tg - cg,
+        db = tb - cb
       const dist = dr * dr * 2 + dg * dg * 3 + db * db * 1
       if (dist < bestDist) {
         bestDist = dist
@@ -140,12 +146,12 @@ export class ColorTable {
 
   /** 序列化为可 JSON 存储的数组 */
   serialize() {
-    return this.#colors.slice(1).map(c => ({
+    return this.#colors.slice(1).map((c) => ({
       code: c.code,
       name: c.name,
       hex: c.hex,
       brand: c.brand,
-      series: c.series
+      series: c.series,
     }))
   }
 
@@ -157,10 +163,6 @@ export class ColorTable {
 
   _hexToRgb(hex) {
     const h = this._normalizeHex(hex)
-    return [
-      parseInt(h.slice(0, 2), 16),
-      parseInt(h.slice(2, 4), 16),
-      parseInt(h.slice(4, 6), 16)
-    ]
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
   }
 }

@@ -10,7 +10,7 @@ import {
   checkColorblindAccessibility,
   generateFill,
   findBestMatch,
-  crossBrandMapping
+  crossBrandMapping,
 } from '../services/paletteAdvisor.js'
 
 const router = Router()
@@ -32,7 +32,7 @@ router.post('/palette/recommend', authOptional, async (req, res) => {
   try {
     const { existingHexes = [], scheme = 'auto', brand } = req.body || {}
     let colors = await getAvailableColors()
-    if (brand && brand !== '全部') colors = colors.filter(c => c.brand === brand)
+    if (brand && brand !== '全部') colors = colors.filter((c) => c.brand === brand)
 
     const result = recommendPalette(existingHexes, colors, scheme)
     res.json({ code: 200, data: result })
@@ -79,7 +79,7 @@ router.post('/palette/match', authOptional, async (req, res) => {
   try {
     const { targetHex, brand, exclude = [] } = req.body || {}
     let colors = await getAvailableColors()
-    if (brand && brand !== '全部') colors = colors.filter(c => c.brand === brand)
+    if (brand && brand !== '全部') colors = colors.filter((c) => c.brand === brand)
     const matches = findBestMatch(targetHex, colors, exclude, 5)
     res.json({ code: 200, data: { matches } })
   } catch (e) {

@@ -7,14 +7,14 @@
   <div class="px-4 mb-4">
     <div class="grid grid-cols-4 gap-3">
       <div
-        v-for="tool in tools" :key="tool.name"
+        v-for="tool in tools"
+        :key="tool.name"
         class="flex flex-col items-center gap-1.5 cursor-pointer group"
         @click="onClick(tool)"
       >
         <!-- 图标容器 -->
         <div
-          class="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform duration-100
-                 active:scale-90"
+          class="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform duration-100 active:scale-90"
           :style="{ backgroundColor: tool.bgColor }"
         >
           <component :is="tool.icon" :size="24" :style="{ color: tool.iconColor }" />
@@ -40,29 +40,29 @@ const tools = [
     icon: ImageIcon,
     bgColor: '#dcfce7',
     iconColor: '#16a34a',
-    route: '/image-import'
+    route: '/image-import',
   },
   {
     name: '空白创作',
     icon: PenIcon,
     bgColor: '#dbeafe',
     iconColor: '#2563eb',
-    route: '/editor'
+    route: '/editor',
   },
   {
     name: 'Q版生成',
     icon: SparklesIcon,
     bgColor: '#fef3c7',
     iconColor: '#d97706',
-    route: '/editor?mode=qstyle'
+    route: '/editor?mode=qstyle',
   },
   {
     name: '辅助拼豆',
     icon: Grid3X3Icon,
     bgColor: '#fce7f3',
     iconColor: '#db2777',
-    route: '/editor?mode=assist'
-  }
+    route: '/editor?mode=assist',
+  },
 ]
 
 function onClick(tool) {

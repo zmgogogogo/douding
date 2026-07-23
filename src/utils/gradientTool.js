@@ -23,7 +23,7 @@ function generateColorStops(hex1, hex2, steps) {
     const r = Math.round(r1 + (r2 - r1) * t)
     const g = Math.round(g1 + (g2 - g1) * t)
     const b = Math.round(b1 + (b2 - b1) * t)
-    stops.push('#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join(''))
+    stops.push('#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join(''))
   }
   return stops
 }
@@ -45,9 +45,14 @@ function nearestBeadColor(hex, beadColors) {
     const r2 = parseInt(bc.hex.slice(1, 3), 16)
     const g2 = parseInt(bc.hex.slice(3, 5), 16)
     const b2 = parseInt(bc.hex.slice(5, 7), 16)
-    const dr = r1 - r2, dg = g1 - g2, db = b1 - b2
+    const dr = r1 - r2,
+      dg = g1 - g2,
+      db = b1 - b2
     const dist = dr * dr * 2 + dg * dg * 3 + db * db * 1 // 人眼绿色敏感度加权
-    if (dist < bestDist) { bestDist = dist; bestHex = bc.hex }
+    if (dist < bestDist) {
+      bestDist = dist
+      bestHex = bc.hex
+    }
   }
   return bestHex
 }
@@ -73,17 +78,17 @@ export function linearGradient(r1, c1, r2, c2, hex1, hex2, levels, beadColors, g
   if (r1 === r2 && c1 === c2) {
     // 单点退化：全画布均匀填充
     const hex = nearestBeadColor(stops[0], beadColors)
-    for (let r = 0; r < gridH; r++)
-      for (let c = 0; c < gridW; c++)
-        cells.push({ r, c, hex })
+    for (let r = 0; r < gridH; r++) for (let c = 0; c < gridW; c++) cells.push({ r, c, hex })
     return cells
   }
 
   // 投影距离范围
-  const dx = c2 - c1, dy = r2 - r1
+  const dx = c2 - c1,
+    dy = r2 - r1
   const lenSq = dx * dx + dy * dy
 
-  let minProj = Infinity, maxProj = -Infinity
+  let minProj = Infinity,
+    maxProj = -Infinity
   const projCache = []
 
   for (let r = 0; r < gridH; r++) {
@@ -120,7 +125,17 @@ export function linearGradient(r1, c1, r2, c2, hex1, hex2, levels, beadColors, g
  * @param {number} gridH
  * @returns {Array<{r:number, c:number, hex:string}>}
  */
-export function radialGradient(cr, cc, radius, innerHex, outerHex, levels, beadColors, gridW, gridH) {
+export function radialGradient(
+  cr,
+  cc,
+  radius,
+  innerHex,
+  outerHex,
+  levels,
+  beadColors,
+  gridW,
+  gridH
+) {
   const stops = generateColorStops(innerHex, outerHex, levels)
   const cells = []
 

@@ -6,14 +6,7 @@
 import { ref } from 'vue'
 
 export function useTouchGesture(opts = {}) {
-  const {
-    onZoom,
-    onRotate,
-    onPan,
-    onLongPress,
-    onUndo,
-    onRedo,
-  } = opts
+  const { onZoom, onRotate, onPan, onLongPress, onUndo, onRedo } = opts
 
   let touchStartTime = 0
   let touchStartPos = null
@@ -43,7 +36,7 @@ export function useTouchGesture(opts = {}) {
       const dx = e.touches[0].clientX - e.touches[1].clientX
       const dy = e.touches[0].clientY - e.touches[1].clientY
       lastDist = Math.sqrt(dx * dx + dy * dy)
-      lastAngle = Math.atan2(dy, dx) * 180 / Math.PI
+      lastAngle = (Math.atan2(dy, dx) * 180) / Math.PI
     }
 
     // 三指以上
@@ -68,7 +61,7 @@ export function useTouchGesture(opts = {}) {
       const dx = e.touches[0].clientX - e.touches[1].clientX
       const dy = e.touches[0].clientY - e.touches[1].clientY
       const dist = Math.sqrt(dx * dx + dy * dy)
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI
 
       if (lastDist > 0 && onZoom) {
         const scale = dist / lastDist

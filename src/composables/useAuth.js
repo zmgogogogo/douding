@@ -36,7 +36,9 @@ export function useAuth() {
       const res = await API.get('/api/auth/me')
       user.value = res.data
       localStorage.setItem('douding_user', JSON.stringify(res.data))
-    } catch { /* token 失效，忽略 */ }
+    } catch {
+      /* token 失效，忽略 */
+    }
   }
 
   return { token, user, isLoggedIn, setAuth, logout, refreshUser }

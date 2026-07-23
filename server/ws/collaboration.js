@@ -16,7 +16,16 @@ const rooms = new Map() // designId → { members: Map<socketId, Member>, locks:
  */
 
 // 给每个协作者分配一个颜色标识
-const MEMBER_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
+const MEMBER_COLORS = [
+  '#3b82f6',
+  '#ef4444',
+  '#10b981',
+  '#f59e0b',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#f97316',
+]
 
 function getRoom(designId) {
   if (!rooms.has(designId)) {
@@ -113,7 +122,7 @@ function broadcastPixelChanges(io, socket, changes) {
 
   for (const ch of changes) {
     const lockKey = `${ch.r},${ch.c}`
-    const existingLock = [...room.locks].find(l => l.endsWith(':' + lockKey))
+    const existingLock = [...room.locks].find((l) => l.endsWith(':' + lockKey))
     if (existingLock && !existingLock.startsWith(socket.id + ':')) {
       // 他人已锁定该格，跳过
       continue
@@ -149,7 +158,8 @@ function broadcastCursor(io, socket, { r, c }) {
     socketId: socket.id,
     nickname: member.nickname,
     color: member.color,
-    r, c,
+    r,
+    c,
   })
 }
 
@@ -159,7 +169,7 @@ function broadcastCursor(io, socket, { r, c }) {
 function getMemberList(designId) {
   const room = rooms.get(designId)
   if (!room) return []
-  return [...room.members.values()].map(m => ({
+  return [...room.members.values()].map((m) => ({
     socketId: m.socketId,
     userId: m.userId,
     nickname: m.nickname,
@@ -177,7 +187,7 @@ function requestSnapshot(io, socket) {
 
   // 通知房间内第一个人发送快照
   const room = rooms.get(designId)
-  const firstMember = [...room.members.values()].find(m => m.socketId !== socket.id)
+  const firstMember = [...room.members.values()].find((m) => m.socketId !== socket.id)
   if (firstMember) {
     io.to(firstMember.socketId).emit('collab:requestSnapshot', {
       requesterId: socket.id,

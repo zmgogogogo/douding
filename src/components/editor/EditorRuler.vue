@@ -110,7 +110,7 @@ function drawHorizontalRuler() {
   const pixelsPerTick = tickInterval * zoom
 
   // 找出第一个可见刻度
-  const firstVisibleTick = Math.ceil((-contentLeft) / pixelsPerTick) * tickInterval
+  const firstVisibleTick = Math.ceil(-contentLeft / pixelsPerTick) * tickInterval
 
   ctx.fillStyle = '#6b7280'
   ctx.font = `${Math.min(10, zoom * 0.7)}px system-ui, sans-serif`
@@ -178,7 +178,7 @@ function drawVerticalRuler() {
 
   const tickInterval = getTickInterval(zoom)
   const pixelsPerTick = tickInterval * zoom
-  const firstVisibleTick = Math.ceil((-contentTop) / pixelsPerTick) * tickInterval
+  const firstVisibleTick = Math.ceil(-contentTop / pixelsPerTick) * tickInterval
 
   ctx.fillStyle = '#6b7280'
   ctx.font = `${Math.min(10, zoom * 0.7)}px system-ui, sans-serif`
@@ -251,7 +251,20 @@ function scheduleDraw() {
   })
 }
 
-watch(() => [props.zoom, props.panX, props.panY, props.gridW, props.gridH, props.mouseCell, props.containerW, props.containerH], scheduleDraw, { deep: true })
+watch(
+  () => [
+    props.zoom,
+    props.panX,
+    props.panY,
+    props.gridW,
+    props.gridH,
+    props.mouseCell,
+    props.containerW,
+    props.containerH,
+  ],
+  scheduleDraw,
+  { deep: true }
+)
 
 onMounted(() => {
   nextTick(() => drawRuler())

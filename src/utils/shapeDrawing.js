@@ -24,7 +24,8 @@ export function bresenhamLine(r1, c1, r2, c2, width = 1) {
   const sc = c1 < c2 ? 1 : -1
   let err = dr - dc
 
-  let r = r1, c = c1
+  let r = r1,
+    c = c1
 
   while (true) {
     // 线宽：在垂直方向扩展
@@ -40,11 +41,20 @@ export function bresenhamLine(r1, c1, r2, c2, width = 1) {
     if (r === r2 && c === c2) break
 
     const e2 = 2 * err
-    if (e2 > -dc) { err -= dc; r += sr }
-    if (e2 < dr) { err += dr; c += sc }
+    if (e2 > -dc) {
+      err -= dc
+      r += sr
+    }
+    if (e2 < dr) {
+      err += dr
+      c += sc
+    }
   }
 
-  return [...cells].map(k => { const [r, c] = k.split(',').map(Number); return { r, c } })
+  return [...cells].map((k) => {
+    const [r, c] = k.split(',').map(Number)
+    return { r, c }
+  })
 }
 
 /**
@@ -59,8 +69,10 @@ export function bresenhamLine(r1, c1, r2, c2, width = 1) {
  * @returns {Array<{r:number, c:number}>}
  */
 export function drawRect(r1, c1, r2, c2, mode = 'outline', lineWidth = 1, radius = 0) {
-  const minR = Math.min(r1, r2), maxR = Math.max(r1, r2)
-  const minC = Math.min(c1, c2), maxC = Math.max(c1, c2)
+  const minR = Math.min(r1, r2),
+    maxR = Math.max(r1, r2)
+  const minC = Math.min(c1, c2),
+    maxC = Math.max(c1, c2)
   const cells = new Set()
   const add = (r, c) => cells.add(`${r},${c}`)
 
@@ -69,12 +81,13 @@ export function drawRect(r1, c1, r2, c2, mode = 'outline', lineWidth = 1, radius
     for (let r = minR; r <= maxR; r++) {
       for (let c = minC; c <= maxC; c++) {
         if (radius > 0) {
-          const inCorner = (r < minR + radius || r > maxR - radius) &&
-                           (c < minC + radius || c > maxC - radius)
+          const inCorner =
+            (r < minR + radius || r > maxR - radius) && (c < minC + radius || c > maxC - radius)
           if (inCorner) {
-            const cornerRX = (c < minC + radius) ? minC + radius - 1 : maxC - radius
-            const cornerRY = (r < minR + radius) ? minR + radius - 1 : maxR - radius
-            const dx = c - cornerRX, dy = r - cornerRY
+            const cornerRX = c < minC + radius ? minC + radius - 1 : maxC - radius
+            const cornerRY = r < minR + radius ? minR + radius - 1 : maxR - radius
+            const dx = c - cornerRX,
+              dy = r - cornerRY
             if (dx * dx + dy * dy > radius * radius) continue
           }
         }
@@ -96,7 +109,10 @@ export function drawRect(r1, c1, r2, c2, mode = 'outline', lineWidth = 1, radius
     }
   }
 
-  return [...cells].map(k => { const [r, c] = k.split(',').map(Number); return { r, c } })
+  return [...cells].map((k) => {
+    const [r, c] = k.split(',').map(Number)
+    return { r, c }
+  })
 }
 
 /**
@@ -123,14 +139,19 @@ export function drawCircle(cr, cc, radius, mode = 'outline', pixelStyle = 'hard'
     }
   } else {
     // 中点画圆算法
-    let x = 0, y = radius
+    let x = 0,
+      y = radius
     let d = 1 - radius
 
     while (x <= y) {
-      add(cr + x, cc + y); add(cr - x, cc + y)
-      add(cr + x, cc - y); add(cr - x, cc - y)
-      add(cr + y, cc + x); add(cr - y, cc + x)
-      add(cr + y, cc - x); add(cr - y, cc - x)
+      add(cr + x, cc + y)
+      add(cr - x, cc + y)
+      add(cr + x, cc - y)
+      add(cr - x, cc - y)
+      add(cr + y, cc + x)
+      add(cr - y, cc + x)
+      add(cr + y, cc - x)
+      add(cr - y, cc - x)
 
       if (d <= 0) {
         d += 2 * x + 3
@@ -157,7 +178,10 @@ export function drawCircle(cr, cc, radius, mode = 'outline', pixelStyle = 'hard'
     }
   }
 
-  return [...cells].map(k => { const [r, c] = k.split(',').map(Number); return { r, c } })
+  return [...cells].map((k) => {
+    const [r, c] = k.split(',').map(Number)
+    return { r, c }
+  })
 }
 
 /**
@@ -177,7 +201,10 @@ export function drawPixelText(text, startR, startC, scale = 1, letterSpacing = 1
   let colOffset = 0
   for (const ch of upper) {
     const glyph = PIXEL_FONT[ch]
-    if (!glyph) { colOffset += 4 * scale + letterSpacing; continue }
+    if (!glyph) {
+      colOffset += 4 * scale + letterSpacing
+      continue
+    }
 
     for (const { r, c } of glyph) {
       for (let sr = 0; sr < scale; sr++) {
@@ -208,47 +235,47 @@ function defineGlyph(ch, width, ...rows) {
 }
 
 // 5行高 × 3列宽（大写字母）
-defineGlyph('A', 3, '010','101','111','101','101')
-defineGlyph('B', 3, '110','101','110','101','110')
-defineGlyph('C', 3, '011','100','100','100','011')
-defineGlyph('D', 3, '110','101','101','101','110')
-defineGlyph('E', 3, '111','100','110','100','111')
-defineGlyph('F', 3, '111','100','110','100','100')
-defineGlyph('G', 3, '011','100','101','101','011')
-defineGlyph('H', 3, '101','101','111','101','101')
-defineGlyph('I', 3, '111','010','010','010','111')
-defineGlyph('J', 3, '001','001','001','101','010')
-defineGlyph('K', 3, '101','101','110','101','101')
-defineGlyph('L', 3, '100','100','100','100','111')
-defineGlyph('M', 5, '10001','11011','10101','10001','10001')
-defineGlyph('N', 3, '101','111','111','101','101')
-defineGlyph('O', 3, '010','101','101','101','010')
-defineGlyph('P', 3, '110','101','110','100','100')
-defineGlyph('Q', 4, '0110','1001','1001','1001','0111')
-defineGlyph('R', 3, '110','101','110','101','101')
-defineGlyph('S', 3, '011','100','010','001','110')
-defineGlyph('T', 3, '111','010','010','010','010')
-defineGlyph('U', 3, '101','101','101','101','010')
-defineGlyph('V', 3, '101','101','101','010','010')
-defineGlyph('W', 5, '10001','10001','10101','11011','10001')
-defineGlyph('X', 3, '101','010','010','010','101')
-defineGlyph('Y', 3, '101','010','010','010','010')
-defineGlyph('Z', 3, '111','001','010','100','111')
+defineGlyph('A', 3, '010', '101', '111', '101', '101')
+defineGlyph('B', 3, '110', '101', '110', '101', '110')
+defineGlyph('C', 3, '011', '100', '100', '100', '011')
+defineGlyph('D', 3, '110', '101', '101', '101', '110')
+defineGlyph('E', 3, '111', '100', '110', '100', '111')
+defineGlyph('F', 3, '111', '100', '110', '100', '100')
+defineGlyph('G', 3, '011', '100', '101', '101', '011')
+defineGlyph('H', 3, '101', '101', '111', '101', '101')
+defineGlyph('I', 3, '111', '010', '010', '010', '111')
+defineGlyph('J', 3, '001', '001', '001', '101', '010')
+defineGlyph('K', 3, '101', '101', '110', '101', '101')
+defineGlyph('L', 3, '100', '100', '100', '100', '111')
+defineGlyph('M', 5, '10001', '11011', '10101', '10001', '10001')
+defineGlyph('N', 3, '101', '111', '111', '101', '101')
+defineGlyph('O', 3, '010', '101', '101', '101', '010')
+defineGlyph('P', 3, '110', '101', '110', '100', '100')
+defineGlyph('Q', 4, '0110', '1001', '1001', '1001', '0111')
+defineGlyph('R', 3, '110', '101', '110', '101', '101')
+defineGlyph('S', 3, '011', '100', '010', '001', '110')
+defineGlyph('T', 3, '111', '010', '010', '010', '010')
+defineGlyph('U', 3, '101', '101', '101', '101', '010')
+defineGlyph('V', 3, '101', '101', '101', '010', '010')
+defineGlyph('W', 5, '10001', '10001', '10101', '11011', '10001')
+defineGlyph('X', 3, '101', '010', '010', '010', '101')
+defineGlyph('Y', 3, '101', '010', '010', '010', '010')
+defineGlyph('Z', 3, '111', '001', '010', '100', '111')
 // 数字
-defineGlyph('0', 3, '010','101','101','101','010')
-defineGlyph('1', 3, '010','110','010','010','111')
-defineGlyph('2', 3, '110','001','010','100','111')
-defineGlyph('3', 3, '110','001','010','001','110')
-defineGlyph('4', 3, '100','101','111','001','001')
-defineGlyph('5', 3, '111','100','110','001','110')
-defineGlyph('6', 3, '011','100','110','101','010')
-defineGlyph('7', 3, '111','001','010','010','010')
-defineGlyph('8', 3, '010','101','010','101','010')
-defineGlyph('9', 3, '010','101','011','001','010')
+defineGlyph('0', 3, '010', '101', '101', '101', '010')
+defineGlyph('1', 3, '010', '110', '010', '010', '111')
+defineGlyph('2', 3, '110', '001', '010', '100', '111')
+defineGlyph('3', 3, '110', '001', '010', '001', '110')
+defineGlyph('4', 3, '100', '101', '111', '001', '001')
+defineGlyph('5', 3, '111', '100', '110', '001', '110')
+defineGlyph('6', 3, '011', '100', '110', '101', '010')
+defineGlyph('7', 3, '111', '001', '010', '010', '010')
+defineGlyph('8', 3, '010', '101', '010', '101', '010')
+defineGlyph('9', 3, '010', '101', '011', '001', '010')
 // 符号
-defineGlyph('.', 1, '0','0','0','0','1')
-defineGlyph('!', 1, '1','1','1','0','1')
-defineGlyph('?', 3, '110','001','010','000','010')
-defineGlyph('-', 3, '000','000','111','000','000')
-defineGlyph('+', 3, '000','010','111','010','000')
-defineGlyph(' ', 3, '000','000','000','000','000')
+defineGlyph('.', 1, '0', '0', '0', '0', '1')
+defineGlyph('!', 1, '1', '1', '1', '0', '1')
+defineGlyph('?', 3, '110', '001', '010', '000', '010')
+defineGlyph('-', 3, '000', '000', '111', '000', '000')
+defineGlyph('+', 3, '000', '010', '111', '010', '000')
+defineGlyph(' ', 3, '000', '000', '000', '000', '000')

@@ -29,7 +29,8 @@ router.post('/register', async (req, res) => {
     if (existing) return res.status(409).json({ code: 409, message: '用户名已存在' })
 
     const hash = await bcrypt.hash(password, BCRYPT_ROUNDS)
-    const result = db.prepare('INSERT INTO users (username, password_hash, nickname) VALUES (?, ?, ?)')
+    const result = db
+      .prepare('INSERT INTO users (username, password_hash, nickname) VALUES (?, ?, ?)')
       .run(username, hash, nickname || username)
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid)
@@ -76,8 +77,9 @@ router.get('/me', authRequired, (req, res) => {
 // 更新个人资料
 router.put('/profile', authRequired, (req, res) => {
   const { nickname, bio } = req.body || {}
-  db.prepare("UPDATE users SET nickname = ?, bio = ?, updated_at = datetime('now') WHERE id = ?")
-    .run(nickname || null, bio || null, req.user.id)
+  db.prepare(
+    "UPDATE users SET nickname = ?, bio = ?, updated_at = datetime('now') WHERE id = ?"
+  ).run(nickname || null, bio || null, req.user.id)
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
   res.json({ code: 200, data: userPublic(user) })
 })

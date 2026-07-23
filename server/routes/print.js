@@ -24,8 +24,11 @@ router.post('/print/grid', authOptional, async (req, res) => {
         if (cell?.hex) {
           const key = cell.hex
           const existing = colorCounts.get(key)
-          if (existing) { existing.count++ }
-          else { colorCounts.set(key, { ...cell, count: 1 }) }
+          if (existing) {
+            existing.count++
+          } else {
+            colorCounts.set(key, { ...cell, count: 1 })
+          }
         }
       }
     }
@@ -72,30 +75,37 @@ router.post('/print/grid', authOptional, async (req, res) => {
 
 <div class="grid-wrap">
 <table class="grid-table">
-  <tr><th class="col-header"></th>${Array.from({length:w},(_,i)=>`<th class="col-header">${i+1}</th>`).join('')}</tr>
-  ${Array.from({length:h},(_,r)=>`
+  <tr><th class="col-header"></th>${Array.from({ length: w }, (_, i) => `<th class="col-header">${i + 1}</th>`).join('')}</tr>
+  ${Array.from(
+    { length: h },
+    (_, r) => `
     <tr>
-      <td class="row-header">${r+1}</td>
-      ${Array.from({length:w},(_,c)=>{
+      <td class="row-header">${r + 1}</td>
+      ${Array.from({ length: w }, (_, c) => {
         const cell = grid[r]?.[c]
         return cell?.hex
-          ? `<td style="background:${cell.hex}" title="${cell.name} ${cell.hex} (${r+1},${c+1})"></td>`
+          ? `<td style="background:${cell.hex}" title="${cell.name} ${cell.hex} (${r + 1},${c + 1})"></td>`
           : '<td></td>'
       }).join('')}
-    </tr>`).join('')}
+    </tr>`
+  ).join('')}
 </table>
 </div>
 
 <div class="legend">
-  ${beadList.map(c => `
+  ${beadList
+    .map(
+      (c) => `
     <div class="legend-item">
       <div class="legend-swatch" style="background:${c.hex}"></div>
       <span>${escapeHtml(c.name)}</span>
       <span class="legend-count">×${c.count}</span>
-    </div>`).join('')}
+    </div>`
+    )
+    .join('')}
 </div>
 
-<div class="meta" style="margin-top:20px;">${beadList.length} 种颜色 | 总计 ${beadList.reduce((s,c)=>s+c.count,0)} 颗珠子</div>
+<div class="meta" style="margin-top:20px;">${beadList.length} 种颜色 | 总计 ${beadList.reduce((s, c) => s + c.count, 0)} 颗珠子</div>
 </body></html>`
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
@@ -107,7 +117,11 @@ router.post('/print/grid', authOptional, async (req, res) => {
 })
 
 function escapeHtml(str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
 export default router

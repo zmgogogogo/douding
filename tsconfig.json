@@ -43,10 +43,5 @@
     "vite.config.ts",
     "eslint.config.js"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "public/uploads",
-    "server-python"
-  ]
+  "exclude": ["node_modules", "dist", "public/uploads", "server-python"]
 }

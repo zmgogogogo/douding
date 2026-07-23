@@ -14,14 +14,19 @@ import fs from 'fs'
 import path from 'path'
 
 const IMG = process.argv[2]
-if (!IMG) { console.log('用法: node server/diagnose.js <图片路径>'); process.exit(1) }
+if (!IMG) {
+  console.log('用法: node server/diagnose.js <图片路径>')
+  process.exit(1)
+}
 
 const TARGET = 60
 const OUT = './diagnose_output'
 fs.mkdirSync(OUT, { recursive: true })
 
 async function savePixels(filename, pixels, w, h) {
-  await sharp(pixels, { raw: { width: w, height: h, channels: 3 } }).toFile(path.join(OUT, filename))
+  await sharp(pixels, { raw: { width: w, height: h, channels: 3 } }).toFile(
+    path.join(OUT, filename)
+  )
 }
 
 async function saveGrid(filename, grid, w, h) {
@@ -66,7 +71,9 @@ async function main() {
 
   const { data: interData, info: interInfo } = await sharp(IMG)
     .resize(interW, interH, { fit: 'fill', kernel: 'nearest' })
-    .removeAlpha().raw().toBuffer({ resolveWithObject: true })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true })
 
   await savePixels('0_intermediate.png', interData, interW, interH)
   console.log('  → 0_intermediate.png')
@@ -84,10 +91,19 @@ async function main() {
 
   // 保存掩码可视化
   const maskVis = new Uint8Array(interW * interH * 3)
-  const pal = [[255,255,255],[30,30,30],[255,200,150],[80,120,220],[255,100,100]]
+  const pal = [
+    [255, 255, 255],
+    [30, 30, 30],
+    [255, 200, 150],
+    [80, 120, 220],
+    [255, 100, 100],
+  ]
   for (let i = 0; i < interW * interH; i++) {
-    const off = i * 3; const c = pal[mask[i]] || pal[4]
-    maskVis[off] = c[0]; maskVis[off+1] = c[1]; maskVis[off+2] = c[2]
+    const off = i * 3
+    const c = pal[mask[i]] || pal[4]
+    maskVis[off] = c[0]
+    maskVis[off + 1] = c[1]
+    maskVis[off + 2] = c[2]
   }
   await savePixels('2_segmentation.png', maskVis, interW, interH)
   console.log('  → 2_segmentation.png (白=背景 黑=轮廓 橙=皮肤 蓝=主色块 红=细节)')
@@ -103,7 +119,10 @@ async function main() {
 
   // ====== 3.5 预清理 ======
   console.log('\n3.5 中间网格预清理')
-  const preClean = postProcessGrid(qResult.grid, interW, interH, mask, regionPalettes, { minComponentSize: 2, morphOpen: false })
+  const preClean = postProcessGrid(qResult.grid, interW, interH, mask, regionPalettes, {
+    minComponentSize: 2,
+    morphOpen: false,
+  })
   const cleanInterGrid = preClean.grid
   console.log('  清理:', preClean.stats.componentFilter.removed, '噪点')
   await saveGrid('3_5_precleaned.png', cleanInterGrid, interW, interH)
@@ -113,7 +132,16 @@ async function main() {
   console.log('\n四、边缘对齐多数投票下采样')
   const offset = computeGridOffset(filtered, interW, interH, TARGET, TARGET)
   console.log('  偏移:', JSON.stringify(offset))
-  const grid = downsampleGrid(cleanInterGrid, interW, interH, TARGET, TARGET, mask, offset.ox, offset.oy)
+  const grid = downsampleGrid(
+    cleanInterGrid,
+    interW,
+    interH,
+    TARGET,
+    TARGET,
+    mask,
+    offset.ox,
+    offset.oy
+  )
   await saveGrid('4_downsampled.png', grid, TARGET, TARGET)
   console.log('  → 4_downsampled.png  (' + countColors(grid) + '色)')
 
@@ -122,7 +150,10 @@ async function main() {
 
   // ====== 五、后处理 ======
   console.log('\n五、后处理')
-  const postResult = postProcessGrid(grid, TARGET, TARGET, targetMask, regionPalettes, { minComponentSize: 4, morphOpen: true })
+  const postResult = postProcessGrid(grid, TARGET, TARGET, targetMask, regionPalettes, {
+    minComponentSize: 4,
+    morphOpen: true,
+  })
   console.log('  后处理:', JSON.stringify(postResult.stats))
   await saveGrid('5_final.png', postResult.grid, TARGET, TARGET)
   console.log('  → 5_final.png  (' + countColors(postResult.grid) + '色)')
@@ -132,4 +163,7 @@ async function main() {
   console.log('逐张检查: 0→1→2→3→3_5→4→5 定位杂色引入阶段')
 }
 
-main().catch(e => { console.error('诊断失败:', e); process.exit(1) })
+main().catch((e) => {
+  console.error('诊断失败:', e)
+  process.exit(1)
+})

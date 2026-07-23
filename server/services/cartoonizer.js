@@ -30,10 +30,7 @@ async function localCartoonize(inputPath, w, h, style) {
     .toBuffer()
 
   // Step 2: Median 平滑（去除噪点，保持边缘）
-  const smoothed = await sharp(small)
-    .median(sp.smoothRadius)
-    .png()
-    .toBuffer()
+  const smoothed = await sharp(small).median(sp.smoothRadius).png().toBuffer()
 
   // Step 3: 放大回目标尺寸（nearest 保持像素块感）
   const upscaled = await sharp(smoothed)
@@ -64,8 +61,9 @@ async function generateEdges(inputPath, w, h, strength) {
     .greyscale()
     .median(3)
     .convolve({
-      width: 3, height: 3,
-      kernel: [-1, -1, -1, -1, 8, -1, -1, -1, -1]
+      width: 3,
+      height: 3,
+      kernel: [-1, -1, -1, -1, 8, -1, -1, -1, -1],
     })
     .linear(strength, -(128 * (strength - 1)))
     .threshold(60)
@@ -73,10 +71,7 @@ async function generateEdges(inputPath, w, h, strength) {
     .toBuffer()
 
   // 白色边缘 → 反转为黑线白底
-  return sharp(edgeBuffer)
-    .negate()
-    .png()
-    .toBuffer()
+  return sharp(edgeBuffer).negate().png().toBuffer()
 }
 
 // ============================================
@@ -89,7 +84,9 @@ async function tryAiCartoonize(inputPath, style, w, h) {
   if (replicateKey) {
     try {
       return await replicateCartoon(inputPath, style, w, h, replicateKey)
-    } catch (e) { console.warn('Replicate 失败，尝试备选:', e.message) }
+    } catch (e) {
+      console.warn('Replicate 失败，尝试备选:', e.message)
+    }
   }
 
   // 方案B：通义万相
@@ -97,7 +94,9 @@ async function tryAiCartoonize(inputPath, style, w, h) {
   if (aliKey) {
     try {
       return await tongyiCartoon(inputPath, style, w, h, aliKey)
-    } catch (e) { console.warn('通义万相失败:', e.message) }
+    } catch (e) {
+      console.warn('通义万相失败:', e.message)
+    }
   }
 
   return null
@@ -113,11 +112,16 @@ async function replicateCartoon(inputPath, style, w, h, apiKey) {
   const dataUrl = `data:image/jpeg;base64,${imgBase64}`
 
   const prompts = {
-    q_big_head: 'chibi kawaii portrait, 1:1 big head tiny body, huge sparkling eyes, clean black outlines, flat cel-shaded colors, NO shading NO gradient, pure white background, pixel bead art',
-    cute_sticker: 'kawaii sticker, thick black borders, super bright saturated flat colors, simple shapes, white background, no shadows, bead art',
-    simple_line: 'minimalist flat vector art, soft muted pastels, thin clean lines, elegant simple, no texture, bead pixel art',
-    pet_cute: 'kawaii chibi pet, round fluffy face, huge cute eyes, clean black outlines, flat colors, no fur texture, white bg',
-    couple_double: 'kawaii chibi couple, two cute characters, big heads, heart interaction, black outlines, flat colors, simple bg'
+    q_big_head:
+      'chibi kawaii portrait, 1:1 big head tiny body, huge sparkling eyes, clean black outlines, flat cel-shaded colors, NO shading NO gradient, pure white background, pixel bead art',
+    cute_sticker:
+      'kawaii sticker, thick black borders, super bright saturated flat colors, simple shapes, white background, no shadows, bead art',
+    simple_line:
+      'minimalist flat vector art, soft muted pastels, thin clean lines, elegant simple, no texture, bead pixel art',
+    pet_cute:
+      'kawaii chibi pet, round fluffy face, huge cute eyes, clean black outlines, flat colors, no fur texture, white bg',
+    couple_double:
+      'kawaii chibi couple, two cute characters, big heads, heart interaction, black outlines, flat colors, simple bg',
   }
 
   // 使用更稳定可靠的白模 img2img
@@ -132,10 +136,11 @@ async function replicateCartoon(inputPath, style, w, h, apiKey) {
     {
       input: {
         prompt: prompts[style] || prompts.q_big_head,
-        negative_prompt: 'photorealistic, 3d render, shading, gradient, noise, blur, ugly, deformed, complex background, watermark, text',
+        negative_prompt:
+          'photorealistic, 3d render, shading, gradient, noise, blur, ugly, deformed, complex background, watermark, text',
         image: dataUrl,
-        strength: 0.55
-      }
+        strength: 0.55,
+      },
     }
   )
 
@@ -156,26 +161,30 @@ async function tongyiCartoon(inputPath, style, w, h, apiKey) {
   const imgBase64 = fs.readFileSync(inputPath).toString('base64')
 
   const prompts = {
-    q_big_head: 'Q版卡通头像，大头小身，圆润可爱，大眼睛，黑色轮廓描边，扁平化色块，无阴影，纯白背景',
+    q_big_head:
+      'Q版卡通头像，大头小身，圆润可爱，大眼睛，黑色轮廓描边，扁平化色块，无阴影，纯白背景',
     cute_sticker: '卡通贴纸风格，粗黑外轮廓，高饱和纯色块，完全无阴影，白底',
     simple_line: '简约扁平插画，莫兰迪低饱和配色，细线条，纯色块，极简',
     pet_cute: 'Q版可爱宠物，圆润脸型大眼睛，简化毛发，黑色描边，纯色块',
-    couple_double: 'Q版双人卡通，大头小身，可爱互动，黑色描边，扁平色块，简洁背景'
+    couple_double: 'Q版双人卡通，大头小身，可爱互动，黑色描边，扁平色块，简洁背景',
   }
 
-  const resp = await fetch('https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'wanx-style-cartoon',
-      input: {
-        prompt: prompts[style] || prompts.q_big_head,
-        negative_prompt: '写实，照片，复杂背景，渐变，阴影，模糊，噪点，变形',
-        base_image: imgBase64
-      },
-      parameters: { size: `${w}*${h}`, n: 1 }
-    })
-  })
+  const resp = await fetch(
+    'https://dashscope.aliyuncs.com/api/v1/services/aigc/image-generation/generation',
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'wanx-style-cartoon',
+        input: {
+          prompt: prompts[style] || prompts.q_big_head,
+          negative_prompt: '写实，照片，复杂背景，渐变，阴影，模糊，噪点，变形',
+          base_image: imgBase64,
+        },
+        parameters: { size: `${w}*${h}`, n: 1 },
+      }),
+    }
+  )
 
   const data = await resp.json()
   const url = data?.output?.results?.[0]?.url
@@ -188,11 +197,11 @@ async function tongyiCartoon(inputPath, style, w, h, apiKey) {
 
 function getStyleParams(style) {
   const p = {
-    q_big_head:   { smoothRadius: 3, edgeStrength: 2.0 },
+    q_big_head: { smoothRadius: 3, edgeStrength: 2.0 },
     cute_sticker: { smoothRadius: 5, edgeStrength: 3.0 },
-    simple_line:  { smoothRadius: 1, edgeStrength: 1.5 },
-    pet_cute:     { smoothRadius: 3, edgeStrength: 2.0 },
-    couple_double:{ smoothRadius: 3, edgeStrength: 2.0 }
+    simple_line: { smoothRadius: 1, edgeStrength: 1.5 },
+    pet_cute: { smoothRadius: 3, edgeStrength: 2.0 },
+    couple_double: { smoothRadius: 3, edgeStrength: 2.0 },
   }
   return p[style] || p.q_big_head
 }

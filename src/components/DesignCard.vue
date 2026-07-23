@@ -4,7 +4,9 @@
 <template>
   <div class="design-card" @click="$router.push(`/detail/${design.id}`)">
     <!-- 缩略图 -->
-    <div class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden relative">
+    <div
+      class="aspect-square bg-slate-100 flex items-center justify-center overflow-hidden relative"
+    >
       <canvas
         v-if="!design.thumbnail && gridData.length"
         ref="thumbCanvas"
@@ -22,7 +24,9 @@
     <!-- 信息区 -->
     <div class="p-2.5 pb-3">
       <div class="text-sm font-semibold text-slate-900 truncate mb-1">{{ design.title }}</div>
-      <div v-if="authorName" class="text-[11px] text-slate-400 truncate mb-0.5">{{ authorName }}</div>
+      <div v-if="authorName" class="text-[11px] text-slate-400 truncate mb-0.5">
+        {{ authorName }}
+      </div>
       <div class="text-[11px] text-slate-400 flex gap-2.5 items-center">
         <span>{{ design.gridWidth }}×{{ design.gridHeight }}</span>
         <span>{{ design.beadCount || 0 }}颗</span>
@@ -37,7 +41,7 @@ import { ref, onMounted, nextTick, watch } from 'vue'
 
 const props = defineProps({
   design: { type: Object, required: true },
-  authorName: { type: String, default: '' }
+  authorName: { type: String, default: '' },
 })
 
 const thumbCanvas = ref(null)
@@ -47,9 +51,12 @@ onMounted(() => {
   nextTick(renderThumbnail)
 })
 
-watch(() => props.design, () => {
-  nextTick(renderThumbnail)
-})
+watch(
+  () => props.design,
+  () => {
+    nextTick(renderThumbnail)
+  }
+)
 
 function renderThumbnail() {
   const canvas = thumbCanvas.value
@@ -78,6 +85,8 @@ function renderThumbnail() {
       }
     }
     ctx.putImageData(img, 0, 0)
-  } catch { /* 忽略渲染错误 */ }
+  } catch {
+    /* 忽略渲染错误 */
+  }
 }
 </script>

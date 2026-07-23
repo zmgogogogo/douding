@@ -19,32 +19,35 @@ export function useBeads() {
       const res = await API.get('/api/beads/colors', false)
       beadData.value = res.data || []
       loaded.value = true
-    } catch { beadData.value = [] }
-    finally { loading.value = false }
+    } catch {
+      beadData.value = []
+    } finally {
+      loading.value = false
+    }
     return beadData.value
   }
 
   /** 所有品牌列表 */
-  const brands = computed(() => [...new Set(beadData.value.map(c => c.brand))])
+  const brands = computed(() => [...new Set(beadData.value.map((c) => c.brand))])
 
   /** 指定品牌的系列列表 */
   function seriesForBrand(brand) {
-    return [...new Set(beadData.value.filter(c => c.brand === brand).map(c => c.series))]
+    return [...new Set(beadData.value.filter((c) => c.brand === brand).map((c) => c.series))]
   }
 
   /** 指定品牌+系列的扁平颜色列表 */
   function colorsForSeries(brand, series) {
-    return beadData.value.filter(c => c.brand === brand && c.series === series)
+    return beadData.value.filter((c) => c.brand === brand && c.series === series)
   }
 
   /** 查找指定 hex 的珠子颜色 */
   function findColor(hex) {
-    return beadData.value.find(c => c.hex.toUpperCase() === hex.toUpperCase())
+    return beadData.value.find((c) => c.hex.toUpperCase() === hex.toUpperCase())
   }
 
   /** 查找指定名称的珠子颜色 */
   function findColorByName(name) {
-    return beadData.value.find(c => c.name === name)
+    return beadData.value.find((c) => c.name === name)
   }
 
   return {
@@ -56,6 +59,6 @@ export function useBeads() {
     seriesForBrand,
     colorsForSeries,
     findColor,
-    findColorByName
+    findColorByName,
   }
 }

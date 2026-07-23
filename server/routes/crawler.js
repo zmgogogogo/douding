@@ -39,8 +39,8 @@ router.post('/crawler/import', authOptional, async (req, res) => {
         sourceUrl: result.sourceUrl,
         title: result.title,
         images: result.images,
-        imagePath: imagePath ? `/uploads/${path.basename(imagePath)}` : null
-      }
+        imagePath: imagePath ? `/uploads/${path.basename(imagePath)}` : null,
+      },
     })
   } catch (e) {
     // cheerio 未安装 → 返回提示
@@ -48,7 +48,7 @@ router.post('/crawler/import', authOptional, async (req, res) => {
       return res.status(503).json({
         code: 503,
         message: e.message,
-        hint: '请管理员在服务器上运行: npm install cheerio'
+        hint: '请管理员在服务器上运行: npm install cheerio',
       })
     }
     console.error('链接解析失败:', e)

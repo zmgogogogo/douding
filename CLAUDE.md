@@ -30,16 +30,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 技术栈
 
-| 层级 | 技术 | 说明 |
-|---|---|---|
-| 前端框架 | Vue 3 (Composition API) | 组件化，响应式，生态成熟 |
-| 构建工具 | Vite 5 | 极速 HMR，开箱即用 |
-| CSS 方案 | Tailwind CSS 3 | 原子化 CSS，dmao.cloud 同款 |
-| 后端框架 | Express 4 | Node.js Web 框架 |
-| 数据库 | SQLite (better-sqlite3) | 零配置，嵌入式 |
-| 认证 | JWT (jsonwebtoken) | 30 天过期 |
-| 图片处理 | sharp | 高性能图片缩放和像素提取 |
-| 图标库 | Lucide Vue | 轻量开源图标 |
+| 层级     | 技术                    | 说明                        |
+| -------- | ----------------------- | --------------------------- |
+| 前端框架 | Vue 3 (Composition API) | 组件化，响应式，生态成熟    |
+| 构建工具 | Vite 5                  | 极速 HMR，开箱即用          |
+| CSS 方案 | Tailwind CSS 3          | 原子化 CSS，dmao.cloud 同款 |
+| 后端框架 | Express 4               | Node.js Web 框架            |
+| 数据库   | SQLite (better-sqlite3) | 零配置，嵌入式              |
+| 认证     | JWT (jsonwebtoken)      | 30 天过期                   |
+| 图片处理 | sharp                   | 高性能图片缩放和像素提取    |
+| 图标库   | Lucide Vue              | 轻量开源图标                |
 
 ---
 
@@ -178,50 +178,53 @@ user_bead_inventory — user_id, color_id, quantity (联合主键)
 所有 API 前缀 `/api`。响应格式：`{ code: 200, data: ... }` 成功，`{ code: 4xx|5xx, message: "..." }` 错误。
 
 ### 认证路由
-| 方法 | 路由 | 认证 | 说明 |
-|---|---|---|---|
-| POST | /api/auth/register | 否 | 注册（username + password, 可选 nickname） |
-| POST | /api/auth/login | 否 | 登录，返回 token + user |
-| GET | /api/auth/me | 是 | 当前用户信息 |
-| PUT | /api/auth/profile | 是 | 更新个人资料 |
-| GET | /api/user/:id | 可选 | 用户公开主页 + 作品列表 |
+
+| 方法 | 路由               | 认证 | 说明                                       |
+| ---- | ------------------ | ---- | ------------------------------------------ |
+| POST | /api/auth/register | 否   | 注册（username + password, 可选 nickname） |
+| POST | /api/auth/login    | 否   | 登录，返回 token + user                    |
+| GET  | /api/auth/me       | 是   | 当前用户信息                               |
+| PUT  | /api/auth/profile  | 是   | 更新个人资料                               |
+| GET  | /api/user/:id      | 可选 | 用户公开主页 + 作品列表                    |
 
 ### 设计路由
-| 方法 | 路由 | 认证 | 说明 |
-|---|---|---|---|
-| POST | /api/designs | 是 | 创建设计 |
-| GET | /api/designs/:id | 可选 | 设计详情（+1 浏览） |
-| PUT | /api/designs/:id | 是 | 更新设计（仅所有者） |
-| DELETE | /api/designs/:id | 是 | 删除设计（仅所有者） |
-| GET | /api/designs | 是 | 我的设计列表（支持 folder_id 筛选） |
-| GET | /api/explore | 可选 | 公开设计广场（?sort=latest|popular|views） |
-| GET | /api/search | 否 | 搜索公开设计（?q=关键词） |
-| POST | /api/designs/:id/like | 是 | 点赞/取消点赞 |
+
+| 方法   | 路由                  | 认证 | 说明                                |
+| ------ | --------------------- | ---- | ----------------------------------- |
+| POST   | /api/designs          | 是   | 创建设计                            |
+| GET    | /api/designs/:id      | 可选 | 设计详情（+1 浏览）                 |
+| PUT    | /api/designs/:id      | 是   | 更新设计（仅所有者）                |
+| DELETE | /api/designs/:id      | 是   | 删除设计（仅所有者）                |
+| GET    | /api/designs          | 是   | 我的设计列表（支持 folder_id 筛选） |
+| GET    | /api/explore          | 可选 | 公开设计广场（?sort=latest          | popular | views） |
+| GET    | /api/search           | 否   | 搜索公开设计（?q=关键词）           |
+| POST   | /api/designs/:id/like | 是   | 点赞/取消点赞                       |
 
 ### 其他路由
-| 方法 | 路由 | 说明 |
-|---|---|---|
-| GET | /api/beads | 珠子层级数据（品牌→系列→颜色） |
-| GET | /api/beads/colors | 珠子扁平列表（编辑器调色板用） |
-| POST | /api/image-to-grid | 上传图片 → 网格数据 |
-| GET/POST | /api/folders | 文件夹 CRUD |
-| PUT/DELETE | /api/folders/:id | 文件夹重命名/删除 |
-| GET/POST | /api/inventory | 珠子库存管理 |
+
+| 方法       | 路由               | 说明                           |
+| ---------- | ------------------ | ------------------------------ |
+| GET        | /api/beads         | 珠子层级数据（品牌→系列→颜色） |
+| GET        | /api/beads/colors  | 珠子扁平列表（编辑器调色板用） |
+| POST       | /api/image-to-grid | 上传图片 → 网格数据            |
+| GET/POST   | /api/folders       | 文件夹 CRUD                    |
+| PUT/DELETE | /api/folders/:id   | 文件夹重命名/删除              |
+| GET/POST   | /api/inventory     | 珠子库存管理                   |
 
 ---
 
 ## 前端路由
 
-| 路径 | 页面 | 说明 |
-|---|---|---|
-| / | 发现广场 | 首页，展示公开设计卡片流 |
-| /editor | 编辑器 | 拼豆画板，支持创建/编辑 |
-| /editor/:id | 编辑已有设计 | … |
-| /detail/:id | 设计详情 | 预览、作者信息、颜色统计、点赞 |
-| /login | 登录/注册 | … |
-| /warehouse | 我的仓库 | 文件夹侧边栏 + 设计列表 |
-| /user/:id | 用户主页 | 公开信息和作品 |
-| /search | 搜索 | 关键词搜索 |
+| 路径        | 页面         | 说明                           |
+| ----------- | ------------ | ------------------------------ |
+| /           | 发现广场     | 首页，展示公开设计卡片流       |
+| /editor     | 编辑器       | 拼豆画板，支持创建/编辑        |
+| /editor/:id | 编辑已有设计 | …                              |
+| /detail/:id | 设计详情     | 预览、作者信息、颜色统计、点赞 |
+| /login      | 登录/注册    | …                              |
+| /warehouse  | 我的仓库     | 文件夹侧边栏 + 设计列表        |
+| /user/:id   | 用户主页     | 公开信息和作品                 |
+| /search     | 搜索         | 关键词搜索                     |
 
 ---
 
@@ -238,6 +241,7 @@ user_bead_inventory — user_id, color_id, quantity (联合主键)
 平移偏移量 `panX/panY` 改变画布在容器内的居中位置。
 
 ### 工具系统
+
 - **画笔** (`brush`): brushSize × brushSize 范围绘制，支持镜像
 - **橡皮** (`eraser`): 清除指定范围珠子
 - **填充** (`fill`): 泛洪算法，替换相连同色区域
@@ -245,6 +249,7 @@ user_bead_inventory — user_id, color_id, quantity (联合主键)
 - **移动** (`move`): 拖拽平移画布
 
 ### 撤销/重做
+
 全量快照数组 + 索引指针，最多 200 步。
 
 ---

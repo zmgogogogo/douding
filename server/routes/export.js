@@ -19,9 +19,16 @@ function attachmentFilename(name) {
 // 单图高清导出
 router.post('/export/grid', authOptional, async (req, res) => {
   try {
-    const { gridData, gridWidth, gridHeight, scale = 10, showGrid = false, bgColor = '#f0f0f0' } = req.body || {}
+    const {
+      gridData,
+      gridWidth,
+      gridHeight,
+      scale = 10,
+      showGrid = false,
+      bgColor = '#f0f0f0',
+    } = req.body || {}
 
-    const grid = (typeof gridData === 'string') ? safeParseJSON(gridData) : gridData
+    const grid = typeof gridData === 'string' ? safeParseJSON(gridData) : gridData
     if (!grid || !Array.isArray(grid)) {
       return res.status(400).json({ code: 400, message: '无效的网格数据' })
     }
@@ -29,11 +36,14 @@ router.post('/export/grid', authOptional, async (req, res) => {
     const pngBuffer = await exportHighRes(grid, gridWidth, gridHeight, {
       scale: parseInt(scale),
       showGrid: !!showGrid,
-      bgColor
+      bgColor,
     })
 
     res.setHeader('Content-Type', 'image/png')
-    res.setHeader('Content-Disposition', attachmentFilename(`拼豆_${gridWidth}x${gridHeight}_高清.png`))
+    res.setHeader(
+      'Content-Disposition',
+      attachmentFilename(`拼豆_${gridWidth}x${gridHeight}_高清.png`)
+    )
     res.send(pngBuffer)
   } catch (e) {
     console.error('导出失败:', e)
@@ -57,11 +67,14 @@ router.post('/export/design/:id', authOptional, async (req, res) => {
     const pngBuffer = await exportHighRes(grid, design.grid_width, design.grid_height, {
       scale: parseInt(scale),
       showGrid: !!showGrid,
-      bgColor
+      bgColor,
     })
 
     res.setHeader('Content-Type', 'image/png')
-    res.setHeader('Content-Disposition', attachmentFilename(`${design.title}_${design.grid_width}x${design.grid_height}.png`))
+    res.setHeader(
+      'Content-Disposition',
+      attachmentFilename(`${design.title}_${design.grid_width}x${design.grid_height}.png`)
+    )
     res.send(pngBuffer)
   } catch (e) {
     console.error('导出失败:', e)
@@ -79,13 +92,15 @@ router.post('/export/batch', authRequired, async (req, res) => {
 
     const designs = []
     for (const id of designIds) {
-      const d = db.prepare('SELECT * FROM designs WHERE id = ? AND user_id = ?').get(id, req.user.id)
+      const d = db
+        .prepare('SELECT * FROM designs WHERE id = ? AND user_id = ?')
+        .get(id, req.user.id)
       if (d) {
         designs.push({
           grid: safeParseJSON(d.grid_data),
           gridW: d.grid_width,
           gridH: d.grid_height,
-          title: d.title
+          title: d.title,
         })
       }
     }
@@ -109,7 +124,7 @@ router.post('/export/batch', authRequired, async (req, res) => {
 router.post('/export/pdf', authOptional, async (req, res) => {
   try {
     const { gridData, gridWidth, gridHeight, title, showLabels = true, bgColor } = req.body || {}
-    const grid = (typeof gridData === 'string') ? safeParseJSON(gridData) : gridData
+    const grid = typeof gridData === 'string' ? safeParseJSON(gridData) : gridData
     if (!grid || !Array.isArray(grid)) {
       return res.status(400).json({ code: 400, message: '无效的网格数据' })
     }
@@ -117,11 +132,14 @@ router.post('/export/pdf', authOptional, async (req, res) => {
     const pdfBuffer = await exportPDF(grid, gridWidth, gridHeight, {
       title: title || '拼豆图纸',
       showLabels: !!showLabels,
-      bgColor
+      bgColor,
     })
 
     res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Disposition', attachmentFilename(`拼豆_${gridWidth}x${gridHeight}_图纸.pdf`))
+    res.setHeader(
+      'Content-Disposition',
+      attachmentFilename(`拼豆_${gridWidth}x${gridHeight}_图纸.pdf`)
+    )
     res.send(pdfBuffer)
   } catch (e) {
     console.error('PDF 导出失败:', e)

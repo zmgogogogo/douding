@@ -24,8 +24,8 @@ router.get('/public/ai-status', (req, res) => {
       cartoonEnabled: hasAI,
       provider: replicate ? 'Replicate (retro-diffusion)' : aliyun ? '阿里云通义万相' : '本地处理',
       tip: hasAI ? 'AI Q版卡通化已就绪' : '配置 REPLICATE_API_KEY 或 ALIYUN_API_KEY 以启用 AI',
-      setupGuide: hasAI ? null : 'https://replicate.com/account/api-tokens'
-    }
+      setupGuide: hasAI ? null : 'https://replicate.com/account/api-tokens',
+    },
   })
 })
 

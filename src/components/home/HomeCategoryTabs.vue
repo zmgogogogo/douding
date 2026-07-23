@@ -4,16 +4,16 @@
   选中态加粗 + 底部2px主题色下划线，sticky吸顶
 ============================================ -->
 <template>
-  <div class="sticky z-20 bg-white border-b border-slate-100"
-       :style="{ top: '48px' }">
+  <div class="sticky z-20 bg-white border-b border-slate-100" :style="{ top: '48px' }">
     <div class="flex items-center gap-6 px-4 h-10 overflow-x-auto scrollbar-hide">
       <button
-        v-for="tab in tabs" :key="tab.key"
+        v-for="tab in tabs"
+        :key="tab.key"
         class="relative flex-shrink-0 h-full flex items-center transition-colors duration-150"
         :class="[
           activeTab === tab.key
             ? 'text-primary font-semibold text-[15px]'
-            : 'text-slate-500 text-[14px] hover:text-slate-700'
+            : 'text-slate-500 text-[14px] hover:text-slate-700',
         ]"
         @click="$emit('change', tab.key)"
       >
@@ -30,7 +30,7 @@
 
 <script setup>
 defineProps({
-  activeTab: { type: String, default: 'recommend' }
+  activeTab: { type: String, default: 'recommend' },
 })
 
 defineEmits(['change'])
@@ -41,6 +41,6 @@ const tabs = [
   { key: 'template', label: '模板' },
   { key: 'works', label: '作品' },
   { key: 'tutorial', label: '教程' },
-  { key: 'activity', label: '活动' }
+  { key: 'activity', label: '活动' },
 ]
 </script>

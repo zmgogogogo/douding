@@ -130,7 +130,9 @@ export async function deleteDraft(key) {
   } catch (e) {
     try {
       localStorage.removeItem(`douding_${key}`)
-    } catch (e2) { /* 静默忽略 */ }
+    } catch (e2) {
+      /* 静默忽略 */
+    }
   }
 }
 
@@ -148,7 +150,7 @@ export async function listDrafts() {
       const request = store.getAll()
       request.onsuccess = () => {
         const drafts = (request.result || [])
-          .map(r => ({
+          .map((r) => ({
             key: r.key,
             title: r.title || r.data?.title || '未命名',
             gridSize: r.gridSize || (r.data?.gridW ? `${r.data.gridW}×${r.data.gridH}` : ''),
@@ -195,6 +197,8 @@ export async function getStorageUsage() {
         percent: estimate.quota ? Math.round((estimate.usage / estimate.quota) * 100) : 0,
       }
     }
-  } catch (e) { /* 静默忽略 */ }
+  } catch (e) {
+    /* 静默忽略 */
+  }
   return { usage: 0, quota: 0, percent: 0 }
 }

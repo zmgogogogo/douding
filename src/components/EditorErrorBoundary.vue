@@ -3,7 +3,10 @@
   异常恢复 + 崩溃提示 + 自动保存检测
 -->
 <template>
-  <div v-if="hasError" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+  <div
+    v-if="hasError"
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+  >
     <div class="bg-white rounded-2xl p-6 max-w-sm mx-4 shadow-2xl text-center">
       <div class="text-3xl mb-3">⚠️</div>
       <h3 class="text-sm font-semibold mb-2">编辑器遇到问题</h3>
@@ -12,7 +15,10 @@
         <button class="px-4 py-1.5 rounded-lg text-xs border hover:bg-slate-50" @click="recover">
           恢复自动保存
         </button>
-        <button class="px-4 py-1.5 rounded-lg text-xs bg-blue-500 text-white hover:bg-blue-600" @click="reload">
+        <button
+          class="px-4 py-1.5 rounded-lg text-xs bg-blue-500 text-white hover:bg-blue-600"
+          @click="reload"
+        >
           重新加载
         </button>
       </div>
@@ -35,7 +41,8 @@ onErrorCaptured((err) => {
 })
 
 function recover() {
-  hasError.value = false; error.value = null
+  hasError.value = false
+  error.value = null
 }
 
 function reload() {

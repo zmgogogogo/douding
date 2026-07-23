@@ -25,7 +25,10 @@ function findAllComponents(grid, w, h) {
       const idx = y * w + x
       if (visited[idx]) continue
       const cell = grid[y]?.[x]
-      if (!cell || !cell.hex) { visited[idx] = 1; continue }
+      if (!cell || !cell.hex) {
+        visited[idx] = 1
+        continue
+      }
 
       const hex = cell.hex
       const queue = [[x, y]]
@@ -34,8 +37,14 @@ function findAllComponents(grid, w, h) {
 
       while (queue.length > 0) {
         const [cx, cy] = queue.shift()
-        for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
-          const nx = cx + dx, ny = cy + dy
+        for (const [dx, dy] of [
+          [0, 1],
+          [0, -1],
+          [1, 0],
+          [-1, 0],
+        ]) {
+          const nx = cx + dx,
+            ny = cy + dy
           if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
           const ni = ny * w + nx
           if (visited[ni]) continue
@@ -83,9 +92,13 @@ function computeDominantColors(grid, w, h, regionMask) {
 
   const dominant = {}
   for (const [rt, counts] of Object.entries(regionColors)) {
-    let bestHex = null, bestCount = 0
+    let bestHex = null,
+      bestCount = 0
     for (const [hex, count] of Object.entries(counts)) {
-      if (count > bestCount) { bestCount = count; bestHex = hex }
+      if (count > bestCount) {
+        bestCount = count
+        bestHex = hex
+      }
     }
     dominant[parseInt(rt)] = regionColorInfo[rt][bestHex] || null
   }
@@ -110,19 +123,27 @@ function computeDominantColors(grid, w, h, regionMask) {
  * @param {number} [baseMinSize=3] - 基础最小连通域面积（皮肤区参考值）
  * @returns {{ grid: Array<Array>, removed: number }}
  */
-function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantColors, baseMinSize = 3) {
+function filterSmallComponents(
+  grid,
+  w,
+  h,
+  regionMask,
+  regionPalettes,
+  dominantColors,
+  baseMinSize = 3
+) {
   const components = findAllComponents(grid, w, h)
-  const result = grid.map(row => row.map(c => c ? { ...c } : null))
+  const result = grid.map((row) => row.map((c) => (c ? { ...c } : null)))
   let removed = 0
   let replaced = 0
-  const FACIAL_FEATURE = 5  // 五官区域标记
+  const FACIAL_FEATURE = 5 // 五官区域标记
   const BACKGROUND = 0
   const SKIN = 2
 
   // 构建区域调色板 hex 集合用于快速查找
   const paletteHexSets = {}
   for (const [rt, palette] of Object.entries(regionPalettes || {})) {
-    paletteHexSets[rt] = new Set(palette.map(c => c.hex.toUpperCase()))
+    paletteHexSets[rt] = new Set(palette.map((c) => c.hex.toUpperCase()))
   }
 
   for (const comp of components) {
@@ -143,9 +164,13 @@ function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantC
         const rt = regionMask[y * w + x] || 0
         regionVotes[rt]++
       }
-      let dominantRt = 0, maxVotes = 0
+      let dominantRt = 0,
+        maxVotes = 0
       for (const [rt, v] of Object.entries(regionVotes)) {
-        if (v > maxVotes) { maxVotes = v; dominantRt = parseInt(rt) }
+        if (v > maxVotes) {
+          maxVotes = v
+          dominantRt = parseInt(rt)
+        }
       }
 
       if (dominantRt === BACKGROUND) {
@@ -210,7 +235,9 @@ function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantC
   }
 
   if (removed + replaced > 0) {
-    console.log(`  连通域过滤(文档合规): ${components.length}个连通域, 清除${removed} 替换${replaced} (背景2px/皮肤3px/五官1px)`)
+    console.log(
+      `  连通域过滤(文档合规): ${components.length}个连通域, 清除${removed} 替换${replaced} (背景2px/皮肤3px/五官1px)`
+    )
   }
   return { grid: result, removed: removed + replaced }
 }
@@ -232,7 +259,7 @@ function filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantC
  * @returns {{ grid: Array<Array>, filled: number }}
  */
 function reinforceContours(grid, w, h, regionMask) {
-  const result = grid.map(row => row.map(c => c ? { ...c } : null))
+  const result = grid.map((row) => row.map((c) => (c ? { ...c } : null)))
   let filled = 0
 
   // 第一遍：1px 缺口修复
@@ -248,7 +275,8 @@ function reinforceContours(grid, w, h, regionMask) {
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
           if (dx === 0 && dy === 0) continue
-          const nx = x + dx, ny = y + dy
+          const nx = x + dx,
+            ny = y + dy
           if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
           const nc = result[ny]?.[nx]
           if (nc && nc.hex) {
@@ -258,10 +286,14 @@ function reinforceContours(grid, w, h, regionMask) {
         }
       }
 
-      let bestHex = null, bestCount = 0, bestCell = null
+      let bestHex = null,
+        bestCount = 0,
+        bestCell = null
       for (const [hex, info] of Object.entries(neighborColors)) {
         if (info.count > bestCount) {
-          bestCount = info.count; bestHex = hex; bestCell = info.cell
+          bestCount = info.count
+          bestHex = hex
+          bestCell = info.cell
         }
       }
 
@@ -284,7 +316,8 @@ function reinforceContours(grid, w, h, regionMask) {
         for (let dx = -2; dx <= 2; dx++) {
           if (dx === 0 && dy === 0) continue
           if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) continue // 跳过3×3区域（已处理）
-          const nx = x + dx, ny = y + dy
+          const nx = x + dx,
+            ny = y + dy
           if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
           const nc = result[ny]?.[nx]
           if (nc && nc.hex) {
@@ -294,10 +327,14 @@ function reinforceContours(grid, w, h, regionMask) {
         }
       }
 
-      let bestHex = null, bestCount = 0, bestCell = null
+      let bestHex = null,
+        bestCount = 0,
+        bestCell = null
       for (const [hex, info] of Object.entries(neighborColors)) {
         if (info.count > bestCount) {
-          bestCount = info.count; bestHex = hex; bestCell = info.cell
+          bestCount = info.count
+          bestHex = hex
+          bestCell = info.cell
         }
       }
 
@@ -328,7 +365,7 @@ function reinforceContours(grid, w, h, regionMask) {
  */
 function morphologicalOpen(grid, w, h, regionMask) {
   // Step 1: 腐蚀 — 2×2 窗口不全同色 → 标记清除
-  const eroded = grid.map(row => row.map(c => c ? { ...c } : null))
+  const eroded = grid.map((row) => row.map((c) => (c ? { ...c } : null)))
   const toClear = new Uint8Array(w * h)
 
   for (let y = 0; y < h - 1; y++) {
@@ -337,33 +374,41 @@ function morphologicalOpen(grid, w, h, regionMask) {
       // 轮廓区(1)和面部特征区(5)严格跳过，避免侵蚀关键细节
       if (regionMask) {
         const skip = [y * w + x, y * w + x + 1, (y + 1) * w + x, (y + 1) * w + x + 1]
-        if (skip.some(i => {
-          const rt = regionMask[i]
-          return rt === 1 || rt === 5 // 跳过轮廓区和面部特征区
-        })) continue
+        if (
+          skip.some((i) => {
+            const rt = regionMask[i]
+            return rt === 1 || rt === 5 // 跳过轮廓区和面部特征区
+          })
+        )
+          continue
       }
 
-      const a = grid[y][x], b = grid[y][x + 1]
-      const c = grid[y + 1][x], d = grid[y + 1][x + 1]
+      const a = grid[y][x],
+        b = grid[y][x + 1]
+      const c = grid[y + 1][x],
+        d = grid[y + 1][x + 1]
       const hex = a?.hex
       if (!hex) continue
       // 2×2 块不全同色 → 腐蚀
       if (b?.hex !== hex || c?.hex !== hex || d?.hex !== hex) {
-        toClear[y * w + x] = 1; toClear[y * w + x + 1] = 1
-        toClear[(y + 1) * w + x] = 1; toClear[(y + 1) * w + x + 1] = 1
+        toClear[y * w + x] = 1
+        toClear[y * w + x + 1] = 1
+        toClear[(y + 1) * w + x] = 1
+        toClear[(y + 1) * w + x + 1] = 1
       }
     }
   }
 
   for (let i = 0; i < w * h; i++) {
     if (toClear[i]) {
-      const x = i % w, y = Math.floor(i / w)
+      const x = i % w,
+        y = Math.floor(i / w)
       eroded[y][x] = null
     }
   }
 
   // Step 2: 膨胀 — 空单元格用邻居最多颜色填充
-  const result = eroded.map(row => row.map(c => c ? { ...c } : null))
+  const result = eroded.map((row) => row.map((c) => (c ? { ...c } : null)))
   let cleaned = 0
 
   for (let y = 0; y < h; y++) {
@@ -374,16 +419,21 @@ function morphologicalOpen(grid, w, h, regionMask) {
       const nb = {}
       for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
-          const nx = x + dx, ny = y + dy
+          const nx = x + dx,
+            ny = y + dy
           if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
           const n = eroded[ny]?.[nx]
           if (n?.hex) nb[n.hex] = (nb[n.hex] || 0) + 1
         }
       }
 
-      let bestHex = null, bestCount = 0
+      let bestHex = null,
+        bestCount = 0
       for (const [hex, count] of Object.entries(nb)) {
-        if (count > bestCount) { bestCount = count; bestHex = hex }
+        if (count > bestCount) {
+          bestCount = count
+          bestHex = hex
+        }
       }
 
       if (bestHex && bestCount >= 2) {
@@ -394,7 +444,8 @@ function morphologicalOpen(grid, w, h, regionMask) {
             if (n?.hex === bestHex) {
               result[y][x] = { id: n.id, name: n.name, hex: n.hex }
               cleaned++
-              dy = 2; break
+              dy = 2
+              break
             }
           }
         }
@@ -436,7 +487,15 @@ export function postProcessGrid(grid, w, h, regionMask, regionPalettes, options 
   const dominantColors = computeDominantColors(grid, w, h, regionMask)
 
   // Step 1: 连通域过滤
-  const step1 = filterSmallComponents(grid, w, h, regionMask, regionPalettes, dominantColors, minSize)
+  const step1 = filterSmallComponents(
+    grid,
+    w,
+    h,
+    regionMask,
+    regionPalettes,
+    dominantColors,
+    minSize
+  )
   let currentGrid = step1.grid
 
   // Step 2: 轮廓补强
@@ -454,7 +513,7 @@ export function postProcessGrid(grid, w, h, regionMask, regionPalettes, options 
   const stats = {
     componentFilter: { removed: step1.removed, threshold: minSize },
     contourFill: { filled: step2.filled },
-    morphOpen: { cleaned: morphCleaned }
+    morphOpen: { cleaned: morphCleaned },
   }
 
   console.log(`后处理完成: 杂点${step1.removed} 轮廓${step2.filled} 开运算${morphCleaned}`)

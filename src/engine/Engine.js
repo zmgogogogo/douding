@@ -88,7 +88,7 @@ export class Engine {
       this.app = new Application()
       await this.app.init({
         background: this.#bgColor,
-        antialias: false,           // 像素艺术不需要抗锯齿
+        antialias: false, // 像素艺术不需要抗锯齿
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
         // PixiJS v8 自动检测 WebGL/WebGPU 支持，不支持时降级 Canvas 2D
@@ -141,10 +141,7 @@ export class Engine {
     this.#gridH = h
 
     if (this.app) {
-      this.app.renderer.resize(
-        this.#containerEl.clientWidth,
-        this.#containerEl.clientHeight
-      )
+      this.app.renderer.resize(this.#containerEl.clientWidth, this.#containerEl.clientHeight)
     }
 
     this.#gridRenderer?.updateGrid(w, h, this.#zoom, this.#panX, this.#panY)
@@ -278,7 +275,9 @@ export class Engine {
 
   // ==================== 交互层 ====================
 
-  get interaction() { return this.#interaction }
+  get interaction() {
+    return this.#interaction
+  }
 
   // ==================== 渲染 ====================
 
@@ -286,7 +285,7 @@ export class Engine {
    * 全量渲染所有层
    */
   renderAll() {
-    this.#layersContainer.children.forEach(child => {
+    this.#layersContainer.children.forEach((child) => {
       if (child instanceof LayerRenderer) child.render()
     })
     this.#gridRenderer?.render(this.#gridW, this.#gridH, this.#zoom)
@@ -304,18 +303,24 @@ export class Engine {
   // ==================== 降级 ====================
 
   /** 是否使用 WebGL */
-  get isWebGL() { return this.#isWebGL }
+  get isWebGL() {
+    return this.#isWebGL
+  }
 
   /** 获取画布尺寸 */
-  get gridSize() { return { w: this.#gridW, h: this.#gridH } }
+  get gridSize() {
+    return { w: this.#gridW, h: this.#gridH }
+  }
 
   /** 获取当前缩放 */
-  get zoom() { return this.#zoom }
+  get zoom() {
+    return this.#zoom
+  }
 
   // ==================== 销毁 ====================
 
   destroy() {
-    this.#layerRenderers.forEach(r => r.destroy())
+    this.#layerRenderers.forEach((r) => r.destroy())
     this.#layerRenderers.clear()
     this.#gridRenderer?.destroy()
     this.#refOverlay?.destroy()

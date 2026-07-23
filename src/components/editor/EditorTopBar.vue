@@ -3,10 +3,15 @@
   ohmybead.cn 风格：毛玻璃背景 + 项目名 + 操作按钮
   ============================================ -->
 <template>
-  <header class="h-14 bg-[var(--ui-bg-base)]/95 backdrop-blur-lg border-b border-[var(--ui-border-glass)] flex items-center px-3 gap-1 flex-shrink-0 z-10 select-none sticky top-0">
+  <header
+    class="h-14 bg-[var(--ui-bg-base)]/95 backdrop-blur-lg border-b border-[var(--ui-border-glass)] flex items-center px-3 gap-1 flex-shrink-0 z-10 select-none sticky top-0"
+  >
     <!-- 左侧：返回 + 标题 -->
-    <button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--ui-bg-tertiary)] transition-colors flex-shrink-0"
-      @click="$emit('back')" title="返回">
+    <button
+      class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--ui-bg-tertiary)] transition-colors flex-shrink-0"
+      @click="$emit('back')"
+      title="返回"
+    >
       <ArrowLeftIcon :size="18" class="text-[var(--ui-text-secondary)]" />
     </button>
 
@@ -14,29 +19,45 @@
       <input
         ref="titleInput"
         :value="title"
-        class="text-[13px] font-semibold text-[var(--ui-text-primary)] bg-transparent border-none outline-none
-               truncate min-w-0 max-w-[200px] rounded-md px-1.5 py-0.5
-               focus:bg-[var(--ui-bg-tertiary)] transition-colors"
+        class="text-[13px] font-semibold text-[var(--ui-text-primary)] bg-transparent border-none outline-none truncate min-w-0 max-w-[200px] rounded-md px-1.5 py-0.5 focus:bg-[var(--ui-bg-tertiary)] transition-colors"
         placeholder="未命名图纸"
         @blur="$emit('update:title', $event.target.value)"
         @keydown.enter="$event.target.blur()"
       />
       <!-- 未保存指示器 -->
-      <span v-if="hasUnsaved" class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" title="有未保存的更改" />
+      <span
+        v-if="hasUnsaved"
+        class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse"
+        title="有未保存的更改"
+      />
       <!-- 已保存提示 -->
-      <span v-if="showSaved" class="text-[10px] text-emerald-500 font-medium animate-fade-in flex-shrink-0">已保存</span>
+      <span
+        v-if="showSaved"
+        class="text-[10px] text-emerald-500 font-medium animate-fade-in flex-shrink-0"
+        >已保存</span
+      >
     </div>
 
     <!-- 右侧：操作按钮 -->
     <div class="flex items-center gap-0.5">
       <!-- 撤销 -->
-      <button class="topbar-action-btn" :class="{ 'opacity-30': !canUndo }"
-        :disabled="!canUndo" @click="$emit('undo')" title="撤销 (Ctrl+Z)">
+      <button
+        class="topbar-action-btn"
+        :class="{ 'opacity-30': !canUndo }"
+        :disabled="!canUndo"
+        @click="$emit('undo')"
+        title="撤销 (Ctrl+Z)"
+      >
         <UndoIcon :size="16" />
       </button>
       <!-- 重做 -->
-      <button class="topbar-action-btn" :class="{ 'opacity-30': !canRedo }"
-        :disabled="!canRedo" @click="$emit('redo')" title="重做 (Ctrl+Y)">
+      <button
+        class="topbar-action-btn"
+        :class="{ 'opacity-30': !canRedo }"
+        :disabled="!canRedo"
+        @click="$emit('redo')"
+        title="重做 (Ctrl+Y)"
+      >
         <RedoIcon :size="16" />
       </button>
       <!-- 保存 -->
@@ -47,14 +68,22 @@
       <div class="w-px h-5 bg-[var(--ui-border)] mx-1" />
 
       <!-- 网格切换 -->
-      <button class="topbar-action-btn" :class="{ 'text-primary': showGrid }"
-        @click="$emit('toggleGrid')" title="网格 (H)">
+      <button
+        class="topbar-action-btn"
+        :class="{ 'text-primary': showGrid }"
+        @click="$emit('toggleGrid')"
+        title="网格 (H)"
+      >
         <GridIcon :size="16" />
       </button>
 
       <!-- 参考图切换 -->
-      <button class="topbar-action-btn" :class="{ 'text-primary': refOpacity > 0 }"
-        @click="$emit('toggleRef')" title="参考图 (R)">
+      <button
+        class="topbar-action-btn"
+        :class="{ 'text-primary': refOpacity > 0 }"
+        @click="$emit('toggleRef')"
+        title="参考图 (R)"
+      >
         <EyeIcon v-if="refOpacity > 0" :size="16" />
         <EyeOffIcon v-else :size="16" />
       </button>
@@ -74,19 +103,59 @@
         <button class="topbar-action-btn" @click="showExport = !showExport" title="导出">
           <DownloadIcon :size="16" />
         </button>
-        <div v-if="showExport" class="absolute right-0 top-full mt-1 bg-white rounded-2xl border border-[var(--ui-border-glass)] py-1 w-36 z-[150] animate-scale-in" style="box-shadow: var(--ui-shadow-lg)"
-          @mouseleave="showExport = false">
-          <button class="export-menu-item" @click="$emit('exportPNG'); showExport = false">
+        <div
+          v-if="showExport"
+          class="absolute right-0 top-full mt-1 bg-white rounded-2xl border border-[var(--ui-border-glass)] py-1 w-36 z-[150] animate-scale-in"
+          style="box-shadow: var(--ui-shadow-lg)"
+          @mouseleave="showExport = false"
+        >
+          <button
+            class="export-menu-item"
+            @click="
+              $emit('exportPNG')
+              showExport = false
+            "
+          >
             <ImageIcon :size="14" /><span>导出 PNG 图片</span>
           </button>
-          <button class="export-menu-item" @click="$emit('exportSVG'); showExport = false">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 7h10l-3 5 3 5H7"/></svg>
+          <button
+            class="export-menu-item"
+            @click="
+              $emit('exportSVG')
+              showExport = false
+            "
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="2" width="20" height="20" rx="2" />
+              <path d="M7 7h10l-3 5 3 5H7" />
+            </svg>
             <span>导出 SVG 矢量</span>
           </button>
-          <button class="export-menu-item" @click="$emit('exportPDF'); showExport = false">
+          <button
+            class="export-menu-item"
+            @click="
+              $emit('exportPDF')
+              showExport = false
+            "
+          >
             <FileTextIcon :size="14" /><span>导出 PDF 图纸</span>
           </button>
-          <button class="export-menu-item" @click="$emit('exportJSON'); showExport = false">
+          <button
+            class="export-menu-item"
+            @click="
+              $emit('exportJSON')
+              showExport = false
+            "
+          >
             <CodeIcon :size="14" /><span>导出 JSON 数据</span>
           </button>
         </div>
@@ -97,18 +166,46 @@
         <button class="topbar-action-btn" @click="showMore = !showMore" title="更多">
           <MoreHorizontalIcon :size="16" />
         </button>
-        <div v-if="showMore" class="absolute right-0 top-full mt-1 bg-white rounded-2xl border border-[var(--ui-border-glass)] py-1 w-40 z-[150] animate-scale-in" style="box-shadow: var(--ui-shadow-lg)"
-          @mouseleave="showMore = false">
-          <button class="export-menu-item" @click="$emit('save'); showMore = false">
+        <div
+          v-if="showMore"
+          class="absolute right-0 top-full mt-1 bg-white rounded-2xl border border-[var(--ui-border-glass)] py-1 w-40 z-[150] animate-scale-in"
+          style="box-shadow: var(--ui-shadow-lg)"
+          @mouseleave="showMore = false"
+        >
+          <button
+            class="export-menu-item"
+            @click="
+              $emit('save')
+              showMore = false
+            "
+          >
             <SaveIcon :size="14" /><span>保存到云端</span>
           </button>
-          <button class="export-menu-item" @click="$emit('showInfo'); showMore = false">
+          <button
+            class="export-menu-item"
+            @click="
+              $emit('showInfo')
+              showMore = false
+            "
+          >
             <InfoIcon :size="14" /><span>图纸信息</span>
           </button>
-          <button class="export-menu-item" @click="$emit('openSizeDialog'); showMore = false">
+          <button
+            class="export-menu-item"
+            @click="
+              $emit('openSizeDialog')
+              showMore = false
+            "
+          >
             <MaximizeIcon :size="14" /><span>修改尺寸</span>
           </button>
-          <button class="export-menu-item" @click="$emit('clear'); showMore = false">
+          <button
+            class="export-menu-item"
+            @click="
+              $emit('clear')
+              showMore = false
+            "
+          >
             <Trash2Icon :size="14" /><span class="text-red-500">清空画布</span>
           </button>
         </div>
@@ -120,12 +217,23 @@
 <script setup>
 import { ref, watch } from 'vue'
 import {
-  ArrowLeftIcon, UndoIcon, RedoIcon,
-  Grid3x3Icon as GridIcon, EyeIcon, EyeOffIcon,
-  DownloadIcon, ImageIcon, FileTextIcon,
-  MoreHorizontalIcon, SaveIcon, InfoIcon,
-  MaximizeIcon, Trash2Icon, CodeIcon,
-  ShuffleIcon, Wand2Icon
+  ArrowLeftIcon,
+  UndoIcon,
+  RedoIcon,
+  Grid3x3Icon as GridIcon,
+  EyeIcon,
+  EyeOffIcon,
+  DownloadIcon,
+  ImageIcon,
+  FileTextIcon,
+  MoreHorizontalIcon,
+  SaveIcon,
+  InfoIcon,
+  MaximizeIcon,
+  Trash2Icon,
+  CodeIcon,
+  ShuffleIcon,
+  Wand2Icon,
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -138,11 +246,22 @@ const props = defineProps({
 })
 
 defineEmits([
-  'back', 'update:title', 'undo', 'redo',
-  'toggleGrid', 'toggleRef',
-  'exportPNG', 'exportSVG', 'exportPDF', 'exportJSON',
-  'save', 'showInfo', 'openSizeDialog', 'clear',
-  'toggleSymmetry', 'toggleGuide'
+  'back',
+  'update:title',
+  'undo',
+  'redo',
+  'toggleGrid',
+  'toggleRef',
+  'exportPNG',
+  'exportSVG',
+  'exportPDF',
+  'exportJSON',
+  'save',
+  'showInfo',
+  'openSizeDialog',
+  'clear',
+  'toggleSymmetry',
+  'toggleGuide',
 ])
 
 const showExport = ref(false)
@@ -151,12 +270,17 @@ const showSaved = ref(false)
 const titleInput = ref(null)
 
 // 已保存提示（3秒后消失）
-watch(() => props.hasUnsaved, (val) => {
-  if (!val) {
-    showSaved.value = true
-    setTimeout(() => { showSaved.value = false }, 3000)
+watch(
+  () => props.hasUnsaved,
+  (val) => {
+    if (!val) {
+      showSaved.value = true
+      setTimeout(() => {
+        showSaved.value = false
+      }, 3000)
+    }
   }
-})
+)
 </script>
 
 <style scoped>

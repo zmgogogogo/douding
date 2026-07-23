@@ -17,8 +17,9 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
 export const upload = multer({
   storage: multer.diskStorage({
     destination: uploadsDir,
-    filename: (req, file, cb) => cb(null, uuidv4() + path.extname(file.originalname))
+    filename: (req, file, cb) => cb(null, uuidv4() + path.extname(file.originalname)),
   }),
   limits: { fileSize: UPLOAD_MAX_SIZE },
-  fileFilter: (req, file, cb) => cb(null, ALLOWED_IMAGE_TYPES.test(path.extname(file.originalname)))
+  fileFilter: (req, file, cb) =>
+    cb(null, ALLOWED_IMAGE_TYPES.test(path.extname(file.originalname))),
 })

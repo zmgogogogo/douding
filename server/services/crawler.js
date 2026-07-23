@@ -22,8 +22,9 @@ export async function parseXhsLink(url) {
 
   // 模拟移动端 User-Agent
   const headers = {
-    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'User-Agent':
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'zh-CN,zh;q=0.9',
   }
 
@@ -37,8 +38,7 @@ export async function parseXhsLink(url) {
 
   const $ = cheerio.load(html)
   const images = []
-  const title = $('meta[property="og:title"]').attr('content') ||
-                $('title').text() || '未命名'
+  const title = $('meta[property="og:title"]').attr('content') || $('title').text() || '未命名'
 
   // 提取 og:image
   const ogImage = $('meta[property="og:image"]').attr('content')
@@ -69,8 +69,8 @@ export async function downloadImage(imageUrl, savePath) {
   const resp = await fetch(imageUrl, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
-      'Referer': 'https://www.xiaohongshu.com/',
-    }
+      Referer: 'https://www.xiaohongshu.com/',
+    },
   })
 
   if (!resp.ok) throw new Error(`下载图片失败: HTTP ${resp.status}`)

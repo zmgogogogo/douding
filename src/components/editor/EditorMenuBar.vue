@@ -6,45 +6,96 @@
   <nav class="menu-bar" @mouseleave="closeAll">
     <!-- 系统菜单（macOS 风格左侧） -->
     <div class="flex items-center h-full">
-      <button class="menu-item" :class="{ open: openMenu === 'file' }"
-        @pointerenter="openMenu = 'file'">文件</button>
-      <button class="menu-item" :class="{ open: openMenu === 'edit' }"
-        @pointerenter="openMenu = 'edit'">编辑</button>
-      <button class="menu-item" :class="{ open: openMenu === 'view' }"
-        @pointerenter="openMenu = 'view'">视图</button>
-      <button class="menu-item" :class="{ open: openMenu === 'image' }"
-        @pointerenter="openMenu = 'image'">图像</button>
-      <button class="menu-item" :class="{ open: openMenu === 'layer' }"
-        @pointerenter="openMenu = 'layer'">图层</button>
-      <button class="menu-item" :class="{ open: openMenu === 'collab' }"
-        @pointerenter="openMenu = 'collab'">协作</button>
-      <button class="menu-item" :class="{ open: openMenu === 'help' }"
-        @pointerenter="openMenu = 'help'">帮助</button>
+      <button
+        class="menu-item"
+        :class="{ open: openMenu === 'file' }"
+        @pointerenter="openMenu = 'file'"
+      >
+        文件
+      </button>
+      <button
+        class="menu-item"
+        :class="{ open: openMenu === 'edit' }"
+        @pointerenter="openMenu = 'edit'"
+      >
+        编辑
+      </button>
+      <button
+        class="menu-item"
+        :class="{ open: openMenu === 'view' }"
+        @pointerenter="openMenu = 'view'"
+      >
+        视图
+      </button>
+      <button
+        class="menu-item"
+        :class="{ open: openMenu === 'image' }"
+        @pointerenter="openMenu = 'image'"
+      >
+        图像
+      </button>
+      <button
+        class="menu-item"
+        :class="{ open: openMenu === 'layer' }"
+        @pointerenter="openMenu = 'layer'"
+      >
+        图层
+      </button>
+      <button
+        class="menu-item"
+        :class="{ open: openMenu === 'collab' }"
+        @pointerenter="openMenu = 'collab'"
+      >
+        协作
+      </button>
+      <button
+        class="menu-item"
+        :class="{ open: openMenu === 'help' }"
+        @pointerenter="openMenu = 'help'"
+      >
+        帮助
+      </button>
     </div>
 
     <!-- 右侧：标题 + 快捷操作 -->
     <div class="flex items-center gap-2 ml-auto mr-2">
-      <span class="text-[11px] text-[var(--ui-text-secondary)] truncate max-w-[200px]">{{ title }}</span>
-      <span v-if="hasUnsaved" class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title="未保存" />
+      <span class="text-[11px] text-[var(--ui-text-secondary)] truncate max-w-[200px]">{{
+        title
+      }}</span>
+      <span
+        v-if="hasUnsaved"
+        class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"
+        title="未保存"
+      />
     </div>
 
     <!-- 下拉菜单面板 -->
     <Teleport to="body">
-      <div v-if="openMenu" class="menu-dropdown" :style="dropdownStyle"
-        @pointerleave="openMenu = null">
+      <div
+        v-if="openMenu"
+        class="menu-dropdown"
+        :style="dropdownStyle"
+        @pointerleave="openMenu = null"
+      >
         <!-- 文件菜单 -->
         <template v-if="openMenu === 'file'">
-          <button class="dd-item" @click="act('newDesign')"><span>新建图纸</span><kbd>⌘N</kbd></button>
+          <button class="dd-item" @click="act('newDesign')">
+            <span>新建图纸</span><kbd>⌘N</kbd>
+          </button>
           <button class="dd-item" @click="act('open')"><span>打开文件</span><kbd>⌘O</kbd></button>
           <div class="dd-sep" />
           <button class="dd-item" @click="act('save')"><span>保存</span><kbd>⌘S</kbd></button>
-          <button class="dd-item" @click="act('saveAs')"><span>另存为...</span><kbd>⇧⌘S</kbd></button>
+          <button class="dd-item" @click="act('saveAs')">
+            <span>另存为...</span><kbd>⇧⌘S</kbd>
+          </button>
           <div class="dd-sep" />
           <button class="dd-item" @click="act('exportPNG')"><span>导出 PNG</span></button>
           <button class="dd-item" @click="act('exportSVG')"><span>导出 SVG</span></button>
           <button class="dd-item" @click="act('exportPDF')"><span>导出 PDF</span></button>
           <button class="dd-item" @click="act('exportCSV')"><span>导出色号矩阵 CSV</span></button>
-          <button class="dd-item" @click="act('exportMaterial')"><span>导出用料清单 CSV</span></button>
+          <button class="dd-item" @click="act('exportMaterial')">
+            <span>导出用料清单 CSV</span>
+          </button>
           <button class="dd-item" @click="act('exportJSON')"><span>导出 JSON</span></button>
           <div class="dd-sep" />
           <button class="dd-item" @click="act('print')"><span>打印...</span><kbd>⌘P</kbd></button>
@@ -54,40 +105,60 @@
 
         <!-- 编辑菜单 -->
         <template v-if="openMenu === 'edit'">
-          <button class="dd-item" :class="{ disabled: !canUndo }" @click="act('undo')"><span>撤销</span><kbd>⌘Z</kbd></button>
-          <button class="dd-item" :class="{ disabled: !canRedo }" @click="act('redo')"><span>重做</span><kbd>⇧⌘Z</kbd></button>
+          <button class="dd-item" :class="{ disabled: !canUndo }" @click="act('undo')">
+            <span>撤销</span><kbd>⌘Z</kbd>
+          </button>
+          <button class="dd-item" :class="{ disabled: !canRedo }" @click="act('redo')">
+            <span>重做</span><kbd>⇧⌘Z</kbd>
+          </button>
           <div class="dd-sep" />
           <button class="dd-item" @click="act('cut')"><span>剪切</span><kbd>⌘X</kbd></button>
           <button class="dd-item" @click="act('copy')"><span>复制</span><kbd>⌘C</kbd></button>
           <button class="dd-item" @click="act('paste')"><span>粘贴</span><kbd>⌘V</kbd></button>
           <div class="dd-sep" />
           <button class="dd-item" @click="act('selectAll')"><span>全选</span><kbd>⌘A</kbd></button>
-          <button class="dd-item" @click="act('deselect')"><span>取消选择</span><kbd>⌘D</kbd></button>
-          <button class="dd-item" @click="act('invertSelect')"><span>反选</span><kbd>⌘I</kbd></button>
+          <button class="dd-item" @click="act('deselect')">
+            <span>取消选择</span><kbd>⌘D</kbd>
+          </button>
+          <button class="dd-item" @click="act('invertSelect')">
+            <span>反选</span><kbd>⌘I</kbd>
+          </button>
           <div class="dd-sep" />
           <button class="dd-item" @click="act('flipH')"><span>水平翻转</span></button>
           <button class="dd-item" @click="act('flipV')"><span>垂直翻转</span></button>
           <div class="dd-sep" />
-          <button class="dd-item" @click="act('preferences')"><span>首选项...</span><kbd>⌘,</kbd></button>
+          <button class="dd-item" @click="act('preferences')">
+            <span>首选项...</span><kbd>⌘,</kbd>
+          </button>
         </template>
 
         <!-- 视图菜单 -->
         <template v-if="openMenu === 'view'">
           <button class="dd-item" @click="act('zoomIn')"><span>放大</span><kbd>⌘+</kbd></button>
           <button class="dd-item" @click="act('zoomOut')"><span>缩小</span><kbd>⌘-</kbd></button>
-          <button class="dd-item" @click="act('zoomFit')"><span>适配屏幕</span><kbd>⌘0</kbd></button>
-          <button class="dd-item" @click="act('zoomActual')"><span>实际大小</span><kbd>⌘1</kbd></button>
+          <button class="dd-item" @click="act('zoomFit')">
+            <span>适配屏幕</span><kbd>⌘0</kbd>
+          </button>
+          <button class="dd-item" @click="act('zoomActual')">
+            <span>实际大小</span><kbd>⌘1</kbd>
+          </button>
           <div class="dd-sep" />
-          <button class="dd-item" :class="{ checked: showGrid }" @click="act('toggleGrid')"><span>显示网格</span></button>
+          <button class="dd-item" :class="{ checked: showGrid }" @click="act('toggleGrid')">
+            <span>显示网格</span>
+          </button>
           <button class="dd-item" @click="act('toggleRuler')"><span>显示标尺</span></button>
           <div class="dd-sep" />
-          <button class="dd-item" @click="act('fullscreen')"><span>全屏模式</span><kbd>F</kbd></button>
+          <button class="dd-item" @click="act('fullscreen')">
+            <span>全屏模式</span><kbd>F</kbd>
+          </button>
         </template>
 
         <!-- 图像菜单 -->
         <template v-if="openMenu === 'image'">
           <button class="dd-item" @click="act('autoFit')"><span>裁剪到内容</span></button>
-          <button class="dd-item" @click="act('openSizeDialog')"><span>修改画布尺寸...</span></button>
+          <button class="dd-item" @click="act('openSizeDialog')">
+            <span>修改画布尺寸...</span>
+          </button>
           <div class="dd-sep" />
           <button class="dd-item" @click="act('invertColors')"><span>反相</span></button>
           <button class="dd-item" @click="act('grayscale')"><span>灰度化</span></button>
@@ -95,7 +166,9 @@
 
         <!-- 图层菜单 -->
         <template v-if="openMenu === 'layer'">
-          <button class="dd-item" @click="act('addLayer')"><span>新建图层</span><kbd>⇧⌘N</kbd></button>
+          <button class="dd-item" @click="act('addLayer')">
+            <span>新建图层</span><kbd>⇧⌘N</kbd>
+          </button>
           <button class="dd-item" @click="act('removeLayer')"><span>删除图层</span></button>
           <button class="dd-item" @click="act('mergeDown')"><span>向下合并</span></button>
           <div class="dd-sep" />
@@ -119,7 +192,9 @@
 
         <!-- 帮助菜单 -->
         <template v-if="openMenu === 'help'">
-          <button class="dd-item" @click="act('shortcuts')"><span>快捷键列表</span><kbd>?</kbd></button>
+          <button class="dd-item" @click="act('shortcuts')">
+            <span>快捷键列表</span><kbd>?</kbd>
+          </button>
           <button class="dd-item" @click="act('about')"><span>关于豆丁</span></button>
         </template>
       </div>
@@ -139,19 +214,53 @@ const props = defineProps({
 })
 
 const emit = defineEmits([
-  'newDesign', 'open', 'save', 'saveAs',
-  'exportPNG', 'exportSVG', 'exportPDF', 'exportCSV', 'exportMaterial', 'exportJSON',
-  'print', 'close',
-  'undo', 'redo', 'cut', 'copy', 'paste',
-  'selectAll', 'deselect', 'invertSelect',
-  'flipH', 'flipV', 'preferences',
-  'zoomIn', 'zoomOut', 'zoomFit', 'zoomActual',
-  'toggleGrid', 'toggleRuler', 'fullscreen',
-  'autoFit', 'openSizeDialog', 'invertColors', 'grayscale',
-  'addLayer', 'removeLayer', 'mergeDown',
-  'addMask', 'toggleMaskEdit',
-  'alignLeft', 'alignCenter', 'alignRight', 'alignTop', 'alignMiddle', 'alignBottom',
-  'shortcuts', 'about',
+  'newDesign',
+  'open',
+  'save',
+  'saveAs',
+  'exportPNG',
+  'exportSVG',
+  'exportPDF',
+  'exportCSV',
+  'exportMaterial',
+  'exportJSON',
+  'print',
+  'close',
+  'undo',
+  'redo',
+  'cut',
+  'copy',
+  'paste',
+  'selectAll',
+  'deselect',
+  'invertSelect',
+  'flipH',
+  'flipV',
+  'preferences',
+  'zoomIn',
+  'zoomOut',
+  'zoomFit',
+  'zoomActual',
+  'toggleGrid',
+  'toggleRuler',
+  'fullscreen',
+  'autoFit',
+  'openSizeDialog',
+  'invertColors',
+  'grayscale',
+  'addLayer',
+  'removeLayer',
+  'mergeDown',
+  'addMask',
+  'toggleMaskEdit',
+  'alignLeft',
+  'alignCenter',
+  'alignRight',
+  'alignTop',
+  'alignMiddle',
+  'alignBottom',
+  'shortcuts',
+  'about',
 ])
 
 const openMenu = ref(null)
@@ -214,7 +323,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   border-radius: 12px;
   padding: 4px;
   min-width: 180px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(20px);
 }
 
@@ -233,9 +344,18 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   border: none;
   background: none;
 }
-.dd-item:hover { background: var(--ui-bg-tertiary, #f3f4f6); }
-.dd-item.disabled { opacity: 0.35; cursor: default; pointer-events: none; }
-.dd-item.checked span::before { content: '✓ '; color: var(--ui-accent, #0058BC); }
+.dd-item:hover {
+  background: var(--ui-bg-tertiary, #f3f4f6);
+}
+.dd-item.disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+.dd-item.checked span::before {
+  content: '✓ ';
+  color: var(--ui-accent, #0058bc);
+}
 
 .dd-item kbd {
   font-size: 10px;

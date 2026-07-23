@@ -5,13 +5,18 @@
 <template>
   <Teleport to="body">
     <Transition name="dialog">
-      <div v-if="visible" class="fixed inset-0 z-[100] flex items-center justify-center"
-        @click.self="onCancel">
+      <div
+        v-if="visible"
+        class="fixed inset-0 z-[100] flex items-center justify-center"
+        @click.self="onCancel"
+      >
         <!-- 遮罩 -->
         <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" />
 
         <!-- 对话框 -->
-        <div class="relative bg-white rounded-2xl shadow-2xl w-[360px] max-w-[90vw] overflow-hidden">
+        <div
+          class="relative bg-white rounded-2xl shadow-2xl w-[360px] max-w-[90vw] overflow-hidden"
+        >
           <!-- 标题 -->
           <div v-if="title" class="px-5 pt-5 pb-0">
             <h3 class="text-base font-bold text-slate-800">{{ title }}</h3>
@@ -26,21 +31,27 @@
               ref="promptInput"
               v-model="inputValue"
               :placeholder="placeholder"
-              class="w-full mt-3 h-10 px-3 border border-slate-200 rounded-xl text-sm outline-none
-                     focus:border-primary transition-colors"
+              class="w-full mt-3 h-10 px-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-primary transition-colors"
               @keydown.enter="onConfirm"
             />
           </div>
 
           <!-- 按钮 -->
           <div class="flex border-t border-slate-100">
-            <button v-if="type !== 'alert'" class="flex-1 h-11 text-sm text-slate-500 font-medium
-                     hover:bg-slate-50 active:bg-slate-100 transition-colors"
-              @click="onCancel">{{ cancelText }}</button>
+            <button
+              v-if="type !== 'alert'"
+              class="flex-1 h-11 text-sm text-slate-500 font-medium hover:bg-slate-50 active:bg-slate-100 transition-colors"
+              @click="onCancel"
+            >
+              {{ cancelText }}
+            </button>
             <div v-if="type !== 'alert'" class="w-px bg-slate-100" />
-            <button class="flex-1 h-11 text-sm font-semibold text-primary
-                     hover:bg-primary/5 active:bg-primary/10 transition-colors"
-              @click="onConfirm">{{ confirmText }}</button>
+            <button
+              class="flex-1 h-11 text-sm font-semibold text-primary hover:bg-primary/5 active:bg-primary/10 transition-colors"
+              @click="onConfirm"
+            >
+              {{ confirmText }}
+            </button>
           </div>
         </div>
       </div>
@@ -117,7 +128,9 @@ function prompt(msg, title = '输入', defaultValue = '', placeholder = '') {
 }
 .dialog-enter-active > div:last-child,
 .dialog-leave-active > div:last-child {
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 .dialog-enter-from,
 .dialog-leave-to {

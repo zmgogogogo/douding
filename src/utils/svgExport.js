@@ -55,7 +55,9 @@ export function generateSVG(grid, gridW, gridH, opts = {}) {
   // 构建 SVG
   const parts = []
   parts.push(`<?xml version="1.0" encoding="UTF-8"?>`)
-  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}">`)
+  parts.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}">`
+  )
 
   // 背景
   if (!transparent) {
@@ -77,7 +79,9 @@ export function generateSVG(grid, gridW, gridH, opts = {}) {
   // 色号标注
   if (showLabels && cellSize >= 12) {
     parts.push(`  <!-- 色号标注 -->`)
-    parts.push(`  <g fill="#333" font-family="monospace" font-size="${Math.max(6, cellSize * 0.55)}" text-anchor="middle">`)
+    parts.push(
+      `  <g fill="#333" font-family="monospace" font-size="${Math.max(6, cellSize * 0.55)}" text-anchor="middle">`
+    )
     for (const [hex, group] of colorGroups) {
       const label = group.name.replace(/\s/g, '').slice(0, 6)
       for (const { r, c } of group.cells) {

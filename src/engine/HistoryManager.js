@@ -16,15 +16,21 @@
  */
 class Command {
   /** 执行操作 */
-  execute() { throw new Error('子类实现') }
+  execute() {
+    throw new Error('子类实现')
+  }
   /** 反向执行 */
-  undo() { throw new Error('子类实现') }
+  undo() {
+    throw new Error('子类实现')
+  }
   /**
    * 尝试与下一条命令合并
    * @param {Command} next
    * @returns {boolean} 是否合并成功
    */
-  mergeWith(next) { return false }
+  mergeWith(next) {
+    return false
+  }
 }
 
 // ==================== 绘制命令 ====================
@@ -75,7 +81,7 @@ export class DrawCommand extends Command {
     if (next.layerId !== this.layerId) return false
 
     // 合并相邻像素变更
-    const existingKeys = new Set(this.changes.map(c => `${c.x},${c.y}`))
+    const existingKeys = new Set(this.changes.map((c) => `${c.x},${c.y}`))
     for (const c of next.changes) {
       const key = `${c.x},${c.y}`
       if (existingKeys.has(key)) {
@@ -149,20 +155,36 @@ export class LayerCommand extends Command {
 
   execute() {
     switch (this.#action) {
-      case 'add': this.#api.addLayerFromSnapshot(this.#payload); break
-      case 'remove': this.#api.removeLayerById(this.#payload.id); break
-      case 'reorder': this.#api.reorderLayers(this.#payload.ids); break
-      case 'merge': this.#api.mergeLayersDown(this.#payload.id); break
+      case 'add':
+        this.#api.addLayerFromSnapshot(this.#payload)
+        break
+      case 'remove':
+        this.#api.removeLayerById(this.#payload.id)
+        break
+      case 'reorder':
+        this.#api.reorderLayers(this.#payload.ids)
+        break
+      case 'merge':
+        this.#api.mergeLayersDown(this.#payload.id)
+        break
     }
   }
 
   undo() {
     // 反向操作
     switch (this.#action) {
-      case 'add': this.#api.removeLayerById(this.#payload.id); break
-      case 'remove': this.#api.addLayerFromSnapshot(this.#payload.snapshot); break
-      case 'reorder': this.#api.reorderLayers(this.#payload.previousIds); break
-      case 'merge': this.#api.restoreFromMerge(this.#payload); break
+      case 'add':
+        this.#api.removeLayerById(this.#payload.id)
+        break
+      case 'remove':
+        this.#api.addLayerFromSnapshot(this.#payload.snapshot)
+        break
+      case 'reorder':
+        this.#api.reorderLayers(this.#payload.previousIds)
+        break
+      case 'merge':
+        this.#api.restoreFromMerge(this.#payload)
+        break
     }
   }
 }
@@ -252,9 +274,7 @@ export class HistoryManager {
   execute(cmd) {
     // 尝试与上一条命令合并（连续同类型操作）
     const now = Date.now()
-    const prev = this.#undoStack.length > 0
-      ? this.#undoStack[this.#undoStack.length - 1]
-      : null
+    const prev = this.#undoStack.length > 0 ? this.#undoStack[this.#undoStack.length - 1] : null
 
     if (prev && now - this.#lastCommandTime < 500 && prev.mergeWith(cmd)) {
       // 合并成功，不新增命令（DrawCommand 合并）
@@ -322,10 +342,18 @@ export class HistoryManager {
 
   // ==================== 状态查询 ====================
 
-  get canUndo() { return this.#undoStack.length > 0 }
-  get canRedo() { return this.#redoStack.length > 0 }
-  get undoCount() { return this.#undoStack.length }
-  get redoCount() { return this.#redoStack.length }
+  get canUndo() {
+    return this.#undoStack.length > 0
+  }
+  get canRedo() {
+    return this.#redoStack.length > 0
+  }
+  get undoCount() {
+    return this.#undoStack.length
+  }
+  get redoCount() {
+    return this.#redoStack.length
+  }
 
   /** 清空所有历史 */
   clear() {
@@ -338,7 +366,7 @@ export class HistoryManager {
     return {
       undoSteps: this.#undoStack.length,
       redoSteps: this.#redoStack.length,
-      lastCommands: this.#undoStack.slice(-5).map(c => c.constructor.name)
+      lastCommands: this.#undoStack.slice(-5).map((c) => c.constructor.name),
     }
   }
 }

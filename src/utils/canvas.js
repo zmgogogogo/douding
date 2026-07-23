@@ -39,7 +39,7 @@ export class CanvasRenderer {
       left: Math.round(cx) + 'px',
       top: Math.round(cy) + 'px',
       width: Math.round(cw) + 'px',
-      height: Math.round(ch) + 'px'
+      height: Math.round(ch) + 'px',
     })
   }
 
@@ -62,8 +62,8 @@ export class CanvasRenderer {
     this.globalCanvas.style.height = ch + 'px'
     this.globalCtx.setTransform(1, 0, 0, 1, 0, 0)
 
-    const ox = cw / 2 + panX - this.gridW * zoom / 2
-    const oy = ch / 2 + panY - this.gridH * zoom / 2
+    const ox = cw / 2 + panX - (this.gridW * zoom) / 2
+    const oy = ch / 2 + panY - (this.gridH * zoom) / 2
 
     const startCol = Math.floor(-ox / zoom)
     const endCol = Math.ceil((cw - ox) / zoom)
@@ -76,11 +76,13 @@ export class CanvasRenderer {
     this.globalCtx.beginPath()
     for (let r = startRow; r <= endRow; r++) {
       const y = Math.round(oy + r * zoom) + 0.5
-      this.globalCtx.moveTo(0, y); this.globalCtx.lineTo(cw, y)
+      this.globalCtx.moveTo(0, y)
+      this.globalCtx.lineTo(cw, y)
     }
     for (let c = startCol; c <= endCol; c++) {
       const x = Math.round(ox + c * zoom) + 0.5
-      this.globalCtx.moveTo(x, 0); this.globalCtx.lineTo(x, ch)
+      this.globalCtx.moveTo(x, 0)
+      this.globalCtx.lineTo(x, ch)
     }
     this.globalCtx.stroke()
 
@@ -92,11 +94,13 @@ export class CanvasRenderer {
     const majorStartRow = Math.floor(startRow / 50) * 50
     for (let r = majorStartRow; r <= endRow; r += 50) {
       const y = Math.round(oy + r * zoom) + 0.5
-      this.globalCtx.moveTo(0, y); this.globalCtx.lineTo(cw, y)
+      this.globalCtx.moveTo(0, y)
+      this.globalCtx.lineTo(cw, y)
     }
     for (let c = majorStartCol; c <= endCol; c += 50) {
       const x = Math.round(ox + c * zoom) + 0.5
-      this.globalCtx.moveTo(x, 0); this.globalCtx.lineTo(x, ch)
+      this.globalCtx.moveTo(x, 0)
+      this.globalCtx.lineTo(x, ch)
     }
     this.globalCtx.stroke()
   }
@@ -104,7 +108,8 @@ export class CanvasRenderer {
   // ========== 1. 珠子渲染（fillRect，按颜色合批） ==========
   renderBeads(grid, highlightHex = null, dimHex = null) {
     const z = this.zoom
-    const w = this.gridW, h = this.gridH
+    const w = this.gridW,
+      h = this.gridH
     const ctx = this.ctx
 
     // 清空 + 底板色（白色底板，珠子绘制区域）
@@ -156,7 +161,8 @@ export class CanvasRenderer {
   renderRefOverlay(refPixels, refW, refH, opacity = 0.3, offsetX = 0, offsetY = 0, scale = 1) {
     if (!refPixels) return
     const z = this.zoom
-    const w = this.gridW, h = this.gridH
+    const w = this.gridW,
+      h = this.gridH
     const ctx = this.ctx
     const alpha = Math.max(0, Math.min(1, opacity))
 
@@ -165,16 +171,21 @@ export class CanvasRenderer {
       for (let c = 0; c < w; c++) {
         const srcR = Math.floor((r - offsetY) / scale)
         const srcC = Math.floor((c - offsetX) / scale)
-        const px = (srcR >= 0 && srcR < refH && srcC >= 0 && srcC < refW) ? refPixels[srcR]?.[srcC] : null
+        const px =
+          srcR >= 0 && srcR < refH && srcC >= 0 && srcC < refW ? refPixels[srcR]?.[srcC] : null
         if (!px) continue
 
         let hex = px.hex
         if (!hex && px.r !== undefined) {
-          hex = '#' + [px.r, px.g, px.b].map(v => v.toString(16).padStart(2, '0')).join('')
+          hex = '#' + [px.r, px.g, px.b].map((v) => v.toString(16).padStart(2, '0')).join('')
         }
         if (!hex) continue
 
-        ctx.fillStyle = hex + Math.round(alpha * 255).toString(16).padStart(2, '0')
+        ctx.fillStyle =
+          hex +
+          Math.round(alpha * 255)
+            .toString(16)
+            .padStart(2, '0')
         ctx.fillRect(c * z, r * z, z, z)
       }
     }
@@ -184,7 +195,8 @@ export class CanvasRenderer {
   renderGridLines(show = true) {
     if (!show) return
     const z = this.zoom
-    const w = this.gridW, h = this.gridH
+    const w = this.gridW,
+      h = this.gridH
     const ctx = this.ctx
 
     // 细网格线：+0.5 偏移确保 1px 线条锐利
@@ -193,11 +205,13 @@ export class CanvasRenderer {
     ctx.beginPath()
     for (let r = 0; r <= h; r++) {
       const y = Math.round(r * z) + 0.5
-      ctx.moveTo(0, y); ctx.lineTo(w * z, y)
+      ctx.moveTo(0, y)
+      ctx.lineTo(w * z, y)
     }
     for (let c = 0; c <= w; c++) {
       const x = Math.round(c * z) + 0.5
-      ctx.moveTo(x, 0); ctx.lineTo(x, h * z)
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, h * z)
     }
     ctx.stroke()
 
@@ -212,7 +226,8 @@ export class CanvasRenderer {
     // 缩放到 12 以上才显示字号
     if (zoom < 12) return
     const z = zoom
-    const w = this.gridW, h = this.gridH
+    const w = this.gridW,
+      h = this.gridH
     const ctx = this.ctx
 
     // 字号跟随缩放线性增长
@@ -244,7 +259,20 @@ export class CanvasRenderer {
 
   // ========== 一次调用渲染全部 ==========
   renderAll(grid, opts = {}) {
-    const { highlightHex, dimHex, refPixels, refW, refH, refOpacity, refOffsetX, refOffsetY, refScale, showGrid, zoom, showLabels } = opts
+    const {
+      highlightHex,
+      dimHex,
+      refPixels,
+      refW,
+      refH,
+      refOpacity,
+      refOffsetX,
+      refOffsetY,
+      refScale,
+      showGrid,
+      zoom,
+      showLabels,
+    } = opts
     try {
       if (!grid || !grid.length) {
         const z = this.zoom
@@ -253,7 +281,16 @@ export class CanvasRenderer {
         return
       }
       this.renderBeads(grid, highlightHex || null, dimHex || null)
-      if (refPixels) this.renderRefOverlay(refPixels, refW || 0, refH || 0, refOpacity || 0, refOffsetX || 0, refOffsetY || 0, refScale || 1)
+      if (refPixels)
+        this.renderRefOverlay(
+          refPixels,
+          refW || 0,
+          refH || 0,
+          refOpacity || 0,
+          refOffsetX || 0,
+          refOffsetY || 0,
+          refScale || 1
+        )
       this.renderGridLines(showGrid)
       if (showLabels !== false) this.renderLabels(grid, zoom || 10)
     } catch (e) {
@@ -271,10 +308,11 @@ export class CanvasRenderer {
     ctx.fillStyle = bgColor
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     for (let r = 0; r < gridH; r++) {
-      const row = grid[r]; if (!row) continue
+      const row = grid[r]
+      if (!row) continue
       for (let c = 0; c < gridW; c++) {
         const cell = row[c]
-        ctx.fillStyle = (cell && cell.hex) ? cell.hex : bgColor
+        ctx.fillStyle = cell && cell.hex ? cell.hex : bgColor
         ctx.fillRect(c * SCALE, r * SCALE, SCALE, SCALE)
       }
     }
@@ -282,7 +320,8 @@ export class CanvasRenderer {
   }
 
   static extractGrid(sourceCanvas, targetW, targetH) {
-    const srcW = sourceCanvas.width, srcH = sourceCanvas.height
+    const srcW = sourceCanvas.width,
+      srcH = sourceCanvas.height
     const srcCtx = sourceCanvas.getContext('2d')
     const srcData = srcCtx.getImageData(0, 0, srcW, srcH).data
     const grid = []
@@ -294,9 +333,15 @@ export class CanvasRenderer {
         const sx = Math.min(srcW - 1, c * cellW + Math.floor(cellW / 2))
         const sy = Math.min(srcH - 1, r * cellH + Math.floor(cellH / 2))
         const idx = (sy * srcW + sx) * 4
-        if (srcData[idx + 3] < 128) { row.push(null); continue }
-        const hex = '#' + [srcData[idx], srcData[idx + 1], srcData[idx + 2]]
-          .map(v => v.toString(16).padStart(2, '0').toUpperCase()).join('')
+        if (srcData[idx + 3] < 128) {
+          row.push(null)
+          continue
+        }
+        const hex =
+          '#' +
+          [srcData[idx], srcData[idx + 1], srcData[idx + 2]]
+            .map((v) => v.toString(16).padStart(2, '0').toUpperCase())
+            .join('')
         row.push({ r: srcData[idx], g: srcData[idx + 1], b: srcData[idx + 2], hex })
       }
       grid.push(row)

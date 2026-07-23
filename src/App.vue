@@ -15,12 +15,20 @@
     <AppDialog ref="dialogRef" />
 
     <!-- PWA 安装提示 -->
-    <div v-if="showInstall" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[200] bg-white rounded-2xl shadow-xl
-                border border-[var(--ui-border)] px-4 py-3 flex items-center gap-3 animate-slide-up">
+    <div
+      v-if="showInstall"
+      class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[200] bg-white rounded-2xl shadow-xl border border-[var(--ui-border)] px-4 py-3 flex items-center gap-3 animate-slide-up"
+    >
       <span class="text-sm font-medium text-slate-700">📱 安装豆丁到桌面</span>
-      <button class="px-3 py-1 rounded-lg bg-primary text-white text-xs font-medium"
-        @click="installApp">安装</button>
-      <button class="text-xs text-slate-400 hover:text-slate-600" @click="showInstall = false">稍后</button>
+      <button
+        class="px-3 py-1 rounded-lg bg-primary text-white text-xs font-medium"
+        @click="installApp"
+      >
+        安装
+      </button>
+      <button class="text-xs text-slate-400 hover:text-slate-600" @click="showInstall = false">
+        稍后
+      </button>
     </div>
   </div>
 </template>
@@ -54,7 +62,10 @@ onMounted(() => {
 function installApp() {
   if (installEvent) {
     installEvent.prompt()
-    installEvent.userChoice.then(() => { showInstall.value = false; installEvent = null })
+    installEvent.userChoice.then(() => {
+      showInstall.value = false
+      installEvent = null
+    })
   }
 }
 </script>

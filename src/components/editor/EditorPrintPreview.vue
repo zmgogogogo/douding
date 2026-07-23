@@ -9,14 +9,23 @@
         <!-- 头部 -->
         <div class="flex items-center justify-between px-4 py-3 border-b">
           <h3 class="text-sm font-semibold">打印预览</h3>
-          <button class="text-slate-400 hover:text-slate-600 text-lg leading-none" @click="$emit('close')">&times;</button>
+          <button
+            class="text-slate-400 hover:text-slate-600 text-lg leading-none"
+            @click="$emit('close')"
+          >
+            &times;
+          </button>
         </div>
 
         <!-- 预览区 -->
         <div class="flex-1 overflow-auto bg-slate-200 p-4 flex items-start justify-center">
           <div ref="previewRef" class="bg-white shadow-xl" :style="previewStyle">
-            <canvas ref="previewCanvasRef" :width="canvasW" :height="canvasH"
-              style="display:block; width:100%; height:auto;" />
+            <canvas
+              ref="previewCanvasRef"
+              :width="canvasW"
+              :height="canvasH"
+              style="display: block; width: 100%; height: auto"
+            />
           </div>
         </div>
 
@@ -56,20 +65,39 @@
           <!-- 缩放 -->
           <div class="flex items-center gap-3 text-[11px]">
             <span class="text-slate-500 w-12">缩放</span>
-            <input v-model.number="printScale" type="range" min="25" max="200" class="flex-1 h-1 accent-blue-500" />
+            <input
+              v-model.number="printScale"
+              type="range"
+              min="25"
+              max="200"
+              class="flex-1 h-1 accent-blue-500"
+            />
             <span class="font-mono w-10 text-right">{{ printScale }}%</span>
           </div>
 
           <!-- 分页信息 -->
-          <div v-if="totalPages > 1" class="text-[10px] text-amber-600 bg-amber-50 rounded px-2 py-1">
-            ⚠ 图纸过大，将拆分为 {{ totalPages }} 页打印（{{ pagesPerRow }}×{{ Math.ceil(totalPages / pagesPerRow) }}）
+          <div
+            v-if="totalPages > 1"
+            class="text-[10px] text-amber-600 bg-amber-50 rounded px-2 py-1"
+          >
+            ⚠ 图纸过大，将拆分为 {{ totalPages }} 页打印（{{ pagesPerRow }}×{{
+              Math.ceil(totalPages / pagesPerRow)
+            }}）
           </div>
         </div>
 
         <!-- 底部按钮 -->
         <div class="flex gap-2 px-4 py-3 border-t justify-end">
-          <button class="px-4 py-1.5 rounded-lg text-xs border hover:bg-slate-50" @click="$emit('close')">取消</button>
-          <button class="px-4 py-1.5 rounded-lg text-xs bg-blue-500 text-white hover:bg-blue-600" @click="doPrint">
+          <button
+            class="px-4 py-1.5 rounded-lg text-xs border hover:bg-slate-50"
+            @click="$emit('close')"
+          >
+            取消
+          </button>
+          <button
+            class="px-4 py-1.5 rounded-lg text-xs bg-blue-500 text-white hover:bg-blue-600"
+            @click="doPrint"
+          >
             🖨️ 打印
           </button>
         </div>
@@ -121,10 +149,17 @@ const cellPrintSize = computed(() => (5 * mmToPx * printScale.value) / 100) // 5
 const canvasW = computed(() => Math.ceil(props.gridW * cellPrintSize.value))
 const canvasH = computed(() => Math.ceil(props.gridH * cellPrintSize.value))
 
-const pagesPerRow = computed(() => Math.max(1, Math.floor((paperDims.value.w * mmToPx * printScale.value / 100) / (props.gridW * cellPrintSize.value))))
+const pagesPerRow = computed(() =>
+  Math.max(
+    1,
+    Math.floor(
+      (paperDims.value.w * mmToPx * printScale.value) / 100 / (props.gridW * cellPrintSize.value)
+    )
+  )
+)
 const totalPages = computed(() => {
-  const w = Math.ceil(canvasW.value / (paperDims.value.w * mmToPx * printScale.value / 100))
-  const h = Math.ceil(canvasH.value / (paperDims.value.h * mmToPx * printScale.value / 100))
+  const w = Math.ceil(canvasW.value / ((paperDims.value.w * mmToPx * printScale.value) / 100))
+  const h = Math.ceil(canvasH.value / ((paperDims.value.h * mmToPx * printScale.value) / 100))
   return w * h
 })
 
@@ -181,10 +216,12 @@ function renderPreview() {
       ctx.lineWidth = 0.3
       ctx.beginPath()
       for (let c = 0; c <= props.gridW; c++) {
-        ctx.moveTo(c * cs, 0); ctx.lineTo(c * cs, canvas.height)
+        ctx.moveTo(c * cs, 0)
+        ctx.lineTo(c * cs, canvas.height)
       }
       for (let r = 0; r <= props.gridH; r++) {
-        ctx.moveTo(0, r * cs); ctx.lineTo(canvas.width, r * cs)
+        ctx.moveTo(0, r * cs)
+        ctx.lineTo(canvas.width, r * cs)
       }
       ctx.stroke()
     }
@@ -204,16 +241,22 @@ function renderPreview() {
 
     // 拼接标记
     if (showMarks.value && totalPages.value > 1) {
-      const pageW = paperDims.value.w * mmToPx * printScale.value / 100
-      const pageH = paperDims.value.h * mmToPx * printScale.value / 100
+      const pageW = (paperDims.value.w * mmToPx * printScale.value) / 100
+      const pageH = (paperDims.value.h * mmToPx * printScale.value) / 100
       ctx.strokeStyle = 'rgba(255,100,50,0.5)'
       ctx.lineWidth = 1.5
       ctx.setLineDash([8, 4])
       for (let px = 0; px < canvas.width; px += pageW) {
-        ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, canvas.height); ctx.stroke()
+        ctx.beginPath()
+        ctx.moveTo(px, 0)
+        ctx.lineTo(px, canvas.height)
+        ctx.stroke()
       }
       for (let py = 0; py < canvas.height; py += pageH) {
-        ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(canvas.width, py); ctx.stroke()
+        ctx.beginPath()
+        ctx.moveTo(0, py)
+        ctx.lineTo(canvas.width, py)
+        ctx.stroke()
       }
       ctx.setLineDash([])
     }
@@ -226,24 +269,37 @@ function doPrint() {
   if (dataUrl) {
     const w = window.open('', '_blank', 'width=800,height=600')
     const s = 'script'
-    w.document.write(`<img src="${dataUrl}" style="max-width:100%"><${s}>window.onload=()=>window.print()</${s}>`)
+    w.document.write(
+      `<img src="${dataUrl}" style="max-width:100%"><${s}>window.onload=()=>window.print()</${s}>`
+    )
   }
 }
 
-watch([paperSize, orientation, showGrid, showLabels, colorPrint, showMarks, printScale], renderPreview)
+watch(
+  [paperSize, orientation, showGrid, showLabels, colorPrint, showMarks, printScale],
+  renderPreview
+)
 watch(() => props.grid, renderPreview, { deep: true })
 </script>
 
 <style scoped>
 .print-overlay {
-  position: fixed; inset: 0; z-index: 2000;
-  background: rgba(0,0,0,0.4);
-  display: flex; align-items: center; justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .print-dialog {
-  background: #fff; border-radius: 16px;
-  width: 90vw; max-width: 800px; max-height: 90vh;
-  display: flex; flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  background: #fff;
+  border-radius: 16px;
+  width: 90vw;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 </style>

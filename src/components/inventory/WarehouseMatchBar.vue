@@ -11,22 +11,29 @@
     </div>
 
     <!-- 匹配结果 -->
-    <div v-else-if="matchData" class="cursor-pointer hover:bg-slate-50 -mx-5 -my-3 px-5 py-3 rounded-lg transition-colors"
-      @click="showMatchDialog = true">
+    <div
+      v-else-if="matchData"
+      class="cursor-pointer hover:bg-slate-50 -mx-5 -my-3 px-5 py-3 rounded-lg transition-colors"
+      @click="showMatchDialog = true"
+    >
       <div class="flex items-center gap-3">
         <!-- 匹配度进度条 -->
         <div class="flex items-center gap-1.5 flex-shrink-0">
           <div class="w-14 h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div class="h-full rounded-full transition-all duration-500"
+            <div
+              class="h-full rounded-full transition-all duration-500"
               :class="matchColor"
-              :style="{ width: matchData.matchRate + '%' }" />
+              :style="{ width: matchData.matchRate + '%' }"
+            />
           </div>
           <span class="text-xs font-bold" :class="matchTextColor">{{ matchData.matchRate }}%</span>
         </div>
 
         <!-- 分类统计 -->
         <div class="flex items-center gap-2 text-[11px]">
-          <span class="text-green-600 font-medium">🟢 {{ matchData.sufficient?.length || 0 }}色充足</span>
+          <span class="text-green-600 font-medium"
+            >🟢 {{ matchData.sufficient?.length || 0 }}色充足</span
+          >
           <span v-if="matchData.insufficient?.length" class="text-amber-600 font-medium">
             🟡 {{ matchData.insufficient.length }}色不足
           </span>
@@ -44,16 +51,17 @@
       </div>
       <!-- 操作按钮 -->
       <div class="flex gap-2 mt-2" @click.stop>
-        <button class="text-[10px] px-3 py-1 rounded-full bg-primary/10 text-primary font-medium
-                       hover:bg-primary/20 transition-colors"
-          @click="showDeductDialog = true">✅ 标记已制作</button>
+        <button
+          class="text-[10px] px-3 py-1 rounded-full bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors"
+          @click="showDeductDialog = true"
+        >
+          ✅ 标记已制作
+        </button>
       </div>
     </div>
 
     <!-- 未匹配（无数据/空豆仓） -->
-    <div v-else class="text-xs text-slate-400">
-      暂无可用的库存匹配数据
-    </div>
+    <div v-else class="text-xs text-slate-400">暂无可用的库存匹配数据</div>
 
     <!-- 缺色匹配详情弹窗 -->
     <MatchDetailDialog
@@ -68,9 +76,14 @@
     <!-- 制作扣减弹窗 -->
     <Teleport to="body">
       <Transition name="dialog">
-        <div v-if="showDeductDialog" class="fixed inset-0 z-[170] flex items-center justify-center bg-black/30 backdrop-blur-sm"
-          @click.self="showDeductDialog = false">
-          <div class="bg-white rounded-2xl shadow-xl p-5 w-[380px] max-w-[90vw] space-y-4 animate-bounce-in">
+        <div
+          v-if="showDeductDialog"
+          class="fixed inset-0 z-[170] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          @click.self="showDeductDialog = false"
+        >
+          <div
+            class="bg-white rounded-2xl shadow-xl p-5 w-[380px] max-w-[90vw] space-y-4 animate-bounce-in"
+          >
             <h3 class="font-bold text-slate-800">标记已制作 · 扣减库存</h3>
             <p class="text-xs text-slate-500">{{ designTitle }}</p>
 
@@ -79,9 +92,18 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs text-slate-600">制作份数</span>
                 <div class="flex items-center gap-1">
-                  <button class="w-6 h-6 rounded bg-slate-100 text-xs" @click="deductCopies = Math.max(1, deductCopies - 1)">−</button>
-                  <span class="w-8 text-center font-mono font-bold text-sm">{{ deductCopies }}</span>
-                  <button class="w-6 h-6 rounded bg-slate-100 text-xs" @click="deductCopies++">+</button>
+                  <button
+                    class="w-6 h-6 rounded bg-slate-100 text-xs"
+                    @click="deductCopies = Math.max(1, deductCopies - 1)"
+                  >
+                    −
+                  </button>
+                  <span class="w-8 text-center font-mono font-bold text-sm">{{
+                    deductCopies
+                  }}</span>
+                  <button class="w-6 h-6 rounded bg-slate-100 text-xs" @click="deductCopies++">
+                    +
+                  </button>
                 </div>
               </div>
 
@@ -89,23 +111,37 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs text-slate-600">损耗率</span>
                 <div class="flex items-center gap-1">
-                  <input v-model.number="deductLossRate" type="range" min="0" max="20" class="w-20 h-1.5 accent-[var(--ui-accent)]" />
+                  <input
+                    v-model.number="deductLossRate"
+                    type="range"
+                    min="0"
+                    max="20"
+                    class="w-20 h-1.5 accent-[var(--ui-accent)]"
+                  />
                   <span class="text-xs font-mono w-8 text-right">{{ deductLossRate }}%</span>
                 </div>
               </div>
 
               <!-- 预览 -->
               <div class="bg-slate-50 rounded-lg p-2.5 text-[10px] text-slate-500">
-                预计消耗 <b class="text-slate-700">{{ estimatedTotal }}</b> 颗
-                （单份 {{ matchData?.totalBeads || 0 }} × {{ deductCopies }}份 × {{ (1 + deductLossRate/100).toFixed(2) }}）
+                预计消耗 <b class="text-slate-700">{{ estimatedTotal }}</b> 颗 （单份
+                {{ matchData?.totalBeads || 0 }} × {{ deductCopies }}份 ×
+                {{ (1 + deductLossRate / 100).toFixed(2) }}）
               </div>
             </div>
 
             <div class="flex gap-2">
-              <button class="flex-1 h-9 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium"
-                @click="showDeductDialog = false">取消</button>
-              <button class="flex-1 h-9 rounded-xl bg-primary text-white text-xs font-medium"
-                @click="doDeduct" :disabled="deducting">
+              <button
+                class="flex-1 h-9 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium"
+                @click="showDeductDialog = false"
+              >
+                取消
+              </button>
+              <button
+                class="flex-1 h-9 rounded-xl bg-primary text-white text-xs font-medium"
+                @click="doDeduct"
+                :disabled="deducting"
+              >
                 {{ deducting ? '扣减中...' : '确认扣减' }}
               </button>
             </div>
@@ -126,7 +162,7 @@ import MatchDetailDialog from './MatchDetailDialog.vue'
 
 const props = defineProps({
   designId: { type: Number, required: true },
-  designTitle: { type: String, default: '' }
+  designTitle: { type: String, default: '' },
 })
 
 const auth = useAuth()
@@ -180,18 +216,34 @@ async function doDeduct() {
   try {
     // 汇总所有颜色用量
     const beads = [
-      ...(matchData.value.sufficient || []).map(c => ({ colorId: c.colorId, quantity: c.need, name: c.name })),
-      ...(matchData.value.insufficient || []).map(c => ({ colorId: c.colorId, quantity: c.need, name: c.name })),
-      ...(matchData.value.missing || []).map(c => ({ colorId: c.colorId, quantity: c.need, name: c.name || '' }))
-    ].filter(b => b.colorId)
+      ...(matchData.value.sufficient || []).map((c) => ({
+        colorId: c.colorId,
+        quantity: c.need,
+        name: c.name,
+      })),
+      ...(matchData.value.insufficient || []).map((c) => ({
+        colorId: c.colorId,
+        quantity: c.need,
+        name: c.name,
+      })),
+      ...(matchData.value.missing || []).map((c) => ({
+        colorId: c.colorId,
+        quantity: c.need,
+        name: c.name || '',
+      })),
+    ].filter((b) => b.colorId)
 
-    const res = await API.post('/api/inventory/deduct', {
-      designId: props.designId,
-      designTitle: props.designTitle,
-      beads,
-      copies: deductCopies.value,
-      lossRate: deductLossRate.value
-    }, true)
+    const res = await API.post(
+      '/api/inventory/deduct',
+      {
+        designId: props.designId,
+        designTitle: props.designTitle,
+        beads,
+        copies: deductCopies.value,
+        lossRate: deductLossRate.value,
+      },
+      true
+    )
 
     if (res.code === 200) {
       toast.show(`消耗扣除完成！`)
@@ -202,8 +254,11 @@ async function doDeduct() {
     } else {
       toast.show(res.message || '扣减失败')
     }
-  } catch (e) { toast.show('扣减失败: ' + (e.message || '网络错误')) }
-  finally { deducting.value = false }
+  } catch (e) {
+    toast.show('扣减失败: ' + (e.message || '网络错误'))
+  } finally {
+    deducting.value = false
+  }
 }
 
 function onDeduct() {

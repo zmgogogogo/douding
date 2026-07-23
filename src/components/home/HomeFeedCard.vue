@@ -7,7 +7,10 @@
   <!-- 类型1：模板卡片 -->
   <div v-if="item.type === 'template'" class="feed-card" @click="$emit('click', item)">
     <!-- 缩略图 -->
-    <div class="relative w-full bg-slate-100 overflow-hidden" :style="{ paddingBottom: thumbRatio }">
+    <div
+      class="relative w-full bg-slate-100 overflow-hidden"
+      :style="{ paddingBottom: thumbRatio }"
+    >
       <img
         v-if="item.thumbnail"
         :src="item.thumbnail"
@@ -20,8 +23,11 @@
         🧩
       </div>
       <!-- 角标 -->
-      <span v-if="item.badge" class="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-semibold"
-        :class="badgeClass(item.badge)">
+      <span
+        v-if="item.badge"
+        class="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+        :class="badgeClass(item.badge)"
+      >
         {{ item.badge }}
       </span>
     </div>
@@ -44,7 +50,10 @@
 
   <!-- 类型2：用户作品卡片 -->
   <div v-else-if="item.type === 'works'" class="feed-card" @click="$emit('click', item)">
-    <div class="relative w-full bg-slate-100 overflow-hidden" :style="{ paddingBottom: thumbRatio }">
+    <div
+      class="relative w-full bg-slate-100 overflow-hidden"
+      :style="{ paddingBottom: thumbRatio }"
+    >
       <img
         v-if="item.thumbnail"
         :src="item.thumbnail"
@@ -53,7 +62,9 @@
         loading="lazy"
         @error="onImgError"
       />
-      <div v-else class="absolute inset-0 flex items-center justify-center text-2xl text-slate-300">🧩</div>
+      <div v-else class="absolute inset-0 flex items-center justify-center text-2xl text-slate-300">
+        🧩
+      </div>
     </div>
     <div class="p-2.5">
       <!-- 作者信息 -->
@@ -64,7 +75,10 @@
           class="w-4 h-4 rounded-full object-cover flex-shrink-0"
           alt=""
         />
-        <div v-else class="w-4 h-4 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center">
+        <div
+          v-else
+          class="w-4 h-4 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center"
+        >
           <UserIcon :size="9" class="text-slate-400" />
         </div>
         <span class="text-[11px] text-slate-500 truncate flex-1 min-w-0 leading-tight">
@@ -72,11 +86,15 @@
         </span>
       </div>
       <!-- 标题 -->
-      <div class="text-[13px] text-slate-800 line-clamp-1 leading-snug mb-1.5">{{ item.title }}</div>
+      <div class="text-[13px] text-slate-800 line-clamp-1 leading-snug mb-1.5">
+        {{ item.title }}
+      </div>
       <!-- 互动数据 -->
       <div class="flex items-center gap-3">
-        <button class="flex items-center gap-0.5 text-[11px] text-slate-400 hover:text-red-500 transition-colors"
-          @click.stop="$emit('like', item)">
+        <button
+          class="flex items-center gap-0.5 text-[11px] text-slate-400 hover:text-red-500 transition-colors"
+          @click.stop="$emit('like', item)"
+        >
           <HeartIcon :size="12" :class="item.isLiked ? 'fill-red-500 text-red-500' : ''" />
           {{ formatNum(item.likesCount || 0) }}
         </button>
@@ -109,9 +127,11 @@
       </div>
       <div class="flex items-center gap-1.5 mb-1.5">
         <span
-          v-for="tag in (item.tags || [])" :key="tag"
+          v-for="tag in item.tags || []"
+          :key="tag"
           class="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500"
-        >{{ tag }}</span>
+          >{{ tag }}</span
+        >
       </div>
       <div class="flex items-center gap-3 text-[11px] text-slate-400">
         <span>{{ formatNum(item.readCount || 0) }} 阅读</span>
@@ -127,16 +147,19 @@
       :style="{ backgroundColor: item.bgColor || '#fef3c7' }"
     >
       <div class="text-lg font-bold text-slate-800 relative z-10">{{ item.title }}</div>
-      <div v-if="item.subtitle" class="text-xs text-slate-600 mt-0.5 relative z-10">{{ item.subtitle }}</div>
+      <div v-if="item.subtitle" class="text-xs text-slate-600 mt-0.5 relative z-10">
+        {{ item.subtitle }}
+      </div>
     </div>
     <div class="p-2.5">
       <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2">
         <span>{{ formatNum(item.joinCount || 0) }} 人参与</span>
         <span v-if="item.remaining" class="text-red-400">{{ item.remaining }}</span>
       </div>
-      <button class="w-full py-1.5 rounded-full bg-primary text-white text-xs font-medium
-                     active:scale-95 transition-transform"
-        @click.stop="$emit('join', item)">
+      <button
+        class="w-full py-1.5 rounded-full bg-primary text-white text-xs font-medium active:scale-95 transition-transform"
+        @click.stop="$emit('join', item)"
+      >
         立即参与
       </button>
     </div>
@@ -148,7 +171,7 @@ import { computed } from 'vue'
 import { UserIcon, HeartIcon, MessageCircleIcon, BookOpenIcon } from 'lucide-vue-next'
 
 const props = defineProps({
-  item: { type: Object, required: true }
+  item: { type: Object, required: true },
 })
 
 defineEmits(['click', 'like', 'join'])
@@ -165,10 +188,10 @@ const thumbRatio = computed(() => {
 
 function badgeClass(badge) {
   const map = {
-    '官方': 'bg-primary text-white',
-    '会员': 'bg-amber-500 text-white',
-    '热门': 'bg-red-500 text-white',
-    'NEW': 'bg-purple-500 text-white'
+    官方: 'bg-primary text-white',
+    会员: 'bg-amber-500 text-white',
+    热门: 'bg-red-500 text-white',
+    NEW: 'bg-purple-500 text-white',
   }
   return map[badge] || 'bg-slate-600 text-white'
 }

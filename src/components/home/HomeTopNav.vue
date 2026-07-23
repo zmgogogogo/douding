@@ -6,7 +6,11 @@
 <template>
   <nav
     class="sticky top-0 z-30 px-4 flex items-center h-12 gap-3 transition-colors duration-300"
-    :class="scrolled ? 'bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-sm' : 'bg-transparent'"
+    :class="
+      scrolled
+        ? 'bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-sm'
+        : 'bg-transparent'
+    "
   >
     <!-- 品牌 Logo -->
     <div class="flex items-center gap-1.5 flex-shrink-0 cursor-pointer" @click="goHome">
@@ -18,8 +22,7 @@
 
     <!-- 搜索入口（折叠式） -->
     <div
-      class="flex-1 h-8 bg-slate-100 rounded-full flex items-center gap-1.5 px-3 cursor-pointer
-             hover:bg-slate-200/80 transition-colors max-w-[240px]"
+      class="flex-1 h-8 bg-slate-100 rounded-full flex items-center gap-1.5 px-3 cursor-pointer hover:bg-slate-200/80 transition-colors max-w-[240px]"
       @click="$router.push('/search')"
     >
       <SearchIcon :size="14" class="text-slate-400 flex-shrink-0" />
@@ -41,19 +44,25 @@
       </button>
 
       <!-- 消息图标 -->
-      <button class="relative w-6 h-6 flex items-center justify-center" @click="goMessages" title="消息">
+      <button
+        class="relative w-6 h-6 flex items-center justify-center"
+        @click="goMessages"
+        title="消息"
+      >
         <BellIcon :size="20" class="text-slate-500 hover:text-slate-700 transition-colors" />
         <span
           v-if="unreadCount > 0"
-          class="absolute -top-0.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold
-                 rounded-full flex items-center justify-center px-1 border border-white"
+          class="absolute -top-0.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 border border-white"
         >
           {{ unreadCount > 99 ? '99+' : unreadCount }}
         </span>
       </button>
 
       <!-- 个人头像 -->
-      <button class="w-6 h-6 rounded-full overflow-hidden bg-slate-200 flex-shrink-0" @click="goProfile">
+      <button
+        class="w-6 h-6 rounded-full overflow-hidden bg-slate-200 flex-shrink-0"
+        @click="goProfile"
+      >
         <img
           v-if="auth.isLoggedIn.value && auth.user.value?.avatar"
           :src="auth.user.value.avatar"

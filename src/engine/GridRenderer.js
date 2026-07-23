@@ -38,12 +38,12 @@ export class GridRenderer {
 
     if (!show || !this.#visible) return
 
-    const showMinor = zoom >= 6  // zoom < 6 隐藏细网格，减少视觉噪音
+    const showMinor = zoom >= 6 // zoom < 6 隐藏细网格，减少视觉噪音
 
     // 细网格（1格1线，浅蓝灰色）
     if (showMinor) {
       g.setStrokeStyle({
-        width: 0.3 / zoom,  // 线宽随 zoom 缩放，保证视觉一致
+        width: 0.3 / zoom, // 线宽随 zoom 缩放，保证视觉一致
         color: 0xc8d0d8,
         alpha: 0.5,
       })

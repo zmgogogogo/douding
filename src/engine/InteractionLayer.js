@@ -139,7 +139,7 @@ export class InteractionLayer {
       g.stroke()
 
       // 高亮格子
-      g.setStrokeStyle({ width: 1.0, color: 0x0058BC, alpha: 0.8 })
+      g.setStrokeStyle({ width: 1.0, color: 0x0058bc, alpha: 0.8 })
       g.rect(x, y, 1, 1)
       g.stroke()
     }
@@ -147,7 +147,7 @@ export class InteractionLayer {
     // 选区蚂蚁线
     if (this.#selectionRect) {
       const { x, y, w, h } = this.#selectionRect
-      g.setStrokeStyle({ width: 1.0, color: 0x0058BC, alpha: 0.9 })
+      g.setStrokeStyle({ width: 1.0, color: 0x0058bc, alpha: 0.9 })
       g.rect(x, y, w, h)
       g.stroke()
     }
@@ -174,7 +174,7 @@ export class InteractionLayer {
       const half = Math.floor(this.#brushSize / 2)
       const x = this.#brushPos.x - half
       const y = this.#brushPos.y - half
-      g.setStrokeStyle({ width: 0.8, color: 0x0058BC, alpha: 0.7 })
+      g.setStrokeStyle({ width: 0.8, color: 0x0058bc, alpha: 0.7 })
       g.rect(x, y, this.#brushSize, this.#brushSize)
       g.stroke()
     }

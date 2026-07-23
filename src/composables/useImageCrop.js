@@ -21,7 +21,7 @@ export function useImageCrop(opts = {}) {
 
   // 拖拽/缩放状态
   const dragging = ref(false)
-  const resizing = ref(null)  // 当前缩放手柄 'nw'|'ne'|'sw'|'se'|null
+  const resizing = ref(null) // 当前缩放手柄 'nw'|'ne'|'sw'|'se'|null
   const dragStart = ref(null) // { x, y, cx, cy, cw, ch }
 
   /** 初始化裁剪区域（居中正方形，占图片短边 80%） */
@@ -55,7 +55,7 @@ export function useImageCrop(opts = {}) {
     left: crop.x + 'px',
     top: crop.y + 'px',
     width: crop.w + 'px',
-    height: crop.h + 'px'
+    height: crop.h + 'px',
   }))
 
   // ---- 拖拽移动裁剪框 ----
@@ -63,8 +63,10 @@ export function useImageCrop(opts = {}) {
     e.preventDefault()
     dragging.value = true
     dragStart.value = {
-      x: e.clientX, y: e.clientY,
-      cx: crop.x, cy: crop.y
+      x: e.clientX,
+      y: e.clientY,
+      cx: crop.x,
+      cy: crop.y,
     }
     document.addEventListener('pointermove', onDragMove)
     document.addEventListener('pointerup', onDragEnd)
@@ -74,8 +76,14 @@ export function useImageCrop(opts = {}) {
     if (!dragging.value || !dragStart.value) return
     const dx = e.clientX - dragStart.value.x
     const dy = e.clientY - dragStart.value.y
-    crop.x = Math.max(0, Math.min(imgW.value * displayScale.value - crop.w, dragStart.value.cx + dx))
-    crop.y = Math.max(0, Math.min(imgH.value * displayScale.value - crop.h, dragStart.value.cy + dy))
+    crop.x = Math.max(
+      0,
+      Math.min(imgW.value * displayScale.value - crop.w, dragStart.value.cx + dx)
+    )
+    crop.y = Math.max(
+      0,
+      Math.min(imgH.value * displayScale.value - crop.h, dragStart.value.cy + dy)
+    )
   }
 
   function onDragEnd() {
@@ -87,11 +95,16 @@ export function useImageCrop(opts = {}) {
 
   // ---- 四角缩放 ----
   function startResize(e, handle) {
-    e.preventDefault(); e.stopPropagation()
+    e.preventDefault()
+    e.stopPropagation()
     resizing.value = handle
     dragStart.value = {
-      x: e.clientX, y: e.clientY,
-      cx: crop.x, cy: crop.y, cw: crop.w, ch: crop.h
+      x: e.clientX,
+      y: e.clientY,
+      cx: crop.x,
+      cy: crop.y,
+      cw: crop.w,
+      ch: crop.h,
     }
     document.addEventListener('pointermove', onResizeMove)
     document.addEventListener('pointerup', onResizeEnd)
@@ -107,7 +120,10 @@ export function useImageCrop(opts = {}) {
     const MIN = 20
 
     const h = resizing.value
-    let nx = cx, ny = cy, nw = cw, nh = ch
+    let nx = cx,
+      ny = cy,
+      nw = cw,
+      nh = ch
 
     if (h.includes('e')) nw = Math.min(maxW - cx, Math.max(MIN, cw + dx))
     if (h.includes('w')) {
@@ -141,7 +157,7 @@ export function useImageCrop(opts = {}) {
       x: Math.round(crop.x / s),
       y: Math.round(crop.y / s),
       w: Math.round(crop.w / s),
-      h: Math.round(crop.h / s)
+      h: Math.round(crop.h / s),
     }
   }
 
@@ -154,9 +170,16 @@ export function useImageCrop(opts = {}) {
   }
 
   return {
-    crop, cropStyle, handles,
-    dragging, resizing,
-    initCrop, setImageSize,
-    startDrag, startResize, getOriginalCrop, destroy
+    crop,
+    cropStyle,
+    handles,
+    dragging,
+    resizing,
+    initCrop,
+    setImageSize,
+    startDrag,
+    startResize,
+    getOriginalCrop,
+    destroy,
   }
 }

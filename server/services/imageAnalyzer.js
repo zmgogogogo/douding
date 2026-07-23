@@ -23,7 +23,8 @@ export async function analyzeImage(imagePath) {
     .toBuffer({ resolveWithObject: true })
 
   const pixels = data
-  const iw = info.width, ih = info.height
+  const iw = info.width,
+    ih = info.height
   const channels = info.channels
 
   // 2. 计算边缘密度（用于显著性检测）
@@ -39,13 +40,13 @@ export async function analyzeImage(imagePath) {
   return {
     originalSize: { width, height, format },
     contentRegion: {
-      x: Math.round(contentRect.x * width / iw),
-      y: Math.round(contentRect.y * height / ih),
-      w: Math.round(contentRect.w * width / iw),
-      h: Math.round(contentRect.h * height / ih)
+      x: Math.round((contentRect.x * width) / iw),
+      y: Math.round((contentRect.y * height) / ih),
+      w: Math.round((contentRect.w * width) / iw),
+      h: Math.round((contentRect.h * height) / ih),
     },
     colorComplexity,
-    recommendations
+    recommendations,
   }
 }
 
@@ -58,9 +59,10 @@ function computeEdgeDensity(pixels, w, h, channels) {
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
       const idx = (y * w + x) * channels
-      const gray = channels >= 3
-        ? pixels[idx] * 0.299 + pixels[idx + 1] * 0.587 + pixels[idx + 2] * 0.114
-        : pixels[idx]
+      const gray =
+        channels >= 3
+          ? pixels[idx] * 0.299 + pixels[idx + 1] * 0.587 + pixels[idx + 2] * 0.114
+          : pixels[idx]
 
       // 简化的边缘检测
       const right = getGray(pixels, y, x + 1, w, channels)
@@ -103,19 +105,34 @@ function findContentRegion(edgeMap, w, h) {
 
   // 找到边缘密度超过阈值的区域
   const threshold = Math.max(...rowDensity) * 0.15
-  let top = 0, bottom = h - 1, left = 0, right = w - 1
+  let top = 0,
+    bottom = h - 1,
+    left = 0,
+    right = w - 1
 
   for (let y = 0; y < h; y++) {
-    if (rowDensity[y] > threshold) { top = y; break }
+    if (rowDensity[y] > threshold) {
+      top = y
+      break
+    }
   }
   for (let y = h - 1; y >= 0; y--) {
-    if (rowDensity[y] > threshold) { bottom = y; break }
+    if (rowDensity[y] > threshold) {
+      bottom = y
+      break
+    }
   }
   for (let x = 0; x < w; x++) {
-    if (colDensity[x] > threshold) { left = x; break }
+    if (colDensity[x] > threshold) {
+      left = x
+      break
+    }
   }
   for (let x = w - 1; x >= 0; x--) {
-    if (colDensity[x] > threshold) { right = x; break }
+    if (colDensity[x] > threshold) {
+      right = x
+      break
+    }
   }
 
   // 加 5% padding
@@ -126,7 +143,7 @@ function findContentRegion(edgeMap, w, h) {
     x: Math.max(0, left - pw),
     y: Math.max(0, top - ph),
     w: Math.min(w - 1, right - left + pw * 2),
-    h: Math.min(h - 1, bottom - top + ph * 2)
+    h: Math.min(h - 1, bottom - top + ph * 2),
   }
 }
 
@@ -147,7 +164,7 @@ function analyzeColorComplexity(pixels, w, h, channels) {
     }
   }
 
-  const uniqueRatio = colorSet.size / 4096  // 16^3 / 16^3 量化后的比例
+  const uniqueRatio = colorSet.size / 4096 // 16^3 / 16^3 量化后的比例
 
   let level
   if (uniqueRatio < 0.05) level = 'simple'
@@ -156,8 +173,12 @@ function analyzeColorComplexity(pixels, w, h, channels) {
 
   return {
     level,
-    levelLabel: { simple: '简单（少颜色）', moderate: '中等（适中颜色）', complex: '复杂（多颜色）' }[level],
-    uniqueColorRatio: Math.round(uniqueRatio * 100)
+    levelLabel: {
+      simple: '简单（少颜色）',
+      moderate: '中等（适中颜色）',
+      complex: '复杂（多颜色）',
+    }[level],
+    uniqueColorRatio: Math.round(uniqueRatio * 100),
   }
 }
 
@@ -168,14 +189,20 @@ function generateRecommendations(contentRect, colorComplexity, origW, origH) {
   // 推荐网格尺寸
   let recommendedSize
   switch (colorComplexity.level) {
-    case 'simple': recommendedSize = 32; break
-    case 'moderate': recommendedSize = 58; break
-    case 'complex': recommendedSize = 78; break
+    case 'simple':
+      recommendedSize = 32
+      break
+    case 'moderate':
+      recommendedSize = 58
+      break
+    case 'complex':
+      recommendedSize = 78
+      break
   }
 
   // 推荐颜色数
-  const colorCount = colorComplexity.level === 'simple' ? 8 :
-                     colorComplexity.level === 'moderate' ? 16 : 32
+  const colorCount =
+    colorComplexity.level === 'simple' ? 8 : colorComplexity.level === 'moderate' ? 16 : 32
 
   // 是否建议裁剪
   const contentRatio = (contentRect.w * contentRect.h) / (origW * origH)
@@ -190,7 +217,7 @@ function generateRecommendations(contentRect, colorComplexity, origW, origH) {
       ? '建议裁剪到内容区域以突出主体，去掉周围空白'
       : colorComplexity.level === 'complex'
         ? '图片颜色丰富，建议适当增大网格尺寸获得更好效果'
-        : '图片适合直接转换，可使用默认参数'
+        : '图片适合直接转换，可使用默认参数',
   }
 }
 
@@ -210,14 +237,15 @@ export async function removeBackgroundSimple(imagePath, threshold = 30) {
     .raw()
     .toBuffer({ resolveWithObject: true })
 
-  const w = info.width, h = info.height
+  const w = info.width,
+    h = info.height
 
   // 采样四角颜色（假设为背景色）
   const corners = [
     getPixel(data, 0, 0, w),
     getPixel(data, w - 1, 0, w),
     getPixel(data, 0, h - 1, w),
-    getPixel(data, w - 1, h - 1, w)
+    getPixel(data, w - 1, h - 1, w),
   ]
   const bgColor = averageColor(corners)
 
@@ -225,19 +253,21 @@ export async function removeBackgroundSimple(imagePath, threshold = 30) {
   const newPixels = Buffer.alloc(w * h * 4)
   for (let i = 0; i < w * h; i++) {
     const srcIdx = i * 4
-    const r = data[srcIdx], g = data[srcIdx + 1], b = data[srcIdx + 2]
-    const dist = Math.sqrt(
-      (r - bgColor.r) ** 2 + (g - bgColor.g) ** 2 + (b - bgColor.b) ** 2
-    )
+    const r = data[srcIdx],
+      g = data[srcIdx + 1],
+      b = data[srcIdx + 2]
+    const dist = Math.sqrt((r - bgColor.r) ** 2 + (g - bgColor.g) ** 2 + (b - bgColor.b) ** 2)
     newPixels[srcIdx] = r
     newPixels[srcIdx + 1] = g
     newPixels[srcIdx + 2] = b
-    newPixels[srcIdx + 3] = dist > threshold ? 255 : 0  // 距背景色远的保留
+    newPixels[srcIdx + 3] = dist > threshold ? 255 : 0 // 距背景色远的保留
   }
 
   const outputBuffer = await sharp(newPixels, {
-    raw: { width: w, height: h, channels: 4 }
-  }).png().toBuffer()
+    raw: { width: w, height: h, channels: 4 },
+  })
+    .png()
+    .toBuffer()
 
   return outputBuffer
 }
@@ -248,6 +278,14 @@ function getPixel(data, x, y, w) {
 }
 
 function averageColor(colors) {
-  const sum = colors.reduce((s, c) => ({ r: s.r + c.r, g: s.g + c.g, b: s.b + c.b }), { r: 0, g: 0, b: 0 })
-  return { r: Math.round(sum.r / colors.length), g: Math.round(sum.g / colors.length), b: Math.round(sum.b / colors.length) }
+  const sum = colors.reduce((s, c) => ({ r: s.r + c.r, g: s.g + c.g, b: s.b + c.b }), {
+    r: 0,
+    g: 0,
+    b: 0,
+  })
+  return {
+    r: Math.round(sum.r / colors.length),
+    g: Math.round(sum.g / colors.length),
+    b: Math.round(sum.b / colors.length),
+  }
 }

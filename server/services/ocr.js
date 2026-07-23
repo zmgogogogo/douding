@@ -48,12 +48,14 @@ export async function preprocessForOCR(imagePath, crop = null) {
   }
 
   const buffer = await pipeline
-    .resize(Math.min(crop?.width || 1600, 1600), Math.min(crop?.height || 1600, 1600), { fit: 'inside' })
-    .greyscale()                    // 灰度化
-    .normalize()                    // 对比度拉伸
-    .median(3)                      // 中值滤波去噪
-    .sharpen({ sigma: 1.2 })       // 适度锐化
-    .linear(1.1, -(128 * 0.1))    // 提亮 + 增对比
+    .resize(Math.min(crop?.width || 1600, 1600), Math.min(crop?.height || 1600, 1600), {
+      fit: 'inside',
+    })
+    .greyscale() // 灰度化
+    .normalize() // 对比度拉伸
+    .median(3) // 中值滤波去噪
+    .sharpen({ sigma: 1.2 }) // 适度锐化
+    .linear(1.1, -(128 * 0.1)) // 提亮 + 增对比
     .toBuffer()
 
   const outMeta = await sharp(buffer).metadata()
@@ -66,7 +68,8 @@ export async function preprocessForOCR(imagePath, crop = null) {
  */
 export function calculateConfidence(grid, ocrResults, imagePixels, w, h, cellW, cellH) {
   const confidences = []
-  let totalConf = 0, count = 0
+  let totalConf = 0,
+    count = 0
 
   for (let r = 0; r < h; r++) {
     const row = []
@@ -95,8 +98,8 @@ export function calculateConfidence(grid, ocrResults, imagePixels, w, h, cellW, 
   }
 
   return {
-    overall: count > 0 ? Math.round(totalConf / count * 100) : 0,
-    cells: confidences
+    overall: count > 0 ? Math.round((totalConf / count) * 100) : 0,
+    cells: confidences,
   }
 }
 
@@ -123,7 +126,7 @@ export async function recognizeBeadPattern(imagePath, opts = {}) {
       left: Math.max(0, Math.min(crop.left, imgW - 1)),
       top: Math.max(0, Math.min(crop.top, imgH - 1)),
       width: Math.min(crop.width, imgW - Math.max(0, crop.left)),
-      height: Math.min(crop.height, imgH - Math.max(0, crop.top))
+      height: Math.min(crop.height, imgH - Math.max(0, crop.top)),
     }
   }
   if (extractRegion.width <= 0 || extractRegion.height <= 0) {
@@ -169,11 +172,14 @@ export async function recognizeBeadPattern(imagePath, opts = {}) {
       const cx = Math.floor((c + 0.5) * cellW_actual)
       const idx = Math.min(rawPixels.length / 3 - 1, Math.max(0, cy + cx)) * 3
 
-      const pr = rawPixels[idx], pg = rawPixels[idx + 1], pb = rawPixels[idx + 2]
+      const pr = rawPixels[idx],
+        pg = rawPixels[idx + 1],
+        pb = rawPixels[idx + 2]
 
       // 原图直出模式：直接使用原始 RGB，不匹配色卡
       if (raw) {
-        const hex = '#' + [pr, pg, pb].map(v => v.toString(16).padStart(2, '0').toUpperCase()).join('')
+        const hex =
+          '#' + [pr, pg, pb].map((v) => v.toString(16).padStart(2, '0').toUpperCase()).join('')
         row.push({ name: hex, hex })
         continue
       }
@@ -193,9 +199,14 @@ export async function recognizeBeadPattern(imagePath, opts = {}) {
       }
 
       if (matchedColor) {
-        row.push({ id: matchedColor.id, name: matchedColor.name, hex: matchedColor.hex.toUpperCase() })
+        row.push({
+          id: matchedColor.id,
+          name: matchedColor.name,
+          hex: matchedColor.hex.toUpperCase(),
+        })
       } else {
-        const hex = '#' + [pr, pg, pb].map(v => v.toString(16).padStart(2, '0').toUpperCase()).join('')
+        const hex =
+          '#' + [pr, pg, pb].map((v) => v.toString(16).padStart(2, '0').toUpperCase()).join('')
         row.push({ name: hex, hex })
       }
     }
@@ -206,7 +217,7 @@ export async function recognizeBeadPattern(imagePath, opts = {}) {
     grid,
     gridWidth: autoCols,
     gridHeight: autoRows,
-    confidence: ocrResults ? 0.7 : 0.4
+    confidence: ocrResults ? 0.7 : 0.4,
   }
 }
 
@@ -254,7 +265,7 @@ async function runOCR(imagePath) {
     // OCR 超时 15 秒，避免卡住整个请求
     const result = await Promise.race([
       worker.recognize(imagePath),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('OCR_TIMEOUT')), 15000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('OCR_TIMEOUT')), 15000)),
     ])
 
     // 解析OCR文本，提取色号代码（如 H01, R05, B12, #FF0000 等）

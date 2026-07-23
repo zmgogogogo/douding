@@ -13,7 +13,9 @@ export function useToast() {
     message.value = msg
     visible.value = true
     clearTimeout(timer)
-    timer = setTimeout(() => { visible.value = false }, 2000)
+    timer = setTimeout(() => {
+      visible.value = false
+    }, 2000)
   }
 
   return { message, visible, show }

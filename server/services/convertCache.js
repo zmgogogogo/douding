@@ -40,7 +40,7 @@ export function computeCacheKey(filePath, params) {
   // 参数序列化（排序确保一致性）
   const sortedParams = Object.keys(params)
     .sort()
-    .map(k => `${k}=${params[k]}`)
+    .map((k) => `${k}=${params[k]}`)
     .join('&')
   hash.update(sortedParams)
 
@@ -65,7 +65,9 @@ export function getCached(cacheKey) {
     }
 
     const data = JSON.parse(fs.readFileSync(cacheFile, 'utf8'))
-    console.log(`  💾 缓存命中: ${cacheKey.slice(0, 12)}... (${Math.round((Date.now() - stat.mtimeMs) / 3600000)}小时前)`)
+    console.log(
+      `  💾 缓存命中: ${cacheKey.slice(0, 12)}... (${Math.round((Date.now() - stat.mtimeMs) / 3600000)}小时前)`
+    )
     return data
   } catch {
     return null
@@ -105,13 +107,17 @@ export function cleanupExpiredCache() {
           fs.unlinkSync(filePath)
           cleaned++
         }
-      } catch { /* 跳过无法访问的文件 */ }
+      } catch {
+        /* 跳过无法访问的文件 */
+      }
     }
 
     if (cleaned > 0) {
       console.log(`🧹 缓存清理: ${cleaned} 个过期文件`)
     }
-  } catch { /* 缓存目录可能不存在 */ }
+  } catch {
+    /* 缓存目录可能不存在 */
+  }
 }
 
 // ============================================
@@ -131,7 +137,7 @@ export function createTask(taskId) {
   taskStore.set(taskId, {
     status: 'pending',
     progress: 0,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   })
 }
 

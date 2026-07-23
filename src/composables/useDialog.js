@@ -14,13 +14,13 @@ export function useDialog() {
     return {
       alert: (msg) => window.alert(msg),
       confirm: (msg) => Promise.resolve(window.confirm(msg)),
-      prompt: (msg, defaultValue) => Promise.resolve(window.prompt(msg, defaultValue || ''))
+      prompt: (msg, defaultValue) => Promise.resolve(window.prompt(msg, defaultValue || '')),
     }
   }
   return {
     alert: (msg, title) => dialog.value.alert(msg, title),
     confirm: (msg, title) => dialog.value.confirm(msg, title),
     prompt: (msg, title, defaultValue, placeholder) =>
-      dialog.value.prompt(msg, title, defaultValue, placeholder)
+      dialog.value.prompt(msg, title, defaultValue, placeholder),
   }
 }

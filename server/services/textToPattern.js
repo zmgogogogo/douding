@@ -19,7 +19,7 @@ export async function generatePatternFromText(prompt, width, height, brand) {
   // 匹配珠子颜色
   const allColors = await loadBeadColors()
   let colors = allColors
-  if (brand && brand !== '全部') colors = allColors.filter(c => c.brand === brand)
+  if (brand && brand !== '全部') colors = allColors.filter((c) => c.brand === brand)
 
   const grid = matchPatternToBeads(pattern, colors, width, height)
 
@@ -28,7 +28,7 @@ export async function generatePatternFromText(prompt, width, height, brand) {
     gridWidth: width,
     gridHeight: height,
     keywords,
-    description: prompt
+    description: prompt,
   }
 }
 
@@ -37,12 +37,69 @@ export async function generatePatternFromText(prompt, width, height, brand) {
  */
 function extractKeywords(prompt) {
   const dict = {
-    animals: ['猫', '狗', '兔子', '鱼', '鸟', '熊', '熊猫', '柴犬', '柯基', '龙', '老虎', '狮子', '鹿', '狐狸', '仓鼠'],
-    food: ['草莓', '苹果', '西瓜', '蛋糕', '糖果', '冰淇淋', '奶茶', '咖啡', '汉堡', '披萨', '寿司'],
-    nature: ['花', '树', '星星', '月亮', '太阳', '爱心', '彩虹', '云', '山', '海', '雪花', '叶子', '蘑菇'],
+    animals: [
+      '猫',
+      '狗',
+      '兔子',
+      '鱼',
+      '鸟',
+      '熊',
+      '熊猫',
+      '柴犬',
+      '柯基',
+      '龙',
+      '老虎',
+      '狮子',
+      '鹿',
+      '狐狸',
+      '仓鼠',
+    ],
+    food: [
+      '草莓',
+      '苹果',
+      '西瓜',
+      '蛋糕',
+      '糖果',
+      '冰淇淋',
+      '奶茶',
+      '咖啡',
+      '汉堡',
+      '披萨',
+      '寿司',
+    ],
+    nature: [
+      '花',
+      '树',
+      '星星',
+      '月亮',
+      '太阳',
+      '爱心',
+      '彩虹',
+      '云',
+      '山',
+      '海',
+      '雪花',
+      '叶子',
+      '蘑菇',
+    ],
     emoji: ['笑脸', '哭脸', '爱心', '赞', '加油'],
-    object: ['手机', '电脑', '相机', '音乐', '音符', '书', '笔', '灯', '房子', '车', '飞机', '火箭', '钻石', '皇冠'],
-    holiday: ['圣诞', '万圣', '新年', '生日', '春节']
+    object: [
+      '手机',
+      '电脑',
+      '相机',
+      '音乐',
+      '音符',
+      '书',
+      '笔',
+      '灯',
+      '房子',
+      '车',
+      '飞机',
+      '火箭',
+      '钻石',
+      '皇冠',
+    ],
+    holiday: ['圣诞', '万圣', '新年', '生日', '春节'],
   }
 
   const found = []
@@ -53,8 +110,12 @@ function extractKeywords(prompt) {
   }
 
   // 尝试检测简单/卡通风
-  const style = prompt.includes('简单') || prompt.includes('简约') ? 'simple' :
-                prompt.includes('卡通') || prompt.includes('可爱') ? 'cute' : 'normal'
+  const style =
+    prompt.includes('简单') || prompt.includes('简约')
+      ? 'simple'
+      : prompt.includes('卡通') || prompt.includes('可爱')
+        ? 'cute'
+        : 'normal'
 
   return { found, style }
 }
@@ -75,7 +136,8 @@ function buildPatternFromKeywords(keywords, w, h) {
   const palette = getPaletteForWord(mainWord)
 
   // 用不同的简单形状组合
-  const cx = Math.floor(w / 2), cy = Math.floor(h / 2)
+  const cx = Math.floor(w / 2),
+    cy = Math.floor(h / 2)
   const radius = Math.floor(Math.min(w, h) / 3)
 
   switch (mainWord) {
@@ -103,18 +165,18 @@ function buildPatternFromKeywords(keywords, w, h) {
 
 function getPaletteForWord(word) {
   const palettes = {
-    '爱心': ['#FF4757', '#FF6B81', '#FFE0E6'],
-    '星星': ['#FFD700', '#FFA502', '#FFF8DC'],
-    '草莓': ['#FF4757', '#FF6348', '#2ED573', '#FFF'],
-    '蘑菇': ['#FF4757', '#FFF', '#8B4513'],
-    '花': ['#FF6B81', '#FFD700', '#2ED573', '#45AAF2'],
-    '猫': ['#FFA502', '#2C3E50', '#FFF', '#FF6B81'],
-    '狗': ['#8B4513', '#D4A574', '#2C3E50', '#FFF'],
-    '太阳': ['#FFD700', '#FFA502', '#FFF8DC'],
-    '月亮': ['#FFD700', '#F0E68C', '#2C3E50'],
-    '西瓜': ['#2ED573', '#FF4757', '#1E8449', '#2C3E50'],
-    '树': ['#27AE60', '#1E8449', '#8B4513'],
-    '雪花': ['#45AAF2', '#FFF', '#74B9FF']
+    爱心: ['#FF4757', '#FF6B81', '#FFE0E6'],
+    星星: ['#FFD700', '#FFA502', '#FFF8DC'],
+    草莓: ['#FF4757', '#FF6348', '#2ED573', '#FFF'],
+    蘑菇: ['#FF4757', '#FFF', '#8B4513'],
+    花: ['#FF6B81', '#FFD700', '#2ED573', '#45AAF2'],
+    猫: ['#FFA502', '#2C3E50', '#FFF', '#FF6B81'],
+    狗: ['#8B4513', '#D4A574', '#2C3E50', '#FFF'],
+    太阳: ['#FFD700', '#FFA502', '#FFF8DC'],
+    月亮: ['#FFD700', '#F0E68C', '#2C3E50'],
+    西瓜: ['#2ED573', '#FF4757', '#1E8449', '#2C3E50'],
+    树: ['#27AE60', '#1E8449', '#8B4513'],
+    雪花: ['#45AAF2', '#FFF', '#74B9FF'],
   }
   return palettes[word] || ['#45AAF2', '#FF6B81', '#FFF', '#2C3E50']
 }
@@ -122,7 +184,8 @@ function getPaletteForWord(word) {
 function drawHeart(pattern, cx, cy, r, palette) {
   for (let y = 0; y < pattern.length; y++) {
     for (let x = 0; x < pattern[0].length; x++) {
-      const dx = (x - cx) / r, dy = (y - cy) / r
+      const dx = (x - cx) / r,
+        dy = (y - cy) / r
       // 心形公式：(x² + y² - 1)³ - x²·y³ < 0
       const val = Math.pow(dx * dx + dy * dy - 1, 3) - dx * dx * dy * dy * dy
       if (val < 0) {
@@ -135,7 +198,8 @@ function drawHeart(pattern, cx, cy, r, palette) {
 function drawStar(pattern, cx, cy, r, palette) {
   for (let y = 0; y < pattern.length; y++) {
     for (let x = 0; x < pattern[0].length; x++) {
-      const dx = Math.abs(x - cx), dy = Math.abs(y - cy)
+      const dx = Math.abs(x - cx),
+        dy = Math.abs(y - cy)
       const dist = Math.sqrt(dx * dx + dy * dy)
       const angle = Math.atan2(dy, dx)
       // 五角星：5个尖角
@@ -150,7 +214,8 @@ function drawStar(pattern, cx, cy, r, palette) {
 function drawFlower(pattern, cx, cy, r, palette) {
   for (let y = 0; y < pattern.length; y++) {
     for (let x = 0; x < pattern[0].length; x++) {
-      const dx = Math.abs(x - cx), dy = Math.abs(y - cy)
+      const dx = Math.abs(x - cx),
+        dy = Math.abs(y - cy)
       const dist = Math.sqrt(dx * dx + dy * dy)
       const angle = Math.atan2(dy, dx)
       const petalRadius = r * (0.4 + 0.6 * Math.abs(Math.cos(3 * angle)))
@@ -166,7 +231,8 @@ function drawFlower(pattern, cx, cy, r, palette) {
 function drawCircle(pattern, cx, cy, r, color) {
   for (let y = 0; y < pattern.length; y++) {
     for (let x = 0; x < pattern[0].length; x++) {
-      const dx = Math.abs(x - cx), dy = Math.abs(y - cy)
+      const dx = Math.abs(x - cx),
+        dy = Math.abs(y - cy)
       if (Math.sqrt(dx * dx + dy * dy) < r) {
         pattern[y][x] = color
       }
@@ -179,7 +245,7 @@ function generateAbstractPattern(w, h) {
   const colors = ['#45AAF2', '#FF6B81', '#FFD700', '#2ED573', '#A55EEA', '#FFA502']
   // 简单的渐变条纹
   for (let y = 0; y < h; y++) {
-    const ci = Math.floor(y / h * colors.length)
+    const ci = Math.floor((y / h) * colors.length)
     for (let x = 0; x < w; x++) {
       pattern[y][x] = colors[ci % colors.length]
     }
@@ -196,13 +262,25 @@ function matchPatternToBeads(pattern, colors, w, h) {
     const row = []
     for (let c = 0; c < w; c++) {
       const targetHex = pattern[r]?.[c]
-      if (!targetHex) { row.push(null); continue }
-      let bestMatch = colors[0], bestDist = Infinity
+      if (!targetHex) {
+        row.push(null)
+        continue
+      }
+      let bestMatch = colors[0],
+        bestDist = Infinity
       for (const bead of colors) {
         const dist = hexDistance(targetHex, bead.hex)
-        if (dist < bestDist) { bestDist = dist; bestMatch = bead }
+        if (dist < bestDist) {
+          bestDist = dist
+          bestMatch = bead
+        }
       }
-      row.push({ name: bestMatch.name, hex: bestMatch.hex, brand: bestMatch.brand, series: bestMatch.series })
+      row.push({
+        name: bestMatch.name,
+        hex: bestMatch.hex,
+        brand: bestMatch.brand,
+        series: bestMatch.series,
+      })
     }
     grid.push(row)
   }
@@ -210,11 +288,16 @@ function matchPatternToBeads(pattern, colors, w, h) {
 }
 
 function hexDistance(h1, h2) {
-  const c1 = hexToRgb(h1), c2 = hexToRgb(h2)
+  const c1 = hexToRgb(h1),
+    c2 = hexToRgb(h2)
   return Math.sqrt((c1.r - c2.r) ** 2 * 2 + (c1.g - c2.g) ** 2 * 3 + (c1.b - c2.b) ** 2)
 }
 
 function hexToRgb(hex) {
   const h = hex.replace('#', '')
-  return { r: parseInt(h.substring(0, 2), 16), g: parseInt(h.substring(2, 4), 16), b: parseInt(h.substring(4, 6), 16) }
+  return {
+    r: parseInt(h.substring(0, 2), 16),
+    g: parseInt(h.substring(2, 4), 16),
+    b: parseInt(h.substring(4, 6), 16),
+  }
 }

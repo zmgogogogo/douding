@@ -5,7 +5,6 @@
 ============================================ -->
 <template>
   <div class="home-scroll-container overflow-y-auto h-full scrollbar-hide">
-
     <!-- 3.1 顶部导航栏 -->
     <HomeTopNav />
 
@@ -25,9 +24,12 @@
     <div class="px-4 pb-20">
       <!-- 骨架屏加载 -->
       <div v-if="loading" class="columns-2 gap-3">
-        <div v-for="i in 6" :key="i"
-          class="break-inside-avoid mb-3 bg-white rounded-xl overflow-hidden animate-pulse">
-          <div class="bg-slate-200 w-full" :style="{ paddingBottom: (80 + (i % 3) * 40) + '%' }" />
+        <div
+          v-for="i in 6"
+          :key="i"
+          class="break-inside-avoid mb-3 bg-white rounded-xl overflow-hidden animate-pulse"
+        >
+          <div class="bg-slate-200 w-full" :style="{ paddingBottom: 80 + (i % 3) * 40 + '%' }" />
           <div class="p-2.5 space-y-2">
             <div class="h-3 bg-slate-200 rounded w-3/4" />
             <div class="h-2.5 bg-slate-100 rounded w-1/2" />
@@ -36,28 +38,39 @@
       </div>
 
       <!-- 错误状态 -->
-      <div v-else-if="error && items.length === 0"
-        class="flex flex-col items-center justify-center py-20 gap-3">
+      <div
+        v-else-if="error && items.length === 0"
+        class="flex flex-col items-center justify-center py-20 gap-3"
+      >
         <p class="text-sm text-slate-400">{{ error }}</p>
-        <button class="px-5 py-2 bg-primary text-white rounded-full text-sm font-semibold
-                       active:scale-95 transition-all"
-          @click="refresh">重新加载</button>
+        <button
+          class="px-5 py-2 bg-primary text-white rounded-full text-sm font-semibold active:scale-95 transition-all"
+          @click="refresh"
+        >
+          重新加载
+        </button>
       </div>
 
       <!-- 空状态 -->
-      <div v-else-if="items.length === 0"
-        class="flex flex-col items-center justify-center py-20 gap-3">
+      <div
+        v-else-if="items.length === 0"
+        class="flex flex-col items-center justify-center py-20 gap-3"
+      >
         <PackageIcon :size="40" class="text-slate-200" />
         <p class="text-sm text-slate-400">暂无内容，去看看其他分类吧</p>
-        <button class="px-5 py-2 bg-primary text-white rounded-full text-sm font-semibold
-                       active:scale-95 transition-all"
-          @click="$router.push('/editor')">开始创作</button>
+        <button
+          class="px-5 py-2 bg-primary text-white rounded-full text-sm font-semibold active:scale-95 transition-all"
+          @click="$router.push('/editor')"
+        >
+          开始创作
+        </button>
       </div>
 
       <!-- 双列瀑布流 -->
       <div v-else class="columns-2 gap-3">
         <HomeFeedCard
-          v-for="item in items" :key="item.id"
+          v-for="item in items"
+          :key="item.id"
           :item="item"
           @click="goDetail(item)"
           @like="handleLike(item)"
@@ -70,11 +83,16 @@
         <div v-if="loadingMore" class="flex items-center gap-2 text-slate-400 py-4 text-sm">
           <LoaderIcon :size="18" class="animate-spin" />加载中...
         </div>
-        <div v-else-if="!hasMore && items.length > 0"
-          class="text-[11px] text-slate-300 py-4">— 没有更多内容了 —</div>
-        <div v-else-if="loadError"
+        <div v-else-if="!hasMore && items.length > 0" class="text-[11px] text-slate-300 py-4">
+          — 没有更多内容了 —
+        </div>
+        <div
+          v-else-if="loadError"
           class="text-[11px] text-slate-400 py-4 cursor-pointer hover:text-primary transition-colors"
-          @click="loadMore">加载失败，点击重试</div>
+          @click="loadMore"
+        >
+          加载失败，点击重试
+        </div>
       </div>
 
       <!-- 滚动哨兵 -->
@@ -105,7 +123,12 @@ const router = useRouter()
 // ====== Banner（首版硬编码，后续接后台） ======
 const banners = ref([
   { bgColor: '#22c55e', title: '欢迎来到豆丁', subtitle: '开始你的拼豆创作之旅', link: '/editor' },
-  { bgColor: '#8b5cf6', title: 'Q版生成上线', subtitle: '一键生成Q版拼豆图纸', link: '/editor?mode=qstyle' }
+  {
+    bgColor: '#8b5cf6',
+    title: 'Q版生成上线',
+    subtitle: '一键生成Q版拼豆图纸',
+    link: '/editor?mode=qstyle',
+  },
 ])
 
 // ====== 分类与数据 ======
@@ -144,17 +167,18 @@ async function fetchData(reset = false) {
     const params = new URLSearchParams({
       category: activeTab.value,
       page: String(page.value),
-      limit: '20'
+      limit: '20',
     })
     const res = await API.get(`/api/home/content/list?${params}`, false)
-    const list = (res.data.list || []).map(d => ({
+    const list = (res.data.list || []).map((d) => ({
       ...d,
       type: d.type || 'works',
-      author: d.author || { nickname: '匿名' }
+      author: d.author || { nickname: '匿名' },
     }))
     if (reset) items.value = list
     else items.value.push(...list)
-    hasMore.value = res.data.hasMore ?? (list.length === 20 && items.value.length < (res.data.total || Infinity))
+    hasMore.value =
+      res.data.hasMore ?? (list.length === 20 && items.value.length < (res.data.total || Infinity))
     page.value++
   } catch (e) {
     if (reset) error.value = '网络异常，请稍后重试'
@@ -179,12 +203,14 @@ function goDetail(item) {
 
 function handleLike(item) {
   // 点赞/取消点赞
-  API.post(`/api/designs/${item.id}/like`).then(res => {
-    if (res.code === 200) {
-      item.isLiked = !item.isLiked
-      item.likesCount = (item.likesCount || 0) + (item.isLiked ? 1 : -1)
-    }
-  }).catch(() => {})
+  API.post(`/api/designs/${item.id}/like`)
+    .then((res) => {
+      if (res.code === 200) {
+        item.isLiked = !item.isLiked
+        item.likesCount = (item.likesCount || 0) + (item.isLiked ? 1 : -1)
+      }
+    })
+    .catch(() => {})
 }
 
 function handleJoin(item) {
@@ -197,11 +223,14 @@ let observer = null
 function setupObserver() {
   if (observer) observer.disconnect()
   if (!sentinelRef.value) return
-  observer = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting && !loading.value && !loadingMore.value && hasMore.value) {
-      loadMore()
-    }
-  }, { rootMargin: '400px' })
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && !loading.value && !loadingMore.value && hasMore.value) {
+        loadMore()
+      }
+    },
+    { rootMargin: '400px' }
+  )
   observer.observe(sentinelRef.value)
 }
 

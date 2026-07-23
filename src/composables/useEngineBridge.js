@@ -90,7 +90,11 @@ export function layerDataToOldGrid(layerData, colorTable) {
         row.push(null)
       } else {
         const color = colorTable.getColor(idx)
-        row.push(color ? { name: color.name, hex: color.hex, brand: color.brand, series: color.series } : null)
+        row.push(
+          color
+            ? { name: color.name, hex: color.hex, brand: color.brand, series: color.series }
+            : null
+        )
       }
     }
     grid.push(row)
@@ -110,11 +114,7 @@ export function syncAllLayers(editorState, colorTable) {
   if (!engine) return
 
   engine.resize(editorState.gridW.value, editorState.gridH.value)
-  engine.setViewport(
-    editorState.zoom.value,
-    editorState.panX.value,
-    editorState.panY.value
-  )
+  engine.setViewport(editorState.zoom.value, editorState.panX.value, editorState.panY.value)
 
   // 同步图层
   for (const layer of editorState.layers.value) {
@@ -165,7 +165,15 @@ export function syncViewport(zoom, panX, panY) {
 /**
  * 同步参考图
  */
-export function syncRefOverlay(refPixels, refW, refH, refOpacity, refOffsetX, refOffsetY, refScale) {
+export function syncRefOverlay(
+  refPixels,
+  refW,
+  refH,
+  refOpacity,
+  refOffsetX,
+  refOffsetY,
+  refScale
+) {
   const engine = engineInstance
   if (!engine) return
   engine.setRefOverlay(refPixels, refW, refH, refOpacity, refOffsetX, refOffsetY, refScale)

@@ -1,14 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    './index.html',
-    './src/**/*.{vue,js,ts}',
-  ],
+  content: ['./index.html', './src/**/*.{vue,js,ts}'],
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#22C55E',  // 拼豆品牌绿色强调
+          DEFAULT: '#22C55E', // 拼豆品牌绿色强调
           rgb: '34, 197, 94',
           light: '#dcfce7',
           lighter: '#f0fdf4',
@@ -30,11 +27,31 @@ export default {
           'text-secondary': 'var(--ui-text-secondary)',
           'text-tertiary': 'var(--ui-text-tertiary)',
           accent: 'var(--ui-accent)',
-        }
+        },
       },
       fontFamily: {
-        sans: ['system-ui', '-apple-system', '"PingFang SC"', '"Microsoft YaHei"', '"Helvetica Neue"', 'Helvetica', 'Arial', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', '"Liberation Mono"', '"Courier New"', 'monospace'],
+        sans: [
+          'system-ui',
+          '-apple-system',
+          '"PingFang SC"',
+          '"Microsoft YaHei"',
+          '"Helvetica Neue"',
+          'Helvetica',
+          'Arial',
+          '"Segoe UI"',
+          'Roboto',
+          'sans-serif',
+        ],
+        mono: [
+          'ui-monospace',
+          'SFMono-Regular',
+          'Menlo',
+          'Monaco',
+          'Consolas',
+          '"Liberation Mono"',
+          '"Courier New"',
+          'monospace',
+        ],
       },
       borderRadius: {
         '2xl': '16px',
@@ -47,7 +64,7 @@ export default {
         'scale-in': 'scale-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
         'slide-up': 'slide-up 0.3s cubic-bezier(.16,1,.3,1)',
-        'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97)',
+        shake: 'shake 0.4s cubic-bezier(.36,.07,.19,.97)',
       },
       keyframes: {
         'bounce-in': {
@@ -74,7 +91,7 @@ export default {
           '0%': { transform: 'translateY(100%)' },
           '100%': { transform: 'translateY(0)' },
         },
-        'shake': {
+        shake: {
           '0%, 100%': { transform: 'translateX(0)' },
           '25%': { transform: 'translateX(-4px)' },
           '75%': { transform: 'translateX(4px)' },

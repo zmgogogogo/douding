@@ -7,30 +7,33 @@ import { rgbToOklab, oklabDist } from '../utils/colorSpace.js'
 
 // 区域类型常量（严格遵循文档规范：背景/轮廓/皮肤/主色块/细节/面部特征/头发 七大类）
 export const REGION = {
-  BACKGROUND: 0,      // 背景区 → K=1 强制纯色
-  OUTLINE: 1,         // 轮廓线条区（深色/黑色边缘，优先级最高）
-  SKIN: 2,            // 皮肤区（人脸、四肢等肤色）→ K=3（高光+主色+阴影）
-  MAIN_COLOR: 3,      // 主色块区（头发、衣物等大面积纯色）→ K=5
-  DETAIL: 4,          // 细节区（小型关键色块）→ K=5
-  FACIAL_FEATURE: 5,  // 面部特征区（眼睛/眉毛/嘴巴）→ K=5（保护五官细节）
-  HAIR: 6             // 头发区（预留，当前映射到MAIN_COLOR处理）
+  BACKGROUND: 0, // 背景区 → K=1 强制纯色
+  OUTLINE: 1, // 轮廓线条区（深色/黑色边缘，优先级最高）
+  SKIN: 2, // 皮肤区（人脸、四肢等肤色）→ K=3（高光+主色+阴影）
+  MAIN_COLOR: 3, // 主色块区（头发、衣物等大面积纯色）→ K=5
+  DETAIL: 4, // 细节区（小型关键色块）→ K=5
+  FACIAL_FEATURE: 5, // 面部特征区（眼睛/眉毛/嘴巴）→ K=5（保护五官细节）
+  HAIR: 6, // 头发区（预留，当前映射到MAIN_COLOR处理）
 }
 
 // ============================================
 //  RGB → HSV 转换
 // ============================================
 function rgbToHsv(r, g, b) {
-  const rn = r / 255, gn = g / 255, bn = b / 255
-  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn)
+  const rn = r / 255,
+    gn = g / 255,
+    bn = b / 255
+  const max = Math.max(rn, gn, bn),
+    min = Math.min(rn, gn, bn)
   const d = max - min
   let h = 0
   const s = max === 0 ? 0 : d / max
   const v = max
 
   if (d > 0.0001) {
-    if (max === rn)      h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6
+    if (max === rn) h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6
     else if (max === gn) h = ((bn - rn) / d + 2) / 6
-    else                 h = ((rn - gn) / d + 4) / 6
+    else h = ((rn - gn) / d + 4) / 6
   }
   return { h, s, v }
 }
@@ -66,13 +69,13 @@ function isOutline(h, s, v) {
 function isSkin(h, s, v) {
   // 肤色色调：严格限定红-橙-黄范围（文档规范 5~25°，收紧至 0~35°）
   // 排除纯红(h≈0)、粉(h≈0.9-0.95)、深橙(h≈0.08)
-  if (h > 0.097 || h < 0.008) return false  // 仅保留 3°~35°（0.008~0.097）
+  if (h > 0.097 || h < 0.008) return false // 仅保留 3°~35°（0.008~0.097）
   // 饱和度：文档规范 0.078~0.71，收紧下限防止灰色混入
-  if (s < 0.10 || s > 0.65) return false
+  if (s < 0.1 || s > 0.65) return false
   // 明度：文档规范 0.47~1.0，收紧上下限防止过暗/过亮
   if (v < 0.45 || v > 0.92) return false
   // 高亮度时限制饱和度（文档："肤色在高明度时饱和度不能太高"）
-  if (v > 0.72 && s > 0.50) return false
+  if (v > 0.72 && s > 0.5) return false
   return true
 }
 
@@ -87,7 +90,7 @@ function isSkin(h, s, v) {
  */
 function isBackground(h, s, v) {
   // 近白色/浅灰色：极高亮度 + 极低饱和（收紧：防止误判浅肤色/粉彩）
-  if (v > 0.88 && s < 0.10) return true
+  if (v > 0.88 && s < 0.1) return true
   // 极浅色背景：几乎无色彩（收紧 S 阈值）
   if (v > 0.78 && s < 0.05) return true
   // 纯白/近白：非常高的亮度，适度饱和（保持对白色背景的覆盖）
@@ -123,8 +126,14 @@ function connectedComponents(mask, w, h, targetValue) {
         const [cx, cy] = queue.shift()
         size++
 
-        for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
-          const nx = cx + dx, ny = cy + dy
+        for (const [dx, dy] of [
+          [0, 1],
+          [0, -1],
+          [1, 0],
+          [-1, 0],
+        ]) {
+          const nx = cx + dx,
+            ny = cy + dy
           if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
           const ni = ny * w + nx
           if (mask[ni] === targetValue && labels[ni] === 0) {
@@ -153,13 +162,16 @@ function detectMainColorBlocks(pixels, w, h, mask, hsvCache) {
   // 对未分类像素（mask==0xFF）做粗糙量化到 ~32 色
   const quantized = new Uint8Array(total)
   for (let i = 0; i < total; i++) {
-    if (mask[i] !== 0xFF) { quantized[i] = 255; continue }
+    if (mask[i] !== 0xff) {
+      quantized[i] = 255
+      continue
+    }
     const off = i * 3
     // 量化：每个通道压缩到 0-7（共 8³ = 512 色），再合并相似色
-    const r = Math.round(pixels[off] / 36)     // 0-7
-    const g = Math.round(pixels[off + 1] / 36)  // 0-7
-    const b = Math.round(pixels[off + 2] / 36)  // 0-7
-    quantized[i] = (r << 6) | (g << 3) | b       // 9-bit color key
+    const r = Math.round(pixels[off] / 36) // 0-7
+    const g = Math.round(pixels[off + 1] / 36) // 0-7
+    const b = Math.round(pixels[off + 2] / 36) // 0-7
+    quantized[i] = (r << 6) | (g << 3) | b // 9-bit color key
   }
 
   // 连通域分析：找出每个量化颜色的连通区域
@@ -170,7 +182,7 @@ function detectMainColorBlocks(pixels, w, h, mask, hsvCache) {
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const idx = y * w + x
-      if (mask[idx] !== 0xFF || regionLabels[idx] !== -1) continue
+      if (mask[idx] !== 0xff || regionLabels[idx] !== -1) continue
 
       const colorKey = quantized[idx]
       const regionId = nextRegionId++
@@ -185,11 +197,17 @@ function detectMainColorBlocks(pixels, w, h, mask, hsvCache) {
         const ci = cy * w + cx
         pixels_in_region.push(ci)
 
-        for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
-          const nx = cx + dx, ny = cy + dy
+        for (const [dx, dy] of [
+          [0, 1],
+          [0, -1],
+          [1, 0],
+          [-1, 0],
+        ]) {
+          const nx = cx + dx,
+            ny = cy + dy
           if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
           const ni = ny * w + nx
-          if (mask[ni] === 0xFF && quantized[ni] === colorKey && regionLabels[ni] === -1) {
+          if (mask[ni] === 0xff && quantized[ni] === colorKey && regionLabels[ni] === -1) {
             regionLabels[ni] = regionId
             queue.push([nx, ny])
           }
@@ -229,7 +247,7 @@ export function segmentRegions(pixels, w, h) {
 
   // ====== Pass 1: 像素级分类 ======
   // 初始掩码：0xFF = 未分类
-  const mask = new Uint8Array(total).fill(0xFF)
+  const mask = new Uint8Array(total).fill(0xff)
 
   // 1. 轮廓线条区（优先级最高，先标记）
   for (let i = 0; i < total; i++) {
@@ -239,14 +257,14 @@ export function segmentRegions(pixels, w, h) {
 
   // 2. 皮肤区
   for (let i = 0; i < total; i++) {
-    if (mask[i] !== 0xFF) continue
+    if (mask[i] !== 0xff) continue
     const { h, s, v } = hsvCache[i]
     if (isSkin(h, s, v)) mask[i] = REGION.SKIN
   }
 
   // 3. 背景区
   for (let i = 0; i < total; i++) {
-    if (mask[i] !== 0xFF) continue
+    if (mask[i] !== 0xff) continue
     const { h, s, v } = hsvCache[i]
     if (isBackground(h, s, v)) mask[i] = REGION.BACKGROUND
   }
@@ -254,22 +272,32 @@ export function segmentRegions(pixels, w, h) {
   // ====== Pass 2: 连通域清理 ======
   // 皮肤区域最小阈值 = max(总像素0.5%, 15)
   const skinMinSize = Math.max(Math.floor(total * 0.005), 15)
-  const { labels: skinLabels, regionSizes: skinSizes } = connectedComponents(mask, w, h, REGION.SKIN)
+  const { labels: skinLabels, regionSizes: skinSizes } = connectedComponents(
+    mask,
+    w,
+    h,
+    REGION.SKIN
+  )
   for (const [label, size] of skinSizes) {
     if (size < skinMinSize) {
       for (let i = 0; i < total; i++) {
-        if (skinLabels[i] === label) mask[i] = 0xFF
+        if (skinLabels[i] === label) mask[i] = 0xff
       }
     }
   }
 
   // 轮廓区域最小阈值 = max(总像素0.1%, 5)
   const outlineMinSize = Math.max(Math.floor(total * 0.001), 5)
-  const { labels: outlineLabels, regionSizes: outlineSizes } = connectedComponents(mask, w, h, REGION.OUTLINE)
+  const { labels: outlineLabels, regionSizes: outlineSizes } = connectedComponents(
+    mask,
+    w,
+    h,
+    REGION.OUTLINE
+  )
   for (const [label, size] of outlineSizes) {
     if (size < outlineMinSize) {
       for (let i = 0; i < total; i++) {
-        if (outlineLabels[i] === label) mask[i] = 0xFF
+        if (outlineLabels[i] === label) mask[i] = 0xff
       }
     }
   }
@@ -303,7 +331,12 @@ export function segmentRegions(pixels, w, h) {
 
   // 从皮肤区中提取剩余的面部特征（更激进的二次检测）
   // 对每个皮肤连通域，检查其内部是否有明显的高对比度小区域
-  const { labels: skinLabels2, regionSizes: skinSizes2 } = connectedComponents(mask, w, h, REGION.SKIN)
+  const { labels: skinLabels2, regionSizes: skinSizes2 } = connectedComponents(
+    mask,
+    w,
+    h,
+    REGION.SKIN
+  )
   for (const [label, size] of skinSizes2) {
     if (size < 100) continue // 太小的皮肤区域不检测面部特征
     // 收集该皮肤连通域内的像素
@@ -314,7 +347,8 @@ export function segmentRegions(pixels, w, h) {
     if (skinPixels.length === 0) continue
 
     // 找到该皮肤域的y范围
-    let minY = h, maxY = 0
+    let minY = h,
+      maxY = 0
     for (const i of skinPixels) {
       const y = Math.floor(i / w)
       if (y < minY) minY = y
@@ -331,18 +365,31 @@ export function segmentRegions(pixels, w, h) {
       const relY = (y - minY) / Math.max(1, skinHeight)
 
       // 上半区域(上40%)：深色小像素 = 眼睛
-      if (relY < 0.4 && v < 0.30 && s < 0.35) {
+      if (relY < 0.4 && v < 0.3 && s < 0.35) {
         mask[i] = REGION.FACIAL_FEATURE
       }
       // 下半区域(下35%-85%)：红色/粉色 = 嘴巴
-      else if (relY > 0.35 && relY < 0.85 && (h < 0.06 || h > 0.93) && s > 0.22 && v > 0.2 && v < 0.75) {
+      else if (
+        relY > 0.35 &&
+        relY < 0.85 &&
+        (h < 0.06 || h > 0.93) &&
+        s > 0.22 &&
+        v > 0.2 &&
+        v < 0.75
+      ) {
         mask[i] = REGION.FACIAL_FEATURE
       }
     }
   }
 
   // ====== Pass 3: 主色块检测 ======
-  const { regionLabels: mainLabels, regionSizes: mainSizes } = detectMainColorBlocks(pixels, w, h, mask, hsvCache)
+  const { regionLabels: mainLabels, regionSizes: mainSizes } = detectMainColorBlocks(
+    pixels,
+    w,
+    h,
+    mask,
+    hsvCache
+  )
 
   // 主色块阈值 = max(总像素2%, 20)，大图至少200像素
   // 主色块 ≥ 阈值 → MAIN_COLOR，< 阈值 → DETAIL
@@ -358,7 +405,7 @@ export function segmentRegions(pixels, w, h) {
 
   // 应用主色块/细节标记
   for (let i = 0; i < total; i++) {
-    if (mask[i] !== 0xFF) continue
+    if (mask[i] !== 0xff) continue
     const rl = mainLabels[i]
     if (rl >= 0 && mainRegionMap.has(rl)) {
       mask[i] = mainRegionMap.get(rl)
@@ -367,22 +414,24 @@ export function segmentRegions(pixels, w, h) {
 
   // 仍未分类的 → 归入细节区
   for (let i = 0; i < total; i++) {
-    if (mask[i] === 0xFF) mask[i] = REGION.DETAIL
+    if (mask[i] === 0xff) mask[i] = REGION.DETAIL
   }
 
   // ====== 统计 ======
   const counts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
   for (let i = 0; i < total; i++) counts[mask[i]] = (counts[mask[i]] || 0) + 1
   const stats = {
-    background:     { pct: (counts[0] / total * 100).toFixed(1), pixels: counts[0] },
-    outline:        { pct: (counts[1] / total * 100).toFixed(1), pixels: counts[1] },
-    skin:           { pct: (counts[2] / total * 100).toFixed(1), pixels: counts[2] },
-    mainColor:      { pct: (counts[3] / total * 100).toFixed(1), pixels: counts[3] },
-    detail:         { pct: (counts[4] / total * 100).toFixed(1), pixels: counts[4] },
-    facialFeature:  { pct: (counts[5] / total * 100).toFixed(1), pixels: counts[5] },
-    hair:           { pct: (counts[6] / total * 100).toFixed(1), pixels: counts[6] }
+    background: { pct: ((counts[0] / total) * 100).toFixed(1), pixels: counts[0] },
+    outline: { pct: ((counts[1] / total) * 100).toFixed(1), pixels: counts[1] },
+    skin: { pct: ((counts[2] / total) * 100).toFixed(1), pixels: counts[2] },
+    mainColor: { pct: ((counts[3] / total) * 100).toFixed(1), pixels: counts[3] },
+    detail: { pct: ((counts[4] / total) * 100).toFixed(1), pixels: counts[4] },
+    facialFeature: { pct: ((counts[5] / total) * 100).toFixed(1), pixels: counts[5] },
+    hair: { pct: ((counts[6] / total) * 100).toFixed(1), pixels: counts[6] },
   }
-  console.log(`语义分区(文档合规): 背景${stats.background.pct}% 轮廓${stats.outline.pct}% 皮肤${stats.skin.pct}% 面部${stats.facialFeature.pct}% 主色块${stats.mainColor.pct}% 细节${stats.detail.pct}% 头发${stats.hair.pct}%`)
+  console.log(
+    `语义分区(文档合规): 背景${stats.background.pct}% 轮廓${stats.outline.pct}% 皮肤${stats.skin.pct}% 面部${stats.facialFeature.pct}% 主色块${stats.mainColor.pct}% 细节${stats.detail.pct}% 头发${stats.hair.pct}%`
+  )
 
   return { mask, stats }
 }
@@ -414,15 +463,15 @@ export function computeRegionPalettes(mask, w, h, pixels, labColors) {
 
   // ====== 1. 轮廓区调色板：仅暗色 ======
   // Oklab L 值 0-1，暗色 L < 0.35
-  const outlinePalette = labColors.filter(c => (c.oklab || c.lab).L < 0.35)
+  const outlinePalette = labColors.filter((c) => (c.oklab || c.lab).L < 0.35)
 
   // ====== 2. 皮肤区调色板：肤色范围 ======
   // Oklab 肤色特征：L 适中(0.4-0.85), a 偏红(0.02-0.12), b 偏黄(0.02-0.15)
-  const skinPalette = labColors.filter(c => {
+  const skinPalette = labColors.filter((c) => {
     const { L, a, b } = c.oklab || c.lab
     // Oklab 肤色范围：L 适中偏亮, a 偏暖(有上限), b 偏黄
     if (L < 0.35 || L > 0.88) return false
-    if (b < 0.01 || b > 0.20) return false
+    if (b < 0.01 || b > 0.2) return false
     if (a < 0.01 && b < 0.04) return false // 纯灰色排除
     if (a > 0.16) return false // 太红的颜色不是肤色（防止高饱和红误入皮肤调色板）
     return true
@@ -431,10 +480,10 @@ export function computeRegionPalettes(mask, w, h, pixels, labColors) {
   // 确保皮肤区至少有 15 种颜色
   let finalSkinPalette = skinPalette
   if (skinPalette.length < 15) {
-    const skinHexes = new Set(skinPalette.map(c => c.hex))
+    const skinHexes = new Set(skinPalette.map((c) => c.hex))
     const candidates = labColors
-      .filter(c => !skinHexes.has(c.hex))
-      .map(c => {
+      .filter((c) => !skinHexes.has(c.hex))
+      .map((c) => {
         let minD = Infinity
         for (const sc of skinPalette) {
           const d = oklabDist(c.oklab || c.lab, sc.oklab || sc.lab)
@@ -443,12 +492,12 @@ export function computeRegionPalettes(mask, w, h, pixels, labColors) {
         return { color: c, dist: minD }
       })
       .sort((a, b) => a.dist - b.dist)
-    const extra = candidates.slice(0, 15 - skinPalette.length).map(c => c.color)
+    const extra = candidates.slice(0, 15 - skinPalette.length).map((c) => c.color)
     finalSkinPalette = [...skinPalette, ...extra]
   }
 
   // ====== 3. 背景区调色板：浅色/白色 ======
-  const bgPalette = labColors.filter(c => (c.oklab || c.lab).L > 0.78)
+  const bgPalette = labColors.filter((c) => (c.oklab || c.lab).L > 0.78)
 
   // ====== 4. 主色块区和细节区：全部颜色 ======
   const fullPalette = labColors
@@ -458,13 +507,13 @@ export function computeRegionPalettes(mask, w, h, pixels, labColors) {
   const hairPalette = fullPalette
 
   return {
-    [REGION.BACKGROUND]:     bgPalette.length > 0 ? bgPalette : fullPalette,
-    [REGION.OUTLINE]:        outlinePalette.length > 5 ? outlinePalette : fullPalette,
-    [REGION.SKIN]:           finalSkinPalette,
-    [REGION.MAIN_COLOR]:     fullPalette,
-    [REGION.DETAIL]:         fullPalette,
-    [REGION.FACIAL_FEATURE]: fullPalette,  // 面部特征：全色板，最高精度
-    [REGION.HAIR]:           hairPalette   // 头发区：全色板（预留）
+    [REGION.BACKGROUND]: bgPalette.length > 0 ? bgPalette : fullPalette,
+    [REGION.OUTLINE]: outlinePalette.length > 5 ? outlinePalette : fullPalette,
+    [REGION.SKIN]: finalSkinPalette,
+    [REGION.MAIN_COLOR]: fullPalette,
+    [REGION.DETAIL]: fullPalette,
+    [REGION.FACIAL_FEATURE]: fullPalette, // 面部特征：全色板，最高精度
+    [REGION.HAIR]: hairPalette, // 头发区：全色板（预留）
   }
 }
 
@@ -501,7 +550,7 @@ export function validateRegionExclusivity(mask, total) {
  */
 export function mergeRegionMasks(layerMasks, w, h) {
   const total = w * h
-  const unified = new Uint8Array(total).fill(0xFF) // 默认未分类
+  const unified = new Uint8Array(total).fill(0xff) // 默认未分类
 
   // 按优先级降序处理
   const sorted = [...layerMasks].sort((a, b) => b.priority - a.priority)
@@ -515,7 +564,7 @@ export function mergeRegionMasks(layerMasks, w, h) {
 
   // 未分类像素归入细节区
   for (let i = 0; i < total; i++) {
-    if (unified[i] === 0xFF) unified[i] = REGION.DETAIL
+    if (unified[i] === 0xff) unified[i] = REGION.DETAIL
   }
 
   return unified

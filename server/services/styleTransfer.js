@@ -27,17 +27,21 @@ export function simplifyPattern(grid, targetColors = 8) {
 
   // 保留 top N 颜色，其余映射到最接近的保留色
   const keepColors = allColors.slice(0, targetColors)
-  const keepHexes = new Set(keepColors.map(c => c.hex.toUpperCase()))
+  const keepHexes = new Set(keepColors.map((c) => c.hex.toUpperCase()))
 
-  const result = grid.map(row => {
+  const result = grid.map((row) => {
     if (!row) return row
-    return row.map(cell => {
+    return row.map((cell) => {
       if (!cell?.hex || keepHexes.has(cell.hex.toUpperCase())) return cell
       // 找最接近的保留颜色
-      let best = keepColors[0], bestDist = Infinity
+      let best = keepColors[0],
+        bestDist = Infinity
       for (const kc of keepColors) {
         const d = hexDist(cell.hex, kc.hex)
-        if (d < bestDist) { bestDist = d; best = kc }
+        if (d < bestDist) {
+          bestDist = d
+          best = kc
+        }
       }
       return { hex: best.hex, name: best.name || cell.name, brand: cell.brand, series: cell.series }
     })
@@ -52,7 +56,7 @@ export function simplifyPattern(grid, targetColors = 8) {
 export function enhanceEdges(grid) {
   const h = grid.length
   const w = grid[0]?.length || 0
-  const result = grid.map(row => row ? [...row] : row)
+  const result = grid.map((row) => (row ? [...row] : row))
 
   for (let r = 0; r < h; r++) {
     if (!result[r]) continue
@@ -62,12 +66,19 @@ export function enhanceEdges(grid) {
 
       // 检查四邻域
       let isEdge = false
-      for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-        const nr = r + dr, nc = c + dc
+      for (const [dr, dc] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ]) {
+        const nr = r + dr,
+          nc = c + dc
         if (nr < 0 || nr >= h || nc < 0 || nc >= w) continue
         const neighbor = grid[nr]?.[nc]
         if (neighbor?.hex && neighbor.hex.toUpperCase() !== cell.hex.toUpperCase()) {
-          isEdge = true; break
+          isEdge = true
+          break
         }
       }
 
@@ -88,7 +99,7 @@ export function enhanceEdges(grid) {
 export function makeTileable(grid) {
   const h = grid.length
   const w = grid[0]?.length || 0
-  const result = grid.map(row => row ? [...row] : row)
+  const result = grid.map((row) => (row ? [...row] : row))
 
   // 四边镜像填充，创建过渡区
   const blendWidth = Math.max(1, Math.floor(Math.min(w, h) * 0.05))
@@ -120,7 +131,7 @@ export function makeTileable(grid) {
 export function applyPixelStyle(grid, style = '8bit') {
   const h = grid.length
   const w = grid[0]?.length || 0
-  const result = grid.map(row => row ? [...row] : row)
+  const result = grid.map((row) => (row ? [...row] : row))
 
   for (let r = 0; r < h; r++) {
     if (!result[r]) continue
@@ -131,7 +142,7 @@ export function applyPixelStyle(grid, style = '8bit') {
       let newHex = cell.hex
       switch (style) {
         case '8bit':
-          newHex = posterizeColor(cell.hex, 4)  // 4-bit 色彩
+          newHex = posterizeColor(cell.hex, 4) // 4-bit 色彩
           break
         case 'minecraft':
           newHex = quantizeToMinecraft(cell.hex)
@@ -158,11 +169,16 @@ export function applyPixelStyle(grid, style = '8bit') {
 function posterizeColor(hex, levels) {
   const { r, g, b } = hexToRgb(hex)
   const step = 256 / levels
-  return '#' + [
-    Math.round(Math.round(r / step) * step),
-    Math.round(Math.round(g / step) * step),
-    Math.round(Math.round(b / step) * step)
-  ].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('')
+  return (
+    '#' +
+    [
+      Math.round(Math.round(r / step) * step),
+      Math.round(Math.round(g / step) * step),
+      Math.round(Math.round(b / step) * step),
+    ]
+      .map((v) => Math.min(255, v).toString(16).padStart(2, '0'))
+      .join('')
+  )
 }
 
 /**
@@ -170,11 +186,26 @@ function posterizeColor(hex, levels) {
  */
 function quantizeToMinecraft(hex) {
   const mcPalette = [
-    '#FFFFFF', '#D4A574', '#8B4513', '#2C3E50',
-    '#27AE60', '#1E8449', '#15803D', '#45AAF2',
-    '#3498DB', '#2980B9', '#A55EEA', '#8E44AD',
-    '#FF4757', '#E74C3C', '#C0392B', '#FFA502',
-    '#FFD700', '#F39C12', '#1ABC9C', '#16A085'
+    '#FFFFFF',
+    '#D4A574',
+    '#8B4513',
+    '#2C3E50',
+    '#27AE60',
+    '#1E8449',
+    '#15803D',
+    '#45AAF2',
+    '#3498DB',
+    '#2980B9',
+    '#A55EEA',
+    '#8E44AD',
+    '#FF4757',
+    '#E74C3C',
+    '#C0392B',
+    '#FFA502',
+    '#FFD700',
+    '#F39C12',
+    '#1ABC9C',
+    '#16A085',
   ]
   return findClosest(hex, mcPalette)
 }
@@ -183,46 +214,73 @@ function applyVintage(hex) {
   const { r, g, b } = hexToRgb(hex)
   // 降低饱和度 + 暖色调
   const gray = r * 0.299 + g * 0.587 + b * 0.114
-  return '#' + [
-    Math.round(r * 0.7 + gray * 0.3 + 20),
-    Math.round(g * 0.7 + gray * 0.3 + 10),
-    Math.round(b * 0.7 + gray * 0.3)
-  ].map(v => Math.min(255, Math.max(0, v)).toString(16).padStart(2, '0')).join('')
+  return (
+    '#' +
+    [
+      Math.round(r * 0.7 + gray * 0.3 + 20),
+      Math.round(g * 0.7 + gray * 0.3 + 10),
+      Math.round(b * 0.7 + gray * 0.3),
+    ]
+      .map((v) => Math.min(255, Math.max(0, v)).toString(16).padStart(2, '0'))
+      .join('')
+  )
 }
 
 function applyNeon(hex) {
   const { r, g, b } = hexToRgb(hex)
   // 高饱和度 + 发光感
-  return '#' + [
-    Math.round(Math.min(255, r * 1.3 + 30)),
-    Math.round(Math.min(255, g * 1.3 + 30)),
-    Math.round(Math.min(255, b * 1.3 + 30))
-  ].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('')
+  return (
+    '#' +
+    [
+      Math.round(Math.min(255, r * 1.3 + 30)),
+      Math.round(Math.min(255, g * 1.3 + 30)),
+      Math.round(Math.min(255, b * 1.3 + 30)),
+    ]
+      .map((v) => Math.min(255, v).toString(16).padStart(2, '0'))
+      .join('')
+  )
 }
 
 // ---- 工具函数 ----
 
 function hexToRgb(hex) {
   const h = hex.replace('#', '')
-  return { r: parseInt(h.substring(0, 2), 16), g: parseInt(h.substring(2, 4), 16), b: parseInt(h.substring(4, 6), 16) }
+  return {
+    r: parseInt(h.substring(0, 2), 16),
+    g: parseInt(h.substring(2, 4), 16),
+    b: parseInt(h.substring(4, 6), 16),
+  }
 }
 
 function hexDist(h1, h2) {
-  const c1 = hexToRgb(h1), c2 = hexToRgb(h2)
+  const c1 = hexToRgb(h1),
+    c2 = hexToRgb(h2)
   return Math.sqrt((c1.r - c2.r) ** 2 * 2 + (c1.g - c2.g) ** 2 * 3 + (c1.b - c2.b) ** 2)
 }
 
 function findClosest(hex, palette) {
-  let best = palette[0], bestDist = Infinity
+  let best = palette[0],
+    bestDist = Infinity
   for (const p of palette) {
     const d = hexDist(hex, p)
-    if (d < bestDist) { bestDist = d; best = p }
+    if (d < bestDist) {
+      bestDist = d
+      best = p
+    }
   }
   return best
 }
 
 function darkenHex(hex, factor) {
   const { r, g, b } = hexToRgb(hex)
-  return '#' + [r, g, b]
-    .map(v => Math.round(v * factor).toString(16).padStart(2, '0')).join('')
+  return (
+    '#' +
+    [r, g, b]
+      .map((v) =>
+        Math.round(v * factor)
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')
+  )
 }

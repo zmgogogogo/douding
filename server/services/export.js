@@ -84,7 +84,7 @@ export async function exportBatch(designs, opts = {}) {
   // 收集 ZIP 数据
   return new Promise((resolve, reject) => {
     const chunks = []
-    passThrough.on('data', chunk => chunks.push(chunk))
+    passThrough.on('data', (chunk) => chunks.push(chunk))
     passThrough.on('end', () => resolve(Buffer.concat(chunks)))
     passThrough.on('error', reject)
   })
@@ -108,9 +108,9 @@ export async function exportPDF(grid, gridW, gridH, opts = {}) {
   const bgColor = opts.bgColor || '#f0f0f0'
 
   // 页面参数：A4 210×297mm，带边距
-  const pageW = 595.28  // A4 宽度 (pt)
-  const pageH = 841.89  // A4 高度 (pt)
-  const margin = 50     // 页边距
+  const pageW = 595.28 // A4 宽度 (pt)
+  const pageH = 841.89 // A4 高度 (pt)
+  const margin = 50 // 页边距
 
   // 可用绘图区域
   const drawW = pageW - margin * 2
@@ -156,18 +156,26 @@ export async function exportPDF(grid, gridW, gridH, opts = {}) {
     info: {
       Title: title,
       Author: '豆丁 - 拼豆图纸工具',
-      Subject: `${gridW}×${gridH} 拼豆图纸`
-    }
+      Subject: `${gridW}×${gridH} 拼豆图纸`,
+    },
   })
 
   const chunks = []
-  doc.on('data', chunk => chunks.push(chunk))
+  doc.on('data', (chunk) => chunks.push(chunk))
 
   // === 第1页：网格图纸 ===
   // 标题
   doc.fontSize(16).font('Helvetica-Bold').text(title, margin, margin, { align: 'center' })
-  doc.fontSize(9).font('Helvetica').fillColor('#666')
-    .text(`${gridW} × ${gridH}  |  ${beadList.length} 色  |  共 ${totalBeads} 颗珠子`, margin, margin + 20, { align: 'center' })
+  doc
+    .fontSize(9)
+    .font('Helvetica')
+    .fillColor('#666')
+    .text(
+      `${gridW} × ${gridH}  |  ${beadList.length} 色  |  共 ${totalBeads} 颗珠子`,
+      margin,
+      margin + 20,
+      { align: 'center' }
+    )
   doc.fillColor('#000')
 
   // 绘制网格背景
@@ -179,9 +187,8 @@ export async function exportPDF(grid, gridW, gridH, opts = {}) {
     if (!row) continue
     for (let c = 0; c < gridW; c++) {
       const cell = row[c]
-      const fill = (cell?.hex) ? cell.hex : bgColor
-      doc.rect(offsetX + c * cellSize, offsetY + r * cellSize, cellSize, cellSize)
-        .fill(fill)
+      const fill = cell?.hex ? cell.hex : bgColor
+      doc.rect(offsetX + c * cellSize, offsetY + r * cellSize, cellSize, cellSize).fill(fill)
     }
   }
 
@@ -189,12 +196,16 @@ export async function exportPDF(grid, gridW, gridH, opts = {}) {
   if (gridW <= 60 && gridH <= 60) {
     doc.strokeColor('#ccc').lineWidth(0.3)
     for (let r = 0; r <= gridH; r++) {
-      doc.moveTo(offsetX, offsetY + r * cellSize)
-        .lineTo(offsetX + gridW_px, offsetY + r * cellSize).stroke()
+      doc
+        .moveTo(offsetX, offsetY + r * cellSize)
+        .lineTo(offsetX + gridW_px, offsetY + r * cellSize)
+        .stroke()
     }
     for (let c = 0; c <= gridW; c++) {
-      doc.moveTo(offsetX + c * cellSize, offsetY)
-        .lineTo(offsetX + c * cellSize, offsetY + gridH_px).stroke()
+      doc
+        .moveTo(offsetX + c * cellSize, offsetY)
+        .lineTo(offsetX + c * cellSize, offsetY + gridH_px)
+        .stroke()
     }
     doc.lineWidth(1)
   }
@@ -203,7 +214,9 @@ export async function exportPDF(grid, gridW, gridH, opts = {}) {
   if (showLabels && beadList.length <= 30 && cellSize >= 12) {
     // 构建颜色索引
     const colorIndex = {}
-    beadList.forEach((b, i) => { colorIndex[b.hex.toUpperCase()] = String(i + 1) })
+    beadList.forEach((b, i) => {
+      colorIndex[b.hex.toUpperCase()] = String(i + 1)
+    })
 
     doc.fontSize(Math.max(4, cellSize * 0.5)).font('Helvetica')
     for (let r = 0; r < gridH; r++) {
@@ -224,7 +237,8 @@ export async function exportPDF(grid, gridW, gridH, opts = {}) {
         const tx = offsetX + c * cellSize + cellSize / 2
         const ty = offsetY + r * cellSize + cellSize / 2
         doc.text(idx, tx - cellSize * 0.15, ty - cellSize * 0.25, {
-          width: cellSize * 0.6, align: 'center'
+          width: cellSize * 0.6,
+          align: 'center',
         })
       }
     }
@@ -233,28 +247,39 @@ export async function exportPDF(grid, gridW, gridH, opts = {}) {
   // === 第2页：材料清单 ===
   doc.addPage()
   doc.fontSize(14).font('Helvetica-Bold').text('材料清单', margin, margin)
-  doc.fontSize(9).font('Helvetica').fillColor('#666')
+  doc
+    .fontSize(9)
+    .font('Helvetica')
+    .fillColor('#666')
     .text(`共 ${beadList.length} 种颜色 · ${totalBeads} 颗珠子`, margin, margin + 18)
   doc.fillColor('#000')
 
   // 表格头
   const tableTop = margin + 40
-  const colW = [30, 90, 70, 250, 60]  // 序号、色号、名称、颜色、数量
+  const colW = [30, 90, 70, 250, 60] // 序号、色号、名称、颜色、数量
   const colX = [margin, margin + 35, margin + 130, margin + 205, margin + 460]
 
   doc.fontSize(8).font('Helvetica-Bold')
-  doc.text('序号', colX[0], tableTop); doc.text('色号', colX[1], tableTop)
-  doc.text('名称', colX[2], tableTop); doc.text('颜色', colX[3], tableTop)
+  doc.text('序号', colX[0], tableTop)
+  doc.text('色号', colX[1], tableTop)
+  doc.text('名称', colX[2], tableTop)
+  doc.text('颜色', colX[3], tableTop)
   doc.text('数量', colX[4], tableTop)
 
   // 分隔线
-  doc.moveTo(margin, tableTop + 12).lineTo(pageW - margin, tableTop + 12).stroke('#ccc')
+  doc
+    .moveTo(margin, tableTop + 12)
+    .lineTo(pageW - margin, tableTop + 12)
+    .stroke('#ccc')
 
   // 列表
   doc.font('Helvetica')
   beadList.forEach((b, i) => {
     const y = tableTop + 18 + i * 16
-    if (y > pageH - margin) { doc.addPage(); return } // 超出则换页
+    if (y > pageH - margin) {
+      doc.addPage()
+      return
+    } // 超出则换页
 
     doc.fontSize(8)
     doc.text(String(i + 1), colX[0], y)
@@ -269,7 +294,12 @@ export async function exportPDF(grid, gridW, gridH, opts = {}) {
   // 页脚
   const footerY = pageH - margin
   doc.fontSize(7).fillColor('#999')
-  doc.text(`由「豆丁」拼豆图纸工具生成 — ${new Date().toISOString().slice(0, 10)}`, margin, footerY, { align: 'center' })
+  doc.text(
+    `由「豆丁」拼豆图纸工具生成 — ${new Date().toISOString().slice(0, 10)}`,
+    margin,
+    footerY,
+    { align: 'center' }
+  )
 
   doc.end()
 

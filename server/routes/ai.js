@@ -6,7 +6,10 @@ import { authOptional } from '../middleware/auth.js'
 import { generateFromText } from '../services/ai.js'
 import { generatePatternFromText } from '../services/textToPattern.js'
 import {
-  simplifyPattern, enhanceEdges, makeTileable, applyPixelStyle
+  simplifyPattern,
+  enhanceEdges,
+  makeTileable,
+  applyPixelStyle,
 } from '../services/styleTransfer.js'
 import { analyzeImage, removeBackgroundSimple } from '../services/imageAnalyzer.js'
 import { loadBeadColors } from '../services/colorMatch.js'
@@ -48,8 +51,8 @@ router.post('/ai/generate', authOptional, async (req, res) => {
         gridWidth: result.gridWidth || targetW,
         gridHeight: result.gridHeight || targetH,
         keywords: result.keywords,
-        message: result.description || prompt
-      }
+        message: result.description || prompt,
+      },
     })
   } catch (e) {
     console.error('AI 生成失败:', e)
@@ -114,7 +117,10 @@ router.get('/ai/templates', (req, res) => {
   const keywords = [
     { category: '动物', items: ['猫', '狗', '兔子', '小熊', '熊猫', '柴犬', '狐狸', '仓鼠', '龙'] },
     { category: '食物', items: ['草莓', '西瓜', '蛋糕', '冰淇淋', '苹果', '汉堡', '奶茶'] },
-    { category: '自然', items: ['花朵', '树木', '星星', '爱心', '月亮', '太阳', '彩虹', '蘑菇', '雪花'] },
+    {
+      category: '自然',
+      items: ['花朵', '树木', '星星', '爱心', '月亮', '太阳', '彩虹', '蘑菇', '雪花'],
+    },
     { category: '表情', items: ['笑脸', '爱心眼', '哭脸'] },
     { category: '物品', items: ['钻石', '皇冠', '火箭', '音符', '相机', '房子'] },
   ]

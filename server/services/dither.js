@@ -37,7 +37,14 @@ export function floydSteinbergDither(w, h, pixels, labColors) {
  * @param {Object|null} regionPalettes - 区域调色板映射 {0:[c1,c2], 1:[c3,c4], ...}，null=全局模式
  * @returns {{ grid: Array<Array<object|null>> }}
  */
-export function floydSteinbergDitherWithRegions(w, h, pixels, globalColors, regionMask, regionPalettes) {
+export function floydSteinbergDitherWithRegions(
+  w,
+  h,
+  pixels,
+  globalColors,
+  regionMask,
+  regionPalettes
+) {
   const len = w * h * 3
   const errors = new Float32Array(len)
   for (let i = 0; i < len; i++) errors[i] = pixels[i]
@@ -68,10 +75,14 @@ export function floydSteinbergDitherWithRegions(w, h, pixels, globalColors, regi
 
       // Oklab 最邻近匹配（感知均匀色彩空间）
       const pixelOklab = rgbToOklab(r, g, b)
-      let best = palette[0], bestDist = Infinity
+      let best = palette[0],
+        bestDist = Infinity
       for (const c of palette) {
         const d = oklabDist(pixelOklab, c.oklab || c.lab)
-        if (d < bestDist) { bestDist = d; best = c }
+        if (d < bestDist) {
+          bestDist = d
+          best = c
+        }
       }
 
       row.push(best ? { id: best.id, name: best.name, hex: best.hex.toUpperCase() } : null)
@@ -86,7 +97,8 @@ export function floydSteinbergDitherWithRegions(w, h, pixels, globalColors, regi
       //        *    7/16
       //   3/16 5/16 1/16
       const dist = (dx, dy, wgt) => {
-        const nx = x + dx, ny = y + dy
+        const nx = x + dx,
+          ny = y + dy
         if (nx < 0 || nx >= w || ny < 0 || ny >= h) return
         const ni = (ny * w + nx) * 3
         errors[ni] += er * wgt

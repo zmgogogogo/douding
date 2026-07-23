@@ -11,7 +11,11 @@
 import { Router } from 'express'
 import { upload } from '../middleware/upload.js'
 import { authRequired, authOptional } from '../middleware/auth.js'
-import { getStyleList, buildImageOptionsFromStyle, getStyleById } from '../services/qStyleTemplates.js'
+import {
+  getStyleList,
+  buildImageOptionsFromStyle,
+  getStyleById,
+} from '../services/qStyleTemplates.js'
 import { photoToCartoon } from '../services/cartoonizer.js'
 
 const router = Router()
@@ -21,7 +25,10 @@ const router = Router()
 // ============================================
 router.post('/upload', authRequired, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ code: 400, message: '请选择图片' })
-  res.json({ code: 200, data: { url: `/uploads/${req.file.filename}`, filename: req.file.filename } })
+  res.json({
+    code: 200,
+    data: { url: `/uploads/${req.file.filename}`, filename: req.file.filename },
+  })
 })
 
 // ============================================

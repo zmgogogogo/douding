@@ -7,24 +7,37 @@
   <!-- ====== 创作入口页 ====== -->
   <div v-if="!inEditor" class="overflow-y-auto h-full">
     <div class="p-4 md:p-8 max-w-2xl mx-auto space-y-6">
-
       <!-- 模块1：开始新项目 -->
-      <div class="relative overflow-hidden rounded-[2rem] bg-white
-                  p-6 md:p-8 cursor-pointer active:scale-[0.98] transition-all duration-300
-                  border border-black/[0.04]"
-                  style="box-shadow: var(--ui-shadow-md)"
+      <div
+        class="relative overflow-hidden rounded-[2rem] bg-white p-6 md:p-8 cursor-pointer active:scale-[0.98] transition-all duration-300 border border-black/[0.04]"
+        style="box-shadow: var(--ui-shadow-md)"
         @click="startBlank"
-        @mouseenter="$el.style.boxShadow = 'var(--ui-shadow-lg)'; $el.style.transform = 'translateY(-1px)'"
-        @mouseleave="$el.style.boxShadow = 'var(--ui-shadow-md)'; $el.style.transform = ''">
-        <div class="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-50"
-          style="background: radial-gradient(circle, rgba(255,214,102,0.35), transparent 70%)" />
-        <div class="absolute -bottom-8 -left-8 w-32 h-32 rounded-full opacity-40"
-          style="background: radial-gradient(circle, rgba(125,211,252,0.38), transparent 70%)" />
-        <div class="absolute top-1/2 -right-8 w-28 h-28 rounded-full opacity-30"
-          style="background: radial-gradient(circle, rgba(244,114,182,0.24), transparent 70%)" />
+        @mouseenter="
+          $el.style.boxShadow = 'var(--ui-shadow-lg)'
+          $el.style.transform = 'translateY(-1px)'
+        "
+        @mouseleave="
+          $el.style.boxShadow = 'var(--ui-shadow-md)'
+          $el.style.transform = ''
+        "
+      >
+        <div
+          class="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-50"
+          style="background: radial-gradient(circle, rgba(255, 214, 102, 0.35), transparent 70%)"
+        />
+        <div
+          class="absolute -bottom-8 -left-8 w-32 h-32 rounded-full opacity-40"
+          style="background: radial-gradient(circle, rgba(125, 211, 252, 0.38), transparent 70%)"
+        />
+        <div
+          class="absolute top-1/2 -right-8 w-28 h-28 rounded-full opacity-30"
+          style="background: radial-gradient(circle, rgba(244, 114, 182, 0.24), transparent 70%)"
+        />
         <div class="relative z-10 flex items-start justify-between">
           <div class="flex items-start gap-4">
-            <div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md">
+            <div
+              class="w-11 h-11 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md"
+            >
               <PlusIcon :size="22" class="text-white" />
             </div>
             <div>
@@ -32,12 +45,16 @@
               <p class="text-sm text-slate-400">从空白画布开始您的像素艺术之旅</p>
             </div>
           </div>
-          <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-xs text-blue-600 font-medium flex-shrink-0">
+          <div
+            class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-xs text-blue-600 font-medium flex-shrink-0"
+          >
             <span class="w-1.5 h-1.5 rounded-full bg-green-400" />创作模式
           </div>
         </div>
         <div class="relative z-10 flex justify-end mt-4">
-          <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors">
+          <div
+            class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors"
+          >
             <ArrowRightIcon :size="18" class="text-primary" />
           </div>
         </div>
@@ -46,37 +63,75 @@
       <!-- 模块2：智能工具标题栏 -->
       <div class="flex items-center justify-between">
         <h3 class="text-[15px] font-bold text-slate-400">智能工具</h3>
-        <a class="flex items-center gap-1 text-[13px] text-blue-500 font-medium cursor-pointer hover:text-blue-600"
-          @click="toast.show('使用教程即将上线')"><BookIcon :size="14" />使用教程</a>
+        <a
+          class="flex items-center gap-1 text-[13px] text-blue-500 font-medium cursor-pointer hover:text-blue-600"
+          @click="toast.show('使用教程即将上线')"
+          ><BookIcon :size="14" />使用教程</a
+        >
       </div>
 
       <!-- 模块3：智能工具卡片 -->
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
           <div class="tool-card" @click="$router.push('/image-import')">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style="background: linear-gradient(135deg, rgba(125,211,252,0.2), rgba(125,211,252,0.05))">
-              <CameraIcon :size="20" class="text-sky-500" /></div>
-            <div class="flex-1 min-w-0"><div class="font-bold text-sm text-slate-800">照片转图纸</div>
-              <div class="text-[11px] text-slate-400 mt-0.5">将图片智能转化为拼豆图案</div></div>
+            <div
+              class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  rgba(125, 211, 252, 0.2),
+                  rgba(125, 211, 252, 0.05)
+                );
+              "
+            >
+              <CameraIcon :size="20" class="text-sky-500" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-sm text-slate-800">照片转图纸</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">将图片智能转化为拼豆图案</div>
+            </div>
             <ChevronRightIcon :size="16" class="text-slate-300" />
           </div>
           <div class="tool-card" @click="showAiPrompt = true">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style="background: linear-gradient(135deg, rgba(255,214,102,0.2), rgba(255,214,102,0.05))">
-              <Wand2Icon :size="20" class="text-amber-500" /></div>
-            <div class="flex-1 min-w-0"><div class="font-bold text-sm text-slate-800">AI 生成</div>
-              <div class="text-[11px] text-slate-400 mt-0.5">输入描述文字，AI 自动生成图案</div></div>
-            <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 text-[9px] font-bold">AI</span>
+            <div
+              class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  rgba(255, 214, 102, 0.2),
+                  rgba(255, 214, 102, 0.05)
+                );
+              "
+            >
+              <Wand2Icon :size="20" class="text-amber-500" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-sm text-slate-800">AI 生成</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">输入描述文字，AI 自动生成图案</div>
+            </div>
+            <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 text-[9px] font-bold"
+              >AI</span
+            >
             <ChevronRightIcon :size="16" class="text-slate-300" />
           </div>
         </div>
         <div class="tool-card" @click="$router.push('/ocr')">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style="background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.04))">
-            <ScanTextIcon :size="20" class="text-blue-600" /></div>
-          <div class="flex-1 min-w-0"><div class="font-bold text-sm text-slate-800">OCR 识别图纸</div>
-            <div class="text-[11px] text-slate-400 mt-0.5">拍照或上传图纸自动识别颜色符号</div></div>
+          <div
+            class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style="
+              background: linear-gradient(
+                135deg,
+                rgba(59, 130, 246, 0.15),
+                rgba(59, 130, 246, 0.04)
+              );
+            "
+          >
+            <ScanTextIcon :size="20" class="text-blue-600" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-sm text-slate-800">OCR 识别图纸</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">拍照或上传图纸自动识别颜色符号</div>
+          </div>
           <ChevronRightIcon :size="16" class="text-slate-300" />
         </div>
       </div>
@@ -85,78 +140,148 @@
       <section v-if="recentDesigns.length" class="space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-[17px] font-bold text-slate-900">最近编辑</h2>
-          <router-link to="/warehouse" class="text-[13px] text-primary font-medium hover:underline">查看全部</router-link>
+          <router-link to="/warehouse" class="text-[13px] text-primary font-medium hover:underline"
+            >查看全部</router-link
+          >
         </div>
         <div class="space-y-2">
-          <div v-for="d in recentDesigns" :key="d.id"
-            class="flex items-center gap-3 bg-white rounded-xl p-2.5 cursor-pointer border border-slate-100
-                   hover:shadow-md active:scale-[0.99] transition-all"
-            @click="openDesign(d.id)">
-            <div class="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center">
-              <canvas :ref="el => renderRecentThumb(el, d)" class="w-full h-full pixel-thumb" /></div>
-            <div class="flex-1 min-w-0"><div class="font-medium text-sm truncate text-slate-800">{{ d.title }}</div>
-              <div class="text-slate-400 text-xs mt-0.5">{{ d.gridWidth }}×{{ d.gridHeight }} · {{ d.beadCount || 0 }}颗</div></div>
+          <div
+            v-for="d in recentDesigns"
+            :key="d.id"
+            class="flex items-center gap-3 bg-white rounded-xl p-2.5 cursor-pointer border border-slate-100 hover:shadow-md active:scale-[0.99] transition-all"
+            @click="openDesign(d.id)"
+          >
+            <div
+              class="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center"
+            >
+              <canvas :ref="(el) => renderRecentThumb(el, d)" class="w-full h-full pixel-thumb" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-sm truncate text-slate-800">{{ d.title }}</div>
+              <div class="text-slate-400 text-xs mt-0.5">
+                {{ d.gridWidth }}×{{ d.gridHeight }} · {{ d.beadCount || 0 }}颗
+              </div>
+            </div>
             <ClockIcon :size="14" class="text-slate-300" />
           </div>
         </div>
       </section>
 
       <!-- 画布尺寸选择弹窗 -->
-      <div v-if="showSizePicker" class="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-md animate-fade-in"
-        @click.self="showSizePicker = false">
-        <div class="bg-white rounded-[2rem] p-5 w-[340px] max-w-[90vw] space-y-4 animate-scale-in" style="box-shadow: var(--ui-shadow-xl)">
+      <div
+        v-if="showSizePicker"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-md animate-fade-in"
+        @click.self="showSizePicker = false"
+      >
+        <div
+          class="bg-white rounded-[2rem] p-5 w-[340px] max-w-[90vw] space-y-4 animate-scale-in"
+          style="box-shadow: var(--ui-shadow-xl)"
+        >
           <h3 class="font-bold text-slate-800 text-sm">选择画布尺寸</h3>
           <div class="grid grid-cols-2 gap-2">
-            <button v-for="p in sizePresets" :key="p.label"
+            <button
+              v-for="p in sizePresets"
+              :key="p.label"
               class="p-3 rounded-xl border border-slate-200 hover:border-primary hover:bg-blue-50 transition-colors text-left"
-              @click="confirmSize(p.w, p.h)">
+              @click="confirmSize(p.w, p.h)"
+            >
               <div class="font-semibold text-sm text-slate-700">{{ p.label }}</div>
               <div class="text-[10px] text-slate-400">{{ p.w }}×{{ p.h }} · {{ p.desc }}</div>
             </button>
           </div>
           <div class="flex items-center gap-2 pt-1">
-            <input v-model.number="sizeDialogW" type="number" min="10" max="300"
-              class="flex-1 h-9 border border-slate-200 rounded-lg px-3 text-xs text-center" placeholder="宽" />
+            <input
+              v-model.number="sizeDialogW"
+              type="number"
+              min="10"
+              max="300"
+              class="flex-1 h-9 border border-slate-200 rounded-lg px-3 text-xs text-center"
+              placeholder="宽"
+            />
             <span class="text-slate-300">×</span>
-            <input v-model.number="sizeDialogH" type="number" min="10" max="300"
-              class="flex-1 h-9 border border-slate-200 rounded-lg px-3 text-xs text-center" placeholder="高" />
-            <button class="h-9 px-3 rounded-lg bg-primary text-white text-xs font-medium"
-              @click="confirmSize(sizeDialogW, sizeDialogH)">确定</button>
+            <input
+              v-model.number="sizeDialogH"
+              type="number"
+              min="10"
+              max="300"
+              class="flex-1 h-9 border border-slate-200 rounded-lg px-3 text-xs text-center"
+              placeholder="高"
+            />
+            <button
+              class="h-9 px-3 rounded-lg bg-primary text-white text-xs font-medium"
+              @click="confirmSize(sizeDialogW, sizeDialogH)"
+            >
+              确定
+            </button>
           </div>
         </div>
       </div>
 
       <!-- AI 生成弹窗 -->
-      <div v-if="showAiPrompt" class="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-md animate-fade-in"
-        @click.self="showAiPrompt = false">
-        <div class="bg-white rounded-[2rem] p-6 w-[380px] max-w-[90vw] space-y-4 animate-scale-in" style="box-shadow: var(--ui-shadow-xl)">
+      <div
+        v-if="showAiPrompt"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-md animate-fade-in"
+        @click.self="showAiPrompt = false"
+      >
+        <div
+          class="bg-white rounded-[2rem] p-6 w-[380px] max-w-[90vw] space-y-4 animate-scale-in"
+          style="box-shadow: var(--ui-shadow-xl)"
+        >
           <div class="flex items-center gap-2">
             <Wand2Icon :size="20" class="text-amber-500" />
             <h3 class="font-bold text-slate-800">AI 生成拼豆图案</h3>
           </div>
-          <p class="text-xs text-slate-500">输入图案描述，AI 将自动生成拼豆图纸。支持的关键词：猫、狗、兔子、草莓、爱心、星星、蘑菇等。</p>
+          <p class="text-xs text-slate-500">
+            输入图案描述，AI
+            将自动生成拼豆图纸。支持的关键词：猫、狗、兔子、草莓、爱心、星星、蘑菇等。
+          </p>
           <div class="flex flex-wrap gap-1">
-            <button v-for="kw in ['猫','狗','草莓','爱心','星星','蘑菇','笑脸','太阳']" :key="kw"
+            <button
+              v-for="kw in ['猫', '狗', '草莓', '爱心', '星星', '蘑菇', '笑脸', '太阳']"
+              :key="kw"
               class="px-2 py-1 rounded-md text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
-              @click="aiPrompt = kw">{{ kw }}</button>
+              @click="aiPrompt = kw"
+            >
+              {{ kw }}
+            </button>
           </div>
-          <input v-model="aiPrompt" type="text" placeholder="例如：可爱的小猫咪"
+          <input
+            v-model="aiPrompt"
+            type="text"
+            placeholder="例如：可爱的小猫咪"
             class="w-full h-10 px-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-primary transition-colors"
-            @keydown.enter="generateAi" />
+            @keydown.enter="generateAi"
+          />
           <div class="flex gap-2">
-            <select v-model="aiBrand" class="flex-1 h-9 border border-slate-200 rounded-lg text-xs px-2 bg-slate-50">
+            <select
+              v-model="aiBrand"
+              class="flex-1 h-9 border border-slate-200 rounded-lg text-xs px-2 bg-slate-50"
+            >
               <option v-for="b in brands" :key="b" :value="b">{{ b }}</option>
             </select>
-            <input v-model.number="aiSize" type="number" min="8" max="64" class="w-16 h-9 border border-slate-200 rounded-lg text-xs text-center" />
+            <input
+              v-model.number="aiSize"
+              type="number"
+              min="8"
+              max="64"
+              class="w-16 h-9 border border-slate-200 rounded-lg text-xs text-center"
+            />
           </div>
-          <button class="w-full h-10 rounded-xl bg-amber-500 text-white font-semibold text-sm
-                         hover:bg-amber-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            :disabled="!aiPrompt.trim() || aiGenerating" @click="generateAi">
+          <button
+            class="w-full h-10 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            :disabled="!aiPrompt.trim() || aiGenerating"
+            @click="generateAi"
+          >
             <LoaderIcon v-if="aiGenerating" :size="14" class="animate-spin" />
             <Wand2Icon v-else :size="14" />
             {{ aiGenerating ? '生成中...' : '开始生成' }}
           </button>
-          <button class="w-full text-xs text-slate-400 hover:text-slate-600" @click="showAiPrompt = false">取消</button>
+          <button
+            class="w-full text-xs text-slate-400 hover:text-slate-600"
+            @click="showAiPrompt = false"
+          >
+            取消
+          </button>
         </div>
       </div>
     </div>
@@ -173,37 +298,137 @@
       :showGrid="showGrid"
       @newDesign="exitEditor"
       @save="saveDesign"
-      @exportPNG="exportPNG" @exportSVG="exportSVG" @exportPDF="exportPDFFile" @exportCSV="exportCSV" @exportMaterial="exportMaterial" @exportJSON="exportJSONFile"
-      @undo="undo" @redo="redo"
-      @cut="copySelection(); deleteSelection(); scheduleRender()"
+      @exportPNG="exportPNG"
+      @exportSVG="exportSVG"
+      @exportPDF="exportPDFFile"
+      @exportCSV="exportCSV"
+      @exportMaterial="exportMaterial"
+      @exportJSON="exportJSONFile"
+      @undo="undo"
+      @redo="redo"
+      @cut="
+        copySelection()
+        deleteSelection()
+        scheduleRender()
+      "
       @copy="copySelection()"
-      @paste="pasteSelection(); saveSnapshot(); renderAll()"
-      @selectAll="selectionRect = { r1: 0, c1: 0, r2: gridH - 1, c2: gridW - 1 }; scheduleRender()"
-      @deselect="selectionRect = null; scheduleRender()"
-      @flipH="flipSelectionH(); scheduleRender()"
-      @flipV="flipSelectionV(); scheduleRender()"
+      @paste="
+        pasteSelection()
+        saveSnapshot()
+        renderAll()
+      "
+      @selectAll="
+        selectionRect = { r1: 0, c1: 0, r2: gridH - 1, c2: gridW - 1 }
+        scheduleRender()
+      "
+      @deselect="
+        selectionRect = null
+        scheduleRender()
+      "
+      @flipH="
+        flipSelectionH()
+        scheduleRender()
+      "
+      @flipV="
+        flipSelectionV()
+        scheduleRender()
+      "
       @zoomIn="zoom = Math.min(30, zoom * 1.25)"
       @zoomOut="zoom = Math.max(0.5, zoom / 1.25)"
-      @zoomFit="zoom = Math.min(30, Math.floor(Math.min(canvasContainerW / gridW, canvasContainerH / gridH) * 0.9))"
+      @zoomFit="
+        zoom = Math.min(
+          30,
+          Math.floor(Math.min(canvasContainerW / gridW, canvasContainerH / gridH) * 0.9)
+        )
+      "
       @zoomActual="zoom = 10"
       @toggleGrid="showGrid = !showGrid"
       @print="showPrintPreview = true"
       @fullscreen="toggleFullscreen"
-      @autoFit="autoFitGrid(4); renderAll()"
+      @autoFit="
+        autoFitGrid(4)
+        renderAll()
+      "
       @openSizeDialog="openSizeDialog()"
       @invertColors="onInvertColors"
       @grayscale="onGrayscale"
-      @addLayer="addLayer('新图层'); renderAll()"
-      @removeLayer="removeLayer(currentLayerId); renderAll()"
-      @mergeDown="mergeLayerDown(currentLayerId); renderAll()"
-      @addMask="addMask(currentLayerId); renderAll()"
+      @addLayer="
+        addLayer('新图层')
+        renderAll()
+      "
+      @removeLayer="
+        removeLayer(currentLayerId)
+        renderAll()
+      "
+      @mergeDown="
+        mergeLayerDown(currentLayerId)
+        renderAll()
+      "
+      @addMask="
+        addMask(currentLayerId)
+        renderAll()
+      "
       @toggleMaskEdit="maskEditMode = !maskEditMode"
-      @alignLeft="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'left'); renderAll()"
-      @alignCenter="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'center'); renderAll()"
-      @alignRight="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'right'); renderAll()"
-      @alignTop="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'top'); renderAll()"
-      @alignMiddle="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'middle'); renderAll()"
-      @alignBottom="alignLayers(layers.filter(l => l.id !== currentLayerId).map(l => l.id).concat([currentLayerId]), 'bottom'); renderAll()"
+      @alignLeft="
+        alignLayers(
+          layers
+            .filter((l) => l.id !== currentLayerId)
+            .map((l) => l.id)
+            .concat([currentLayerId]),
+          'left'
+        )
+        renderAll()
+      "
+      @alignCenter="
+        alignLayers(
+          layers
+            .filter((l) => l.id !== currentLayerId)
+            .map((l) => l.id)
+            .concat([currentLayerId]),
+          'center'
+        )
+        renderAll()
+      "
+      @alignRight="
+        alignLayers(
+          layers
+            .filter((l) => l.id !== currentLayerId)
+            .map((l) => l.id)
+            .concat([currentLayerId]),
+          'right'
+        )
+        renderAll()
+      "
+      @alignTop="
+        alignLayers(
+          layers
+            .filter((l) => l.id !== currentLayerId)
+            .map((l) => l.id)
+            .concat([currentLayerId]),
+          'top'
+        )
+        renderAll()
+      "
+      @alignMiddle="
+        alignLayers(
+          layers
+            .filter((l) => l.id !== currentLayerId)
+            .map((l) => l.id)
+            .concat([currentLayerId]),
+          'middle'
+        )
+        renderAll()
+      "
+      @alignBottom="
+        alignLayers(
+          layers
+            .filter((l) => l.id !== currentLayerId)
+            .map((l) => l.id)
+            .concat([currentLayerId]),
+          'bottom'
+        )
+        renderAll()
+      "
       @shortcuts="showShortcuts = true"
     />
 
@@ -217,13 +442,24 @@
       :refOpacity="refOpacity"
       @back="exitEditor"
       @update:title="editTitle = $event"
-      @undo="undo; renderAll()"
-      @redo="redo; renderAll()"
+      @undo="
+        undo
+        renderAll()
+      "
+      @redo="
+        redo
+        renderAll()
+      "
       @toggleGrid="showGrid = !showGrid"
       @toggleRef="cycleRefOpacity"
-      @exportPNG="exportPNG" @exportSVG="exportSVG" @exportPDF="exportPDFFile" @exportJSON="exportJSONFile"
-      @save="saveDesign" @showInfo="showInfo = !showInfo"
-      @openSizeDialog="showSizePanel = true" @clear="confirmClear"
+      @exportPNG="exportPNG"
+      @exportSVG="exportSVG"
+      @exportPDF="exportPDFFile"
+      @exportJSON="exportJSONFile"
+      @save="saveDesign"
+      @showInfo="showInfo = !showInfo"
+      @openSizeDialog="showSizePanel = true"
+      @clear="confirmClear"
       @toggleSymmetry="cycleSymmetry"
       @toggleGuide="toggleGuideMode"
     />
@@ -245,38 +481,74 @@
 
       <!-- 中心画布区 -->
       <div class="flex-1 relative overflow-hidden decorative-glow">
-        <EditorCanvas ref="editorCanvasRef"
-          :gridW="gridW" :gridH="gridH" :grid="grid"
-          :zoom="zoom" :panX="panX" :panY="panY"
-          :tool="tool" :brushSize="brushSize" :curColor="curColor"
-          :highlightHex="highlightHex" :symmetryMode="symmetryMode"
-          :showGrid="showGrid" :editMode="editMode" :guideMode="guideMode"
-          :refOpacity="refOpacity" :refPixels="refPixels" :refW="refW" :refH="refH"
-          :refOffsetX="refOffsetX" :refOffsetY="refOffsetY" :refScale="refScale"
-          :guideCurrentColor="guideCurrentColor" :guideProgress="guideProgress"
+        <EditorCanvas
+          ref="editorCanvasRef"
+          :gridW="gridW"
+          :gridH="gridH"
+          :grid="grid"
+          :zoom="zoom"
+          :panX="panX"
+          :panY="panY"
+          :tool="tool"
+          :brushSize="brushSize"
+          :curColor="curColor"
+          :highlightHex="highlightHex"
+          :symmetryMode="symmetryMode"
+          :showGrid="showGrid"
+          :editMode="editMode"
+          :guideMode="guideMode"
+          :refOpacity="refOpacity"
+          :refPixels="refPixels"
+          :refW="refW"
+          :refH="refH"
+          :refOffsetX="refOffsetX"
+          :refOffsetY="refOffsetY"
+          :refScale="refScale"
+          :guideCurrentColor="guideCurrentColor"
+          :guideProgress="guideProgress"
           :guideColorIdx="guideColorIdx"
-          :guideAutoPlay="guideAutoPlay" :guideSpeed="guideSpeed"
+          :guideAutoPlay="guideAutoPlay"
+          :guideSpeed="guideSpeed"
           :selectionRect="selectionRect"
           :beadCount="beadCount"
           :replaceSourceHex="replaceSourceHex"
           :focusDimHex="focusMode && focusColor ? focusColor.hex : null"
-          @setCell="setCellAndRender" @saveSnapshot="saveSnapshot" @scheduleRender="scheduleRender"
+          @setCell="setCellAndRender"
+          @saveSnapshot="saveSnapshot"
+          @scheduleRender="scheduleRender"
           @expandGrid="onExpandGrid"
-          @update:panX="panX = $event" @update:panY="panY = $event"
+          @update:panX="panX = $event"
+          @update:panY="panY = $event"
           @update:zoom="onCanvasZoom"
           @update:mouseCol="mouseCol = $event"
           @update:mouseRow="mouseRow = $event"
           @update:mouseColor="mouseColor = $event"
           @setRefOpacity="setRefOpacity"
-          @refZoomIn="refScale = Math.min(3, (refScale||1) * 1.25)"
-          @refZoomOut="refScale = Math.max(0.25, (refScale||1) * 0.8)"
-          @refMove="(dx, dy) => { refOffsetX += dx; refOffsetY += dy }"
-          @refReset="refScale = 1; refOffsetX = 0; refOffsetY = 0"
-          @toggleGuide="toggleGuideMode" @guidePrev="guidePrev" @guideNext="guideNext"
-          @toggleAutoPlay="toggleAutoPlay" @setGuideSpeed="setGuideSpeed"
-          @pickColor="onPickColor" @floodFill="onFloodFill"
-          @magicWand="onMagicWand" @lassoClick="onLassoClick"
-          @shapePreview="onShapePreview" @drawShape="onDrawShape" @placeText="onPlaceText"
+          @refZoomIn="refScale = Math.min(3, (refScale || 1) * 1.25)"
+          @refZoomOut="refScale = Math.max(0.25, (refScale || 1) * 0.8)"
+          @refMove="
+            (dx, dy) => {
+              refOffsetX += dx
+              refOffsetY += dy
+            }
+          "
+          @refReset="
+            refScale = 1
+            refOffsetX = 0
+            refOffsetY = 0
+          "
+          @toggleGuide="toggleGuideMode"
+          @guidePrev="guidePrev"
+          @guideNext="guideNext"
+          @toggleAutoPlay="toggleAutoPlay"
+          @setGuideSpeed="setGuideSpeed"
+          @pickColor="onPickColor"
+          @floodFill="onFloodFill"
+          @magicWand="onMagicWand"
+          @lassoClick="onLassoClick"
+          @shapePreview="onShapePreview"
+          @drawShape="onDrawShape"
+          @placeText="onPlaceText"
         />
       </div>
 
@@ -310,23 +582,57 @@
         :currentTool="tool"
         :symmetryMode="symmetryMode"
         @update:activeTab="rightPanelTab = $event"
-        @update:brand="brand = $event; seriesActive = ''"
+        @update:brand="
+          brand = $event
+          seriesActive = ''
+        "
         @update:seriesActive="seriesActive = $event"
         @update:searchText="colorSearch = $event"
         @update:brushSize="brushSize = $event"
         @update:warehouseOnly="warehouseOnly = $event"
         @selectColor="onSelectColor"
         @highlightColor="onHighlightColor"
-        @addLayer="addLayer('新图层'); renderAll()"
-        @removeLayer="removeLayer($event); renderAll()"
-        @selectLayer="selectLayer($event); renderAll()"
-        @toggleVisibility="toggleLayerVisibility($event); renderAll()"
+        @addLayer="
+          addLayer('新图层')
+          renderAll()
+        "
+        @removeLayer="
+          removeLayer($event)
+          renderAll()
+        "
+        @selectLayer="
+          selectLayer($event)
+          renderAll()
+        "
+        @toggleVisibility="
+          toggleLayerVisibility($event)
+          renderAll()
+        "
         @toggleLock="toggleLayerLock"
-        @setOpacity="(v) => { setLayerOpacity(currentLayerId, v); renderAll(); }"
-        @setBlendMode="(v) => { setLayerBlendMode(currentLayerId, v); renderAll(); }"
-        @addMask="addMask($event); renderAll();"
-        @removeMask="removeMask($event); renderAll();"
-        @applyMask="applyMask($event); renderAll();"
+        @setOpacity="
+          (v) => {
+            setLayerOpacity(currentLayerId, v)
+            renderAll()
+          }
+        "
+        @setBlendMode="
+          (v) => {
+            setLayerBlendMode(currentLayerId, v)
+            renderAll()
+          }
+        "
+        @addMask="
+          addMask($event)
+          renderAll()
+        "
+        @removeMask="
+          removeMask($event)
+          renderAll()
+        "
+        @applyMask="
+          applyMask($event)
+          renderAll()
+        "
         @toggleMaskEdit="maskEditMode = !maskEditMode"
         @applyAIEnhance="onApplyAIEnhance"
         @applyAIGenerate="onApplyAIGenerate"
@@ -337,20 +643,34 @@
     </div>
 
     <!-- ===== 底部色卡统计条 ===== -->
-    <div v-if="gridColorStats.length" class="h-9 bg-[var(--ui-bg-surface)] border-t border-[var(--ui-border)] flex items-center px-3 gap-1.5 overflow-x-auto scrollbar-hide flex-shrink-0 z-10">
-      <span class="text-[9px] text-[var(--ui-text-tertiary)] flex-shrink-0">{{ gridColorStats.length }}色</span>
-      <div v-for="s in gridColorStats" :key="s.hex"
+    <div
+      v-if="gridColorStats.length"
+      class="h-9 bg-[var(--ui-bg-surface)] border-t border-[var(--ui-border)] flex items-center px-3 gap-1.5 overflow-x-auto scrollbar-hide flex-shrink-0 z-10"
+    >
+      <span class="text-[9px] text-[var(--ui-text-tertiary)] flex-shrink-0"
+        >{{ gridColorStats.length }}色</span
+      >
+      <div
+        v-for="s in gridColorStats"
+        :key="s.hex"
         class="flex items-center gap-1 flex-shrink-0 px-1.5 py-0.5 rounded-md hover:bg-[var(--ui-bg-tertiary)] cursor-pointer transition-colors"
-        @click="onSelectColor(s)">
-        <div class="w-3.5 h-3.5 rounded-sm ring-1 ring-black/10 flex-shrink-0" :style="{ background: s.hex }" />
-        <span class="text-[10px] text-[var(--ui-text-primary)] font-medium">{{ s.name?.split(' ')[0] || s.name }}</span>
+        @click="onSelectColor(s)"
+      >
+        <div
+          class="w-3.5 h-3.5 rounded-sm ring-1 ring-black/10 flex-shrink-0"
+          :style="{ background: s.hex }"
+        />
+        <span class="text-[10px] text-[var(--ui-text-primary)] font-medium">{{
+          s.name?.split(' ')[0] || s.name
+        }}</span>
         <span class="text-[9px] text-[var(--ui-text-tertiary)] font-mono">{{ s.count }}</span>
       </div>
     </div>
 
     <!-- ===== 底部状态栏 ===== -->
     <EditorStatusBar
-      :gridW="gridW" :gridH="gridH"
+      :gridW="gridW"
+      :gridH="gridH"
       :beadCount="beadCount"
       :colorCount="gridColorStats.length"
       :zoom="zoom"
@@ -364,22 +684,48 @@
     />
 
     <!-- ===== 尺寸修改弹窗 ===== -->
-    <div v-if="showSizePanel" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/25 backdrop-blur-md"
-      @click.self="showSizePanel = false">
-      <div class="bg-white rounded-[2rem] p-5 w-[320px] max-w-[90vw] space-y-3 animate-scale-in" style="box-shadow: var(--ui-shadow-xl)">
+    <div
+      v-if="showSizePanel"
+      class="fixed inset-0 z-[200] flex items-center justify-center bg-black/25 backdrop-blur-md"
+      @click.self="showSizePanel = false"
+    >
+      <div
+        class="bg-white rounded-[2rem] p-5 w-[320px] max-w-[90vw] space-y-3 animate-scale-in"
+        style="box-shadow: var(--ui-shadow-xl)"
+      >
         <h3 class="text-sm font-bold text-slate-800">修改画布尺寸</h3>
         <div class="flex items-center gap-2">
-          <input v-model.number="sizeDialogW" type="number" min="10" max="300"
-            class="flex-1 h-10 border border-slate-200 rounded-xl px-3 text-sm text-center outline-none focus:border-primary" placeholder="宽" />
+          <input
+            v-model.number="sizeDialogW"
+            type="number"
+            min="10"
+            max="300"
+            class="flex-1 h-10 border border-slate-200 rounded-xl px-3 text-sm text-center outline-none focus:border-primary"
+            placeholder="宽"
+          />
           <span class="text-slate-400 font-bold">×</span>
-          <input v-model.number="sizeDialogH" type="number" min="10" max="300"
-            class="flex-1 h-10 border border-slate-200 rounded-xl px-3 text-sm text-center outline-none focus:border-primary" placeholder="高" />
+          <input
+            v-model.number="sizeDialogH"
+            type="number"
+            min="10"
+            max="300"
+            class="flex-1 h-10 border border-slate-200 rounded-xl px-3 text-sm text-center outline-none focus:border-primary"
+            placeholder="高"
+          />
         </div>
         <div class="flex gap-2">
-          <button class="flex-1 h-10 rounded-xl bg-slate-100 text-slate-500 text-sm font-medium"
-            @click="showSizePanel = false">取消</button>
-          <button class="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-medium"
-            @click="doResize">确认</button>
+          <button
+            class="flex-1 h-10 rounded-xl bg-slate-100 text-slate-500 text-sm font-medium"
+            @click="showSizePanel = false"
+          >
+            取消
+          </button>
+          <button
+            class="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-medium"
+            @click="doResize"
+          >
+            确认
+          </button>
         </div>
       </div>
     </div>
@@ -389,14 +735,23 @@
       v-if="focusMode && focusColor"
       :focusColor="focusColor"
       :beadCount="focusBeadCount"
-      @exit="focusMode = false; highlightHex = null; renderAll()"
+      @exit="
+        focusMode = false
+        highlightHex = null
+        renderAll()
+      "
     />
   </div>
 
   <!-- 打印预览 -->
-  <EditorPrintPreview v-if="showPrintPreview"
-    :grid="compositeGrid" :gridW="gridW" :gridH="gridH" :gridColorStats="gridColorStats"
-    @close="showPrintPreview = false" />
+  <EditorPrintPreview
+    v-if="showPrintPreview"
+    :grid="compositeGrid"
+    :gridW="gridW"
+    :gridH="gridH"
+    :gridColorStats="gridColorStats"
+    @close="showPrintPreview = false"
+  />
 
   <!-- 隐藏的文件输入 -->
   <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
@@ -412,8 +767,15 @@ import { useDialog } from '@/composables/useDialog.js'
 import { useEditor } from '@/composables/useEditor.js'
 
 import {
-  PlusIcon, ArrowRightIcon, BookIcon, CameraIcon,
-  ScanTextIcon, ChevronRightIcon, ClockIcon, LoaderIcon, Wand2Icon
+  PlusIcon,
+  ArrowRightIcon,
+  BookIcon,
+  CameraIcon,
+  ScanTextIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  LoaderIcon,
+  Wand2Icon,
 } from 'lucide-vue-next'
 
 import EditorTopBar from '@/components/editor/EditorTopBar.vue'
@@ -436,42 +798,133 @@ const dialog = useDialog()
 
 // 从 composable 解构状态
 const {
-  gridW, gridH, grid, zoom, panX, panY,
-  tool, brushSize, curColor, highlightHex,
-  symmetryMode, showGrid, refOpacity, refLocked,
-  refPixels, refW, refH, refImage, refOffsetX, refOffsetY, refScale,
-  editMode, guideMode, focusMode,
-  selectionRect, clipboard,
+  gridW,
+  gridH,
+  grid,
+  zoom,
+  panX,
+  panY,
+  tool,
+  brushSize,
+  curColor,
+  highlightHex,
+  symmetryMode,
+  showGrid,
+  refOpacity,
+  refLocked,
+  refPixels,
+  refW,
+  refH,
+  refImage,
+  refOffsetX,
+  refOffsetY,
+  refScale,
+  editMode,
+  guideMode,
+  focusMode,
+  selectionRect,
+  clipboard,
   replaceSourceHex,
-  guideColorIdx, guideDone, guideColors, guideCurrentColor, guideProgress,
-  historyArr, historyIdx,
-  beadData, inventory, warehouseOnly,
-  editId, editTitle, hasUnsavedChanges, autoSaveKey,
-  showInfo, showSizeDialog, sizeDialogW, sizeDialogH,
+  guideColorIdx,
+  guideDone,
+  guideColors,
+  guideCurrentColor,
+  guideProgress,
+  historyArr,
+  historyIdx,
+  beadData,
+  inventory,
+  warehouseOnly,
+  editId,
+  editTitle,
+  hasUnsavedChanges,
+  autoSaveKey,
+  showInfo,
+  showSizeDialog,
+  sizeDialogW,
+  sizeDialogH,
   showColorStats,
-  mousePos, crossCol, crossRow, mouseCol, mouseRow, mouseColor,
-  activePanelTab, modeLabel,
-  brand, seriesActive,
-  brands, series, filteredColors,
-  beadCount, gridColorStats,
-  brandColorCounts, totalColorCount, seriesColorCount,
-  brushPreviewStyle, colorSearch, recentColors, addRecentColor, codeOnly, autoFitGrid,
-  layers, currentLayerId, BLEND_MODES, addLayer, removeLayer, selectLayer,
-  toggleLayerVisibility, setLayerOpacity, setLayerBlendMode, mergeLayerDown, getCompositeGrid,
+  mousePos,
+  crossCol,
+  crossRow,
+  mouseCol,
+  mouseRow,
+  mouseColor,
+  activePanelTab,
+  modeLabel,
+  brand,
+  seriesActive,
+  brands,
+  series,
+  filteredColors,
+  beadCount,
+  gridColorStats,
+  brandColorCounts,
+  totalColorCount,
+  seriesColorCount,
+  brushPreviewStyle,
+  colorSearch,
+  recentColors,
+  addRecentColor,
+  codeOnly,
+  autoFitGrid,
+  layers,
+  currentLayerId,
+  BLEND_MODES,
+  addLayer,
+  removeLayer,
+  selectLayer,
+  toggleLayerVisibility,
+  setLayerOpacity,
+  setLayerBlendMode,
+  mergeLayerDown,
+  getCompositeGrid,
   maskEditMode,
-  addMask, removeMask, applyMask, toggleMaskEnabled, setMaskCell, getMaskHex,
-  initGrid, resetEditorSession, getCell, setCell, expandGridToFit,
-  saveSnapshot, undo, redo, restoreSnapshot,
-  cycleSymmetry, cycleRefOpacity, setRefOpacity, toggleRefLock,
-  toggleGuideMode, guidePrev, guideNext,
-  guideAutoPlay, guideSpeed, guideGroupBy,
-  guideJumpTo, toggleAutoPlay, stopAutoPlay, setGuideSpeed,
-  openSizeDialog, applyResize,
-  deleteSelection, copySelection, pasteSelection,
-  flipSelectionH, flipSelectionV,
-  magicWandSelect, lassoSelect, cycleSelectionMode,
+  addMask,
+  removeMask,
+  applyMask,
+  toggleMaskEnabled,
+  setMaskCell,
+  getMaskHex,
+  initGrid,
+  resetEditorSession,
+  getCell,
+  setCell,
+  expandGridToFit,
+  saveSnapshot,
+  undo,
+  redo,
+  restoreSnapshot,
+  cycleSymmetry,
+  cycleRefOpacity,
+  setRefOpacity,
+  toggleRefLock,
+  toggleGuideMode,
+  guidePrev,
+  guideNext,
+  guideAutoPlay,
+  guideSpeed,
+  guideGroupBy,
+  guideJumpTo,
+  toggleAutoPlay,
+  stopAutoPlay,
+  setGuideSpeed,
+  openSizeDialog,
+  applyResize,
+  deleteSelection,
+  copySelection,
+  pasteSelection,
+  flipSelectionH,
+  flipSelectionV,
+  magicWandSelect,
+  lassoSelect,
+  cycleSelectionMode,
   getOrderedRect,
-  createGroup, ungroup, alignLayers, setLayerStyle, removeLayerStyle,
+  createGroup,
+  ungroup,
+  alignLayers,
+  setLayerStyle,
+  removeLayerStyle,
   selectionMode,
 } = useEditor()
 
@@ -486,7 +939,10 @@ const showPrintPreview = ref(false)
 // 画布容器尺寸监听
 function updateCanvasSize() {
   const el = document.querySelector('.editor-canvas-wrap')
-  if (el) { canvasContainerW.value = el.clientWidth; canvasContainerH.value = el.clientHeight }
+  if (el) {
+    canvasContainerW.value = el.clientWidth
+    canvasContainerH.value = el.clientHeight
+  }
 }
 
 function toggleFullscreen() {
@@ -504,15 +960,18 @@ function onInvertColors() {
       const cell = comp[r]?.[c]
       if (cell?.hex) {
         const h = cell.hex.replace('#', '')
-        const inv = '#' + (255 - parseInt(h.slice(0,2),16)).toString(16).padStart(2,'0')
-          + (255 - parseInt(h.slice(2,4),16)).toString(16).padStart(2,'0')
-          + (255 - parseInt(h.slice(4,6),16)).toString(16).padStart(2,'0')
+        const inv =
+          '#' +
+          (255 - parseInt(h.slice(0, 2), 16)).toString(16).padStart(2, '0') +
+          (255 - parseInt(h.slice(2, 4), 16)).toString(16).padStart(2, '0') +
+          (255 - parseInt(h.slice(4, 6), 16)).toString(16).padStart(2, '0')
         setCell(r, c, { ...cell, hex: inv })
         getCell(r, c) // trigger reactivity
       }
     }
   }
-  saveSnapshot(); renderAll()
+  saveSnapshot()
+  renderAll()
 }
 
 function onGrayscale() {
@@ -521,13 +980,18 @@ function onGrayscale() {
       const cell = getCell(r, c)
       if (cell?.hex) {
         const h = cell.hex.replace('#', '')
-        const gray = Math.round(parseInt(h.slice(0,2),16) * 0.299 + parseInt(h.slice(2,4),16) * 0.587 + parseInt(h.slice(4,6),16) * 0.114)
-        const gHex = '#' + gray.toString(16).padStart(2,'0').repeat(3)
+        const gray = Math.round(
+          parseInt(h.slice(0, 2), 16) * 0.299 +
+            parseInt(h.slice(2, 4), 16) * 0.587 +
+            parseInt(h.slice(4, 6), 16) * 0.114
+        )
+        const gHex = '#' + gray.toString(16).padStart(2, '0').repeat(3)
         setCell(r, c, { ...cell, hex: gHex })
       }
     }
   }
-  saveSnapshot(); renderAll()
+  saveSnapshot()
+  renderAll()
 }
 
 // ---- AI 增强处理 ----
@@ -535,7 +999,7 @@ function onApplyAIEnhance(enhancedGrid) {
   if (!enhancedGrid || !Array.isArray(enhancedGrid)) return
   try {
     saveSnapshot()
-    const layer = layers.value.find(l => l.id === currentLayerId.value)
+    const layer = layers.value.find((l) => l.id === currentLayerId.value)
     if (!layer) return
     for (let r = 0; r < gridH.value; r++) {
       for (let c = 0; c < gridW.value; c++) {
@@ -564,7 +1028,7 @@ function onApplyAIGenerate(newGrid, w, h) {
     gridW.value = w || newGrid[0]?.length || gridW.value
     gridH.value = h || newGrid.length || gridH.value
     initGrid(gridW.value, gridH.value)
-    const layer = layers.value.find(l => l.id === currentLayerId.value)
+    const layer = layers.value.find((l) => l.id === currentLayerId.value)
     if (layer) {
       for (let r = 0; r < gridH.value; r++) {
         for (let c = 0; c < gridW.value; c++) {
@@ -573,7 +1037,8 @@ function onApplyAIGenerate(newGrid, w, h) {
       }
     }
     hasUnsavedChanges.value = true
-    saveSnapshot(); renderAll()
+    saveSnapshot()
+    renderAll()
   } catch (e) {
     console.error('AI 生成失败:', e)
     toast.show('AI 生成处理失败，请重试')
@@ -606,14 +1071,18 @@ function findClosestBead(hex) {
   const targetR = parseInt(targetHex.slice(0, 2), 16)
   const targetG = parseInt(targetHex.slice(2, 4), 16)
   const targetB = parseInt(targetHex.slice(4, 6), 16)
-  let best = null, bestDist = Infinity
+  let best = null,
+    bestDist = Infinity
   for (const b of beadData.value) {
     const h = b.hex.replace('#', '')
     const dr = targetR - parseInt(h.slice(0, 2), 16)
     const dg = targetG - parseInt(h.slice(2, 4), 16)
     const db = targetB - parseInt(h.slice(4, 6), 16)
     const dist = dr * dr * 2 + dg * dg * 3 + db * db
-    if (dist < bestDist) { bestDist = dist; best = b }
+    if (dist < bestDist) {
+      bestDist = dist
+      best = b
+    }
   }
   return best
 }
@@ -630,7 +1099,9 @@ const aiSize = ref(32)
 const aiGenerating = ref(false)
 
 // 同步 rightPanelTab 到 composable（使模式标签在状态栏正确显示）
-watch(rightPanelTab, (v) => { activePanelTab.value = v })
+watch(rightPanelTab, (v) => {
+  activePanelTab.value = v
+})
 
 // 专注模式
 const focusColor = ref(null)
@@ -662,9 +1133,9 @@ function onExpandGrid({ row, col, brushSize: bs }) {
   const EXPAND = 10
 
   if (row < 0) padding.top = Math.abs(row) + EXPAND
-  if (row + bs > gridH.value) padding.bottom = (row + bs) - gridH.value + EXPAND
+  if (row + bs > gridH.value) padding.bottom = row + bs - gridH.value + EXPAND
   if (col < 0) padding.left = Math.abs(col) + EXPAND
-  if (col + bs > gridW.value) padding.right = (col + bs) - gridW.value + EXPAND
+  if (col + bs > gridW.value) padding.right = col + bs - gridW.value + EXPAND
 
   if (padding.top === 0 && padding.bottom === 0 && padding.left === 0 && padding.right === 0) return
 
@@ -676,7 +1147,10 @@ function onExpandGrid({ row, col, brushSize: bs }) {
   refOffsetX.value += offsetC
   refOffsetY.value += offsetR
 
-  nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+  nextTick(() => {
+    editorCanvasRef.value?.initCanvas()
+    renderAll()
+  })
 }
 
 function scheduleRender() {
@@ -711,7 +1185,10 @@ function onSelectColor(c) {
     return
   }
   curColor.value = { ...c }
-  if (focusMode.value) { focusMode.value = false; highlightHex.value = null }
+  if (focusMode.value) {
+    focusMode.value = false
+    highlightHex.value = null
+  }
   if (highlightHex.value === c.hex) {
     focusColor.value = c
     focusMode.value = true
@@ -739,10 +1216,18 @@ function onPickColor(row, col) {
 }
 
 // ---- 缩放 ----
-function onCanvasZoom(v) { zoom.value = Math.max(0.5, Math.min(30, v)) }
-function onStatusBarZoom(v) { zoom.value = v }
-function zoomIn() { zoom.value = Math.max(0.5, Math.min(30, zoom.value * 1.25)) }
-function zoomOut() { zoom.value = Math.max(0.5, Math.min(30, zoom.value * 0.8)) }
+function onCanvasZoom(v) {
+  zoom.value = Math.max(0.5, Math.min(30, v))
+}
+function onStatusBarZoom(v) {
+  zoom.value = v
+}
+function zoomIn() {
+  zoom.value = Math.max(0.5, Math.min(30, zoom.value * 1.25))
+}
+function zoomOut() {
+  zoom.value = Math.max(0.5, Math.min(30, zoom.value * 0.8))
+}
 
 // ---- 颜色替换 ----
 function replaceColor(sourceHex, targetColor) {
@@ -783,8 +1268,14 @@ function onFloodFill(sr, sc) {
 
     setCell(r, c, fillColor)
 
-    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
-      const nr = r + dr, nc = c + dc
+    for (const [dr, dc] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ]) {
+      const nr = r + dr,
+        nc = c + dc
       if (nr < 0 || nr >= gridH.value || nc < 0 || nc >= gridW.value) continue
       const key = `${nr},${nc}`
       if (visited.has(key)) continue
@@ -857,7 +1348,7 @@ function onPlaceText(r, c) {
 
 // ---- 图层锁定 ----
 function toggleLayerLock(id) {
-  const layer = layers.value.find(l => l.id === id)
+  const layer = layers.value.find((l) => l.id === id)
   if (layer) layer.locked = !layer.locked
 }
 
@@ -866,7 +1357,10 @@ function onJumpToHistory(index) {
   if (index === historyIdx.value) return
   historyIdx.value = index
   restoreSnapshot(historyArr.value[index])
-  nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+  nextTick(() => {
+    editorCanvasRef.value?.initCanvas()
+    renderAll()
+  })
 }
 
 // ---- 导出 ----
@@ -875,15 +1369,21 @@ async function exportPNG() {
   try {
     const cg = getCompositeGrid()
     const blob = await API.download('/api/export/grid', {
-      gridData: cg, gridWidth: gridW.value, gridHeight: gridH.value,
-      scale: 10
+      gridData: cg,
+      gridWidth: gridW.value,
+      gridHeight: gridH.value,
+      scale: 10,
     })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url
+    const a = document.createElement('a')
+    a.href = url
     a.download = (editTitle.value || '拼豆图纸') + '.png'
-    a.click(); URL.revokeObjectURL(url)
+    a.click()
+    URL.revokeObjectURL(url)
     toast.show('PNG 导出成功')
-  } catch (e) { toast.show('导出失败，请稍后重试') }
+  } catch (e) {
+    toast.show('导出失败，请稍后重试')
+  }
 }
 
 async function exportPDFFile() {
@@ -891,15 +1391,21 @@ async function exportPDFFile() {
   try {
     const cg = getCompositeGrid()
     const blob = await API.download('/api/export/pdf', {
-      gridData: cg, gridWidth: gridW.value, gridHeight: gridH.value,
-      title: editTitle.value
+      gridData: cg,
+      gridWidth: gridW.value,
+      gridHeight: gridH.value,
+      title: editTitle.value,
     })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url
+    const a = document.createElement('a')
+    a.href = url
     a.download = (editTitle.value || '拼豆图纸') + '.pdf'
-    a.click(); URL.revokeObjectURL(url)
+    a.click()
+    URL.revokeObjectURL(url)
     toast.show('PDF 导出成功')
-  } catch (e) { toast.show('导出失败，请稍后重试') }
+  } catch (e) {
+    toast.show('导出失败，请稍后重试')
+  }
 }
 
 function exportSVG() {
@@ -927,19 +1433,25 @@ function exportJSONFile() {
   const cg = getCompositeGrid()
   const data = {
     title: editTitle.value,
-    gridW: gridW.value, gridH: gridH.value,
-    grid: cg, version: '2.0'
+    gridW: gridW.value,
+    gridH: gridH.value,
+    grid: cg,
+    version: '2.0',
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url
+  const a = document.createElement('a')
+  a.href = url
   a.download = (editTitle.value || '拼豆图纸') + '.json'
-  a.click(); URL.revokeObjectURL(url)
+  a.click()
+  URL.revokeObjectURL(url)
   toast.show('JSON 导出成功')
 }
 
 // ---- 图片导入 ----
-function triggerImport() { fileInput.value?.click() }
+function triggerImport() {
+  fileInput.value?.click()
+}
 
 async function onFileChange(e) {
   const file = e.target.files?.[0]
@@ -962,10 +1474,15 @@ async function onFileChange(e) {
         refOpacity.value = 0.3
       }
       saveSnapshot()
-      nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+      nextTick(() => {
+        editorCanvasRef.value?.initCanvas()
+        renderAll()
+      })
       toast.show('图片转换完成')
     }
-  } catch (e) { toast.show('图片分析失败，请稍后重试') }
+  } catch (e) {
+    toast.show('图片分析失败，请稍后重试')
+  }
   fileInput.value.value = ''
 }
 
@@ -984,9 +1501,10 @@ function startBlank() {
 }
 
 function confirmSize(w, h) {
-  const safeW = (Number.isFinite(w) && w >= 10) ? Math.round(w) : 50
-  const safeH = (Number.isFinite(h) && h >= 10) ? Math.round(h) : 50
-  gridW.value = safeW; gridH.value = safeH
+  const safeW = Number.isFinite(w) && w >= 10 ? Math.round(w) : 50
+  const safeH = Number.isFinite(h) && h >= 10 ? Math.round(h) : 50
+  gridW.value = safeW
+  gridH.value = safeH
   showSizePicker.value = false
   resetEditorSession()
   focusColor.value = null
@@ -998,14 +1516,19 @@ function confirmSize(w, h) {
     curColor.value = { ...filteredColors.value[0] }
   }
   saveSnapshot()
-  nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+  nextTick(() => {
+    editorCanvasRef.value?.initCanvas()
+    renderAll()
+  })
 }
 
 async function loadRecentDesigns() {
   try {
     const res = await API.get('/api/designs?limit=5&sort=updated', true)
     if (res.code === 200) recentDesigns.value = res.data || []
-  } catch (_) { /* offline */ }
+  } catch (_) {
+    /* offline */
+  }
 }
 
 async function openDesign(id) {
@@ -1027,9 +1550,14 @@ async function openDesign(id) {
       if (!curColor.value && filteredColors.value.length > 0) {
         curColor.value = { ...filteredColors.value[0] }
       }
-      nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+      nextTick(() => {
+        editorCanvasRef.value?.initCanvas()
+        renderAll()
+      })
     }
-  } catch (_) { toast.show('加载设计失败') }
+  } catch (_) {
+    toast.show('加载设计失败')
+  }
 }
 
 function renderRecentThumb(el, design) {
@@ -1057,7 +1585,12 @@ async function generateAi() {
   if (!aiPrompt.value.trim() || aiGenerating.value) return
   aiGenerating.value = true
   try {
-    const res = await API.post('/api/ai/generate', { prompt: aiPrompt.value, brand: aiBrand.value, width: aiSize.value, height: aiSize.value })
+    const res = await API.post('/api/ai/generate', {
+      prompt: aiPrompt.value,
+      brand: aiBrand.value,
+      width: aiSize.value,
+      height: aiSize.value,
+    })
     if (res.code === 200 && res.data?.grid) {
       gridW.value = res.data.gridWidth || aiSize.value
       gridH.value = res.data.gridHeight || aiSize.value
@@ -1067,9 +1600,14 @@ async function generateAi() {
       showAiPrompt.value = false
       inEditor.value = true
       saveSnapshot()
-      nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+      nextTick(() => {
+        editorCanvasRef.value?.initCanvas()
+        renderAll()
+      })
     }
-  } catch (_) { toast.show('AI 生成失败，请稍后重试') }
+  } catch (_) {
+    toast.show('AI 生成失败，请稍后重试')
+  }
   aiGenerating.value = false
 }
 
@@ -1077,7 +1615,10 @@ async function generateAi() {
 function doResize() {
   applyResize()
   showSizePanel.value = false
-  nextTick(() => { editorCanvasRef.value?.initCanvas(); renderAll() })
+  nextTick(() => {
+    editorCanvasRef.value?.initCanvas()
+    renderAll()
+  })
 }
 
 // ---- 保存 ----
@@ -1090,10 +1631,13 @@ async function saveDesign() {
   try {
     const cg = getCompositeGrid()
     const payload = {
-      title: editTitle.value, gridWidth: gridW.value, gridHeight: gridH.value,
-      gridData: JSON.stringify(cg), beadCount: beadCount.value,
+      title: editTitle.value,
+      gridWidth: gridW.value,
+      gridHeight: gridH.value,
+      gridData: JSON.stringify(cg),
+      beadCount: beadCount.value,
       colorCount: gridColorStats.value.length,
-      isPublic: true
+      isPublic: true,
     }
     if (editId.value) {
       await API.put(`/api/designs/${editId.value}`, payload, true)
@@ -1103,12 +1647,18 @@ async function saveDesign() {
     }
     hasUnsavedChanges.value = false
     toast.show('保存成功')
-  } catch (e) { toast.show('保存失败，请稍后重试') }
+  } catch (e) {
+    toast.show('保存失败，请稍后重试')
+  }
 }
 
 async function confirmClear() {
   const ok = await dialog.confirm('确定要清空画布吗？此操作不可撤销。')
-  if (ok) { initGrid(gridW.value, gridH.value); saveSnapshot(); renderAll() }
+  if (ok) {
+    initGrid(gridW.value, gridH.value)
+    saveSnapshot()
+    renderAll()
+  }
 }
 
 // ---- 自动保存 ----
@@ -1116,13 +1666,26 @@ function autoSave() {
   if (!hasUnsavedChanges.value) return
   try {
     const cg = getCompositeGrid()
-    const data = { grid: cg, gridW: gridW.value, gridH: gridH.value, editId: editId.value, title: editTitle.value, time: Date.now() }
+    const data = {
+      grid: cg,
+      gridW: gridW.value,
+      gridH: gridH.value,
+      editId: editId.value,
+      title: editTitle.value,
+      time: Date.now(),
+    }
     localStorage.setItem(autoSaveKey.value, JSON.stringify(data))
-  } catch (_) { /* quota exceeded */ }
+  } catch (_) {
+    /* quota exceeded */
+  }
 }
 
 function clearAutoSave() {
-  try { localStorage.removeItem(autoSaveKey.value) } catch (_) { /* noop */ }
+  try {
+    localStorage.removeItem(autoSaveKey.value)
+  } catch (_) {
+    /* noop */
+  }
 }
 
 // ---- 退出 ----
@@ -1145,31 +1708,94 @@ async function exitEditor() {
 // ---- 快捷键 ----
 function onGlobalKeyDown(e) {
   if (!inEditor.value) return
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return
+  if (
+    e.target.tagName === 'INPUT' ||
+    e.target.tagName === 'TEXTAREA' ||
+    e.target.tagName === 'SELECT'
+  )
+    return
 
   const key = e.key.toLowerCase()
-  if ((e.ctrlKey || e.metaKey) && key === 'z') { e.preventDefault(); undo(); renderAll(); return }
-  if ((e.ctrlKey || e.metaKey) && (key === 'y' || (key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); renderAll(); return }
-  if ((e.ctrlKey || e.metaKey) && key === 's') { e.preventDefault(); saveDesign(); return }
-  if ((e.ctrlKey || e.metaKey) && key === 'c') { e.preventDefault(); copySelection(); return }
-  if ((e.ctrlKey || e.metaKey) && key === 'v') { e.preventDefault(); pasteSelection(); return }
-  if ((e.ctrlKey || e.metaKey) && key === 'l') { e.preventDefault(); toggleRefLock(); return }
-  if ((e.ctrlKey || e.metaKey) && key === 'n') { e.preventDefault(); toggleGuideMode(); return }
-  if (key === 'delete' || key === 'backspace') { e.preventDefault(); deleteSelection(); return }
+  if ((e.ctrlKey || e.metaKey) && key === 'z') {
+    e.preventDefault()
+    undo()
+    renderAll()
+    return
+  }
+  if ((e.ctrlKey || e.metaKey) && (key === 'y' || (key === 'z' && e.shiftKey))) {
+    e.preventDefault()
+    redo()
+    renderAll()
+    return
+  }
+  if ((e.ctrlKey || e.metaKey) && key === 's') {
+    e.preventDefault()
+    saveDesign()
+    return
+  }
+  if ((e.ctrlKey || e.metaKey) && key === 'c') {
+    e.preventDefault()
+    copySelection()
+    return
+  }
+  if ((e.ctrlKey || e.metaKey) && key === 'v') {
+    e.preventDefault()
+    pasteSelection()
+    return
+  }
+  if ((e.ctrlKey || e.metaKey) && key === 'l') {
+    e.preventDefault()
+    toggleRefLock()
+    return
+  }
+  if ((e.ctrlKey || e.metaKey) && key === 'n') {
+    e.preventDefault()
+    toggleGuideMode()
+    return
+  }
+  if (key === 'delete' || key === 'backspace') {
+    e.preventDefault()
+    deleteSelection()
+    return
+  }
 
   switch (key) {
-    case 'b': tool.value = 'brush'; break
-    case 'e': tool.value = 'eraser'; break
-    case 'g': case 'f': tool.value = 'fill'; break
-    case 'i': tool.value = 'picker'; break
-    case 's': tool.value = 'select'; break
-    case 'r': tool.value = 'replace'; break
-    case 'm': tool.value = 'move'; break
-    case 'h': showGrid.value = !showGrid.value; break
-    case 'k': cycleSymmetry(); break
-    case '[': brushSize.value = Math.max(1, brushSize.value - 1); break
-    case ']': brushSize.value = Math.min(8, brushSize.value + 1); break
-    default: return
+    case 'b':
+      tool.value = 'brush'
+      break
+    case 'e':
+      tool.value = 'eraser'
+      break
+    case 'g':
+    case 'f':
+      tool.value = 'fill'
+      break
+    case 'i':
+      tool.value = 'picker'
+      break
+    case 's':
+      tool.value = 'select'
+      break
+    case 'r':
+      tool.value = 'replace'
+      break
+    case 'm':
+      tool.value = 'move'
+      break
+    case 'h':
+      showGrid.value = !showGrid.value
+      break
+    case 'k':
+      cycleSymmetry()
+      break
+    case '[':
+      brushSize.value = Math.max(1, brushSize.value - 1)
+      break
+    case ']':
+      brushSize.value = Math.min(8, brushSize.value + 1)
+      break
+    default:
+      return
   }
   e.preventDefault()
 }
@@ -1180,7 +1806,9 @@ onMounted(async () => {
   try {
     const res = await API.get('/api/beads/colors')
     if (res.code === 200) beadData.value = res.data || []
-  } catch (_) { /* offline */ }
+  } catch (_) {
+    /* offline */
+  }
 
   // 加载库存
   if (auth.isLoggedIn.value) {
@@ -1189,7 +1817,9 @@ onMounted(async () => {
       if (res.code === 200 && res.data) {
         for (const item of res.data) inventory.value[item.color_id] = item.quantity
       }
-    } catch (_) { /* offline */ }
+    } catch (_) {
+      /* offline */
+    }
   }
 
   // 判断是打开已有设计还是显示入口页
@@ -1225,7 +1855,10 @@ onMounted(async () => {
         const imported = JSON.parse(importedRaw)
         sessionStorage.removeItem('imported_grid')
         const importToast = sessionStorage.getItem('import_toast')
-        if (importToast) { sessionStorage.removeItem('import_toast'); nextTick(() => toast.show(importToast)) }
+        if (importToast) {
+          sessionStorage.removeItem('import_toast')
+          nextTick(() => toast.show(importToast))
+        }
         if (imported.grid && imported.gridWidth && imported.gridHeight) {
           initGrid(imported.gridWidth, imported.gridHeight)
           grid.value = imported.grid

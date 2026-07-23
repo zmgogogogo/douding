@@ -33,7 +33,8 @@ export function dilate(mask, w, h, kernelSize = 3, iterations = 1) {
         let hasWhite = false
         for (let dy = -radius; dy <= radius && !hasWhite; dy++) {
           for (let dx = -radius; dx <= radius && !hasWhite; dx++) {
-            const nx = x + dx, ny = y + dy
+            const nx = x + dx,
+              ny = y + dy
             if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
             if (src[ny * w + nx] === 255) hasWhite = true
           }
@@ -69,9 +70,16 @@ export function erode(mask, w, h, kernelSize = 3, iterations = 1) {
         let allWhite = true
         for (let dy = -radius; dy <= radius && allWhite; dy++) {
           for (let dx = -radius; dx <= radius && allWhite; dx++) {
-            const nx = x + dx, ny = y + dy
-            if (nx < 0 || nx >= w || ny < 0 || ny >= h) { allWhite = false; break }
-            if (src[ny * w + nx] !== 255) { allWhite = false; break }
+            const nx = x + dx,
+              ny = y + dy
+            if (nx < 0 || nx >= w || ny < 0 || ny >= h) {
+              allWhite = false
+              break
+            }
+            if (src[ny * w + nx] !== 255) {
+              allWhite = false
+              break
+            }
           }
         }
         result[y * w + x] = allWhite ? 255 : 0
@@ -167,8 +175,9 @@ export function hardenEdges(pixels, w, h, regionMask) {
 
   // 收缩后的主体掩码
   const shrunk = shrinkSubjectEdge(
-    regionMask.map(v => v === 0 ? 0 : 255),
-    w, h
+    regionMask.map((v) => (v === 0 ? 0 : 255)),
+    w,
+    h
   )
 
   // 找到边缘像素（原主体但收缩后不是主体的像素）
@@ -185,12 +194,16 @@ export function hardenEdges(pixels, w, h, regionMask) {
         let bestOff = -1
         for (let dy = -1; dy <= 1; dy++) {
           for (let dx = -1; dx <= 1; dx++) {
-            const nx = x + dx, ny = y + dy
+            const nx = x + dx,
+              ny = y + dy
             if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
             const ni = ny * w + nx
             if (shrunk[ni] === 255) {
               const d = dx * dx + dy * dy
-              if (d < bestDist) { bestDist = d; bestOff = ni * 3 }
+              if (d < bestDist) {
+                bestDist = d
+                bestOff = ni * 3
+              }
             }
           }
         }
@@ -229,10 +242,14 @@ export function skinConstrainedSmooth(pixels, w, h, skinMask, radius = 3) {
       if (skinMask[idx] !== 255) continue // 非皮肤区域跳过
 
       // 在半径内取皮肤像素的均值
-      let sumR = 0, sumG = 0, sumB = 0, count = 0
+      let sumR = 0,
+        sumG = 0,
+        sumB = 0,
+        count = 0
       for (let dy = -radius; dy <= radius; dy++) {
         for (let dx = -radius; dx <= radius; dx++) {
-          const nx = x + dx, ny = y + dy
+          const nx = x + dx,
+            ny = y + dy
           if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue
           const ni = ny * w + nx
           if (skinMask[ni] === 255) {

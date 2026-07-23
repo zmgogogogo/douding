@@ -29,7 +29,7 @@ async function request(method, url, body, auth = true) {
 async function upload(url, formData, auth = true) {
   const opts = { method: 'POST', body: formData }
   const token = getToken()
-  if (auth && token) opts.headers = { 'Authorization': 'Bearer ' + token }
+  if (auth && token) opts.headers = { Authorization: 'Bearer ' + token }
   const res = await fetch(BASE + url, opts)
   const ct = res.headers.get('content-type') || ''
   if (!ct.includes('application/json')) {
@@ -43,7 +43,7 @@ async function upload(url, formData, auth = true) {
 async function download(url, body = null, auth = true) {
   const opts = {
     method: body ? 'POST' : 'GET',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
   }
   const token = getToken()
   if (auth && token) opts.headers['Authorization'] = 'Bearer ' + token
@@ -60,5 +60,5 @@ export default {
   put: (url, body, auth = true) => request('PUT', url, body, auth),
   del: (url, auth = true) => request('DELETE', url, null, auth),
   upload,
-  download
+  download,
 }

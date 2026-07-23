@@ -17,7 +17,7 @@
 import { LayerData } from './LayerData.js'
 
 /** 魔数标识 */
-const MAGIC = new Uint8Array([0x42, 0x45, 0x41, 0x4E]) // "BEAN"
+const MAGIC = new Uint8Array([0x42, 0x45, 0x41, 0x4e]) // "BEAN"
 
 /** 当前文件版本 */
 const VERSION = 1
@@ -45,7 +45,7 @@ export class BeanFormat {
         createdAt: new Date().toISOString(),
         colorTable: colorTable.serialize(),
       },
-      layers: layers.map(l => ({
+      layers: layers.map((l) => ({
         id: l.id,
         name: l.name,
         visible: l.visible,
@@ -83,7 +83,7 @@ export class BeanFormat {
       width,
       height,
       colorTableSerialized: raw.meta.colorTable,
-      layers: raw.layers.map(l => ({
+      layers: raw.layers.map((l) => ({
         id: l.id,
         name: l.name,
         visible: l.visible !== false,

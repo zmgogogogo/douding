@@ -24,7 +24,10 @@
     </div>
 
     <!-- 预警提示条 -->
-    <div v-if="alertCount" class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 mb-3 text-sm flex-shrink-0">
+    <div
+      v-if="alertCount"
+      class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 mb-3 text-sm flex-shrink-0"
+    >
       <span class="font-semibold text-amber-700">⚠️ {{ alertCount }} 种颜色需补豆</span>
       <span class="text-amber-600 text-xs ml-1">
         ({{ outOfStockCount }}种用尽，{{ runningLowCount }}种偏低)
@@ -36,28 +39,46 @@
       <!-- 搜索 -->
       <div class="relative flex-1 min-w-[140px] max-w-[220px]">
         <SearchIcon :size="14" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input v-model="search" type="text" placeholder="搜索色号/名称..."
-          class="w-full h-8 pl-8 pr-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-primary bg-white" />
+        <input
+          v-model="search"
+          type="text"
+          placeholder="搜索色号/名称..."
+          class="w-full h-8 pl-8 pr-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-primary bg-white"
+        />
       </div>
 
       <!-- 品牌 -->
-      <select v-model="filterBrand" class="h-8 px-2 rounded-lg border border-slate-200 text-xs bg-white outline-none">
+      <select
+        v-model="filterBrand"
+        class="h-8 px-2 rounded-lg border border-slate-200 text-xs bg-white outline-none"
+      >
         <option value="">全部品牌</option>
         <option v-for="b in brands" :key="b" :value="b">{{ b }}</option>
       </select>
 
       <!-- 色系 -->
-      <select v-model="filterSeries" class="h-8 px-2 rounded-lg border border-slate-200 text-xs bg-white outline-none">
+      <select
+        v-model="filterSeries"
+        class="h-8 px-2 rounded-lg border border-slate-200 text-xs bg-white outline-none"
+      >
         <option value="">全部色系</option>
-        <option value="红">🔴 红</option><option value="橙">🟠 橙</option>
-        <option value="黄">🟡 黄</option><option value="绿">🟢 绿</option>
-        <option value="青">🩵 青</option><option value="蓝">🔵 蓝</option>
-        <option value="紫">🟣 紫</option><option value="灰">⬜ 灰</option>
-        <option value="棕">🟤 棕</option><option value="黑白">⚫ 黑白</option>
+        <option value="红">🔴 红</option>
+        <option value="橙">🟠 橙</option>
+        <option value="黄">🟡 黄</option>
+        <option value="绿">🟢 绿</option>
+        <option value="青">🩵 青</option>
+        <option value="蓝">🔵 蓝</option>
+        <option value="紫">🟣 紫</option>
+        <option value="灰">⬜ 灰</option>
+        <option value="棕">🟤 棕</option>
+        <option value="黑白">⚫ 黑白</option>
       </select>
 
       <!-- 颜色类型 -->
-      <select v-model="filterType" class="h-8 px-2 rounded-lg border border-slate-200 text-xs bg-white outline-none">
+      <select
+        v-model="filterType"
+        class="h-8 px-2 rounded-lg border border-slate-200 text-xs bg-white outline-none"
+      >
         <option value="0">全部类型</option>
         <option value="1">基础纯色</option>
         <option value="2">荧光色</option>
@@ -68,7 +89,10 @@
       </select>
 
       <!-- 排序 -->
-      <select v-model="sortBy" class="h-8 px-2 rounded-lg border border-slate-200 text-xs bg-white outline-none">
+      <select
+        v-model="sortBy"
+        class="h-8 px-2 rounded-lg border border-slate-200 text-xs bg-white outline-none"
+      >
         <option value="default">默认排序</option>
         <option value="qty-desc">库存↓</option>
         <option value="qty-asc">库存↑</option>
@@ -78,36 +102,59 @@
 
     <!-- 卡片网格 -->
     <div v-if="filteredList.length" class="flex-1 overflow-y-auto">
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-        <div v-for="item in filteredList" :key="item.color_id"
-          class="color-card group" :class="{
+      <div
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2"
+      >
+        <div
+          v-for="item in filteredList"
+          :key="item.color_id"
+          class="color-card group"
+          :class="{
             'out-of-stock': item.min_threshold > 0 && item.quantity === 0,
-            'low-stock': item.min_threshold > 0 && item.quantity > 0 && item.quantity <= item.min_threshold
+            'low-stock':
+              item.min_threshold > 0 && item.quantity > 0 && item.quantity <= item.min_threshold,
           }"
-          @click="$emit('select-color', item)">
+          @click="$emit('select-color', item)"
+        >
           <!-- 色块 -->
-          <div class="aspect-[4/3] rounded-t-lg relative overflow-hidden"
+          <div
+            class="aspect-[4/3] rounded-t-lg relative overflow-hidden"
             :style="{ background: item.hex }"
-            :class="{ 'opacity-40': item.quantity === 0 && item.min_threshold > 0 }">
+            :class="{ 'opacity-40': item.quantity === 0 && item.min_threshold > 0 }"
+          >
             <!-- hover 快捷操作 -->
-            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-end justify-center pb-1 opacity-0 group-hover:opacity-100">
+            <div
+              class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-end justify-center pb-1 opacity-0 group-hover:opacity-100"
+            >
               <div class="flex gap-0.5">
-                <button class="w-6 h-6 rounded-full bg-white/90 text-[10px] font-bold text-slate-600 flex items-center justify-center
-                  hover:bg-white hover:text-primary transition-colors shadow-sm"
-                  @click.stop="quickAdd(item, -10)">−</button>
-                <button class="w-6 h-6 rounded-full bg-white/90 text-[10px] font-bold text-slate-600 flex items-center justify-center
-                  hover:bg-white hover:text-primary transition-colors shadow-sm"
-                  @click.stop="quickAdd(item, 10)">+</button>
+                <button
+                  class="w-6 h-6 rounded-full bg-white/90 text-[10px] font-bold text-slate-600 flex items-center justify-center hover:bg-white hover:text-primary transition-colors shadow-sm"
+                  @click.stop="quickAdd(item, -10)"
+                >
+                  −
+                </button>
+                <button
+                  class="w-6 h-6 rounded-full bg-white/90 text-[10px] font-bold text-slate-600 flex items-center justify-center hover:bg-white hover:text-primary transition-colors shadow-sm"
+                  @click.stop="quickAdd(item, 10)"
+                >
+                  +
+                </button>
               </div>
             </div>
           </div>
           <!-- 信息 -->
           <div class="px-2 py-1.5">
-            <div class="text-[11px] font-semibold text-slate-700 truncate" :title="item.name">{{ item.name }}</div>
+            <div class="text-[11px] font-semibold text-slate-700 truncate" :title="item.name">
+              {{ item.name }}
+            </div>
             <div class="flex items-center justify-between mt-0.5">
               <span class="text-[10px] text-slate-400 font-mono">{{ item.hex }}</span>
-              <span class="text-[11px] font-mono font-bold"
-                :class="item.quantity === 0 && item.min_threshold > 0 ? 'text-red-500' : 'text-slate-600'">
+              <span
+                class="text-[11px] font-mono font-bold"
+                :class="
+                  item.quantity === 0 && item.min_threshold > 0 ? 'text-red-500' : 'text-slate-600'
+                "
+              >
                 {{ item.quantity.toLocaleString() }}
               </span>
             </div>
@@ -123,36 +170,75 @@
     <div v-else class="flex-1 flex items-center justify-center text-slate-400">
       <div class="text-center">
         <div class="text-5xl mb-3">{{ inventory.length ? '🔍' : '📦' }}</div>
-        <p class="text-sm">{{ inventory.length ? '没有匹配的颜色，试试调整筛选条件' : '还没有库存记录，点击"+ 入库"添加珠子' }}</p>
+        <p class="text-sm">
+          {{
+            inventory.length
+              ? '没有匹配的颜色，试试调整筛选条件'
+              : '还没有库存记录，点击"+ 入库"添加珠子'
+          }}
+        </p>
       </div>
     </div>
 
     <!-- 入库弹窗 -->
     <Teleport to="body">
       <Transition name="dialog">
-        <div v-if="showAddDialog" class="fixed inset-0 z-[150] flex items-center justify-center bg-black/30 backdrop-blur-sm"
-          @click.self="showAddDialog = false">
-          <div class="bg-white rounded-2xl shadow-xl p-5 w-[380px] max-w-[90vw] space-y-4 animate-bounce-in">
+        <div
+          v-if="showAddDialog"
+          class="fixed inset-0 z-[150] flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          @click.self="showAddDialog = false"
+        >
+          <div
+            class="bg-white rounded-2xl shadow-xl p-5 w-[380px] max-w-[90vw] space-y-4 animate-bounce-in"
+          >
             <h3 class="font-bold text-slate-800">入库珠子</h3>
             <div class="space-y-2">
-              <select v-model="addForm.colorId" class="w-full h-9 border border-slate-200 rounded-lg text-xs px-2 bg-slate-50">
+              <select
+                v-model="addForm.colorId"
+                class="w-full h-9 border border-slate-200 rounded-lg text-xs px-2 bg-slate-50"
+              >
                 <option :value="null">选择颜色...</option>
                 <optgroup v-for="bg in colorGroups" :key="bg.brand" :label="bg.brand">
-                  <option v-for="c in bg.colors" :key="c.id" :value="c.id">{{ c.name }} {{ c.hex }}</option>
+                  <option v-for="c in bg.colors" :key="c.id" :value="c.id">
+                    {{ c.name }} {{ c.hex }}
+                  </option>
                 </optgroup>
               </select>
               <div class="flex gap-2">
-                <input v-model.number="addForm.quantity" type="number" min="1"
-                  class="flex-1 h-9 border border-slate-200 rounded-lg text-xs px-2 text-center" placeholder="数量" />
-                <input v-model.number="addForm.threshold" type="number" min="0"
-                  class="w-20 h-9 border border-slate-200 rounded-lg text-xs px-2 text-center" placeholder="预警值" />
+                <input
+                  v-model.number="addForm.quantity"
+                  type="number"
+                  min="1"
+                  class="flex-1 h-9 border border-slate-200 rounded-lg text-xs px-2 text-center"
+                  placeholder="数量"
+                />
+                <input
+                  v-model.number="addForm.threshold"
+                  type="number"
+                  min="0"
+                  class="w-20 h-9 border border-slate-200 rounded-lg text-xs px-2 text-center"
+                  placeholder="预警值"
+                />
               </div>
-              <input v-model="addForm.note" placeholder="备注（可选）"
-                class="w-full h-9 border border-slate-200 rounded-lg text-xs px-2" />
+              <input
+                v-model="addForm.note"
+                placeholder="备注（可选）"
+                class="w-full h-9 border border-slate-200 rounded-lg text-xs px-2"
+              />
             </div>
             <div class="flex gap-2">
-              <button class="flex-1 h-9 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium" @click="showAddDialog = false">取消</button>
-              <button class="flex-1 h-9 rounded-xl bg-primary text-white text-xs font-medium" @click="doAddStock">确认入库</button>
+              <button
+                class="flex-1 h-9 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium"
+                @click="showAddDialog = false"
+              >
+                取消
+              </button>
+              <button
+                class="flex-1 h-9 rounded-xl bg-primary text-white text-xs font-medium"
+                @click="doAddStock"
+              >
+                确认入库
+              </button>
             </div>
           </div>
         </div>
@@ -188,10 +274,12 @@ const showAddDialog = ref(false)
 const addForm = ref({ colorId: null, quantity: 100, threshold: 0, note: '' })
 
 // 推导
-const brands = computed(() => [...new Set(inventory.value.map(i => i.brand).filter(Boolean))].sort())
+const brands = computed(() =>
+  [...new Set(inventory.value.map((i) => i.brand).filter(Boolean))].sort()
+)
 const alertCount = computed(() => alerts.value.length)
-const outOfStockCount = computed(() => alerts.value.filter(i => i.quantity === 0).length)
-const runningLowCount = computed(() => alerts.value.filter(i => i.quantity > 0).length)
+const outOfStockCount = computed(() => alerts.value.filter((i) => i.quantity === 0).length)
+const runningLowCount = computed(() => alerts.value.filter((i) => i.quantity > 0).length)
 const totalBeads = computed(() => inventory.value.reduce((s, i) => s + (i.quantity || 0), 0))
 
 // 色系推断（基于颜色名称中的色系关键词）
@@ -228,28 +316,29 @@ const filteredList = computed(() => {
   // 搜索
   if (search.value) {
     const q = search.value.toLowerCase()
-    list = list.filter(i =>
-      (i.name || '').toLowerCase().includes(q) ||
-      (i.hex || '').toLowerCase().includes(q) ||
-      (i.brand || '').toLowerCase().includes(q)
+    list = list.filter(
+      (i) =>
+        (i.name || '').toLowerCase().includes(q) ||
+        (i.hex || '').toLowerCase().includes(q) ||
+        (i.brand || '').toLowerCase().includes(q)
     )
   }
 
   // 品牌
   if (filterBrand.value) {
-    list = list.filter(i => i.brand === filterBrand.value)
+    list = list.filter((i) => i.brand === filterBrand.value)
   }
 
   // 色系
   if (filterSeries.value) {
-    list = list.filter(i => inferSeries(i.name, i.series) === filterSeries.value)
+    list = list.filter((i) => inferSeries(i.name, i.series) === filterSeries.value)
   }
 
   // 类型（需要从 allColors 关联 color_type）
   if (filterType.value !== '0') {
     const typeMap = {}
     for (const c of allColors.value) typeMap[c.id] = c.color_type || 1
-    list = list.filter(i => String(typeMap[i.color_id] || 1) === filterType.value)
+    list = list.filter((i) => String(typeMap[i.color_id] || 1) === filterType.value)
   }
 
   // 排序
@@ -271,7 +360,9 @@ async function loadInventory() {
     if (res.code === 200) {
       inventory.value = res.data?.items || []
     }
-  } catch (e) { toast.show('加载库存失败') }
+  } catch (e) {
+    toast.show('加载库存失败')
+  }
 }
 
 async function loadAllColors() {
@@ -294,19 +385,31 @@ async function quickAdd(item, delta) {
     await API.put(`/api/inventory/${item.color_id}`, { quantity: newQty }, true)
     item.quantity = newQty
     emit('updated')
-  } catch (e) { toast.show('调整失败') }
+  } catch (e) {
+    toast.show('调整失败')
+  }
 }
 
 async function doAddStock() {
-  if (!addForm.value.colorId) { toast.show('请选择颜色'); return }
-  if (!addForm.value.quantity || addForm.value.quantity <= 0) { toast.show('请输入有效数量'); return }
+  if (!addForm.value.colorId) {
+    toast.show('请选择颜色')
+    return
+  }
+  if (!addForm.value.quantity || addForm.value.quantity <= 0) {
+    toast.show('请输入有效数量')
+    return
+  }
   try {
-    const res = await API.post('/api/inventory', {
-      colorId: parseInt(addForm.value.colorId),
-      quantity: parseInt(addForm.value.quantity),
-      minThreshold: addForm.value.threshold || 0,
-      note: addForm.value.note || ''
-    }, true)
+    const res = await API.post(
+      '/api/inventory',
+      {
+        colorId: parseInt(addForm.value.colorId),
+        quantity: parseInt(addForm.value.quantity),
+        minThreshold: addForm.value.threshold || 0,
+        note: addForm.value.note || '',
+      },
+      true
+    )
     if (res.code === 200) {
       toast.show(`入库 ${addForm.value.quantity} 颗`)
       showAddDialog.value = false
@@ -315,7 +418,9 @@ async function doAddStock() {
     } else {
       toast.show(res.message || '入库失败')
     }
-  } catch (e) { toast.show(e.message || '入库失败，请稍后重试') }
+  } catch (e) {
+    toast.show(e.message || '入库失败，请稍后重试')
+  }
 }
 
 onMounted(async () => {
@@ -342,8 +447,12 @@ defineExpose({ refresh })
   @apply h-7 px-3 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500
          hover:bg-slate-50 transition-colors cursor-pointer;
 }
-.dialog-enter-active, .dialog-leave-active {
+.dialog-enter-active,
+.dialog-leave-active {
   transition: opacity 0.15s ease;
 }
-.dialog-enter-from, .dialog-leave-to { opacity: 0; }
+.dialog-enter-from,
+.dialog-leave-to {
+  opacity: 0;
+}
 </style>

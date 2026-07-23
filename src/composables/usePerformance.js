@@ -23,7 +23,7 @@ function startFPSMonitor() {
     const now = performance.now()
     if (now - lastFrameTime >= 1000) {
       fps.value = Math.round(frameCount / ((now - lastFrameTime) / 1000))
-      frameTime.value = Math.round((now - lastFrameTime) / frameCount * 100) / 100
+      frameTime.value = Math.round(((now - lastFrameTime) / frameCount) * 100) / 100
       frameCount = 0
       lastFrameTime = now
 
@@ -39,7 +39,10 @@ function startFPSMonitor() {
 }
 
 function stopFPSMonitor() {
-  if (fpsTimer) { cancelAnimationFrame(fpsTimer); fpsTimer = null }
+  if (fpsTimer) {
+    cancelAnimationFrame(fpsTimer)
+    fpsTimer = null
+  }
 }
 
 /** 记录操作延迟 */
@@ -60,15 +63,22 @@ function incrementRenderCalls() {
 }
 
 /** 重置渲染计数（每秒） */
-setInterval(() => { renderCalls.value = 0 }, 1000)
+setInterval(() => {
+  renderCalls.value = 0
+}, 1000)
 setInterval(updateMemory, 5000)
 
 export function usePerformance() {
   return {
-    fps, frameTime, memoryUsage,
-    renderCalls, lastOpLatency,
+    fps,
+    frameTime,
+    memoryUsage,
+    renderCalls,
+    lastOpLatency,
     isLowPerformance,
-    startFPSMonitor, stopFPSMonitor,
-    recordLatency, incrementRenderCalls,
+    startFPSMonitor,
+    stopFPSMonitor,
+    recordLatency,
+    incrementRenderCalls,
   }
 }

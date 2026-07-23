@@ -18,8 +18,11 @@
     <div v-if="upcoming?.length" class="mt-4 pt-4 border-t border-slate-100">
       <p class="text-[11px] text-slate-400 mb-2">即将到来</p>
       <div class="flex flex-wrap gap-2">
-        <span v-for="u in upcoming.slice(0, 5)" :key="u.date"
-          class="text-[10px] px-2 py-1 bg-slate-50 rounded-full text-slate-500">
+        <span
+          v-for="u in upcoming.slice(0, 5)"
+          :key="u.date"
+          class="text-[10px] px-2 py-1 bg-slate-50 rounded-full text-slate-500"
+        >
           {{ u.date.slice(5) }} {{ u.zh }}
         </span>
       </div>
@@ -38,7 +41,7 @@ onMounted(async () => {
   try {
     const [todayRes, upcomingRes] = await Promise.all([
       API.get('/api/challenge/today'),
-      API.get('/api/challenges/upcoming')
+      API.get('/api/challenges/upcoming'),
     ])
     if (todayRes.code === 200) challenge.value = todayRes.data
     if (upcomingRes.code === 200) upcoming.value = upcomingRes.data

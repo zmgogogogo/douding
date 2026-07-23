@@ -16,9 +16,9 @@ import { useAuth } from './useAuth.js'
 // 模块级单例
 let socket = null
 const connected = ref(false)
-const members = ref([])               // 在线成员列表
-const remoteCursors = reactive({})    // socketId → {r, c, nickname, color}
-const comments = ref([])              // 批注列表
+const members = ref([]) // 在线成员列表
+const remoteCursors = reactive({}) // socketId → {r, c, nickname, color}
+const comments = ref([]) // 批注列表
 const currentDesignId = ref(null)
 
 /**
@@ -27,7 +27,10 @@ const currentDesignId = ref(null)
  */
 function connect() {
   return new Promise((resolve) => {
-    if (socket?.connected) { resolve(); return }
+    if (socket?.connected) {
+      resolve()
+      return
+    }
 
     const auth = useAuth()
     const token = auth.token?.value || localStorage.getItem('douding_token')
@@ -96,7 +99,7 @@ function connect() {
     })
 
     socket.on('collab:commentResolved', ({ commentId }) => {
-      const c = comments.value.find(c => c.id === commentId)
+      const c = comments.value.find((c) => c.id === commentId)
       if (c) c.resolved = true
     })
   })
@@ -107,9 +110,15 @@ let _onPixelChange = () => {}
 let _onRequestSnapshot = null
 let _onSnapshot = null
 
-function onPixelChange(fn) { _onPixelChange = fn }
-function onRequestSnapshot(fn) { _onRequestSnapshot = fn }
-function onSnapshot(fn) { _onSnapshot = fn }
+function onPixelChange(fn) {
+  _onPixelChange = fn
+}
+function onRequestSnapshot(fn) {
+  _onRequestSnapshot = fn
+}
+function onSnapshot(fn) {
+  _onSnapshot = fn
+}
 
 /**
  * 加入设计房间
@@ -133,7 +142,7 @@ function leaveDesign() {
   socket.emit('collab:leave')
   currentDesignId.value = null
   members.value = []
-  Object.keys(remoteCursors).forEach(k => delete remoteCursors[k])
+  Object.keys(remoteCursors).forEach((k) => delete remoteCursors[k])
 }
 
 /** 发送像素变更 */

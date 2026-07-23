@@ -9,126 +9,181 @@ import { rgbToOklab } from '../utils/colorSpace.js'
 /** 关键词 → 预设像素模板映射 */
 const TEMPLATES = {
   // 动物类
-  '猫|猫咪|小猫': { w: 16, h: 16, shapes: [
-    { type: 'head_cat' },
-    { type: 'ears', count: 2, dir: 'top' },
-    { type: 'eyes', count: 2 },
-    { type: 'nose_triangle' },
-    { type: 'whiskers', count: 6 }
-  ]},
-  '狗|小狗|狗狗': { w: 16, h: 16, shapes: [
-    { type: 'head_round' },
-    { type: 'ears_floppy', count: 2, dir: 'top' },
-    { type: 'eyes', count: 2 },
-    { type: 'nose_oval' },
-    { type: 'tongue' }
-  ]},
-  '兔|兔子|小兔': { w: 16, h: 18, shapes: [
-    { type: 'head_round' },
-    { type: 'ears_long', count: 2, dir: 'top' },
-    { type: 'eyes', count: 2 },
-    { type: 'nose_triangle' }
-  ]},
-  '熊|小熊|熊熊': { w: 18, h: 18, shapes: [
-    { type: 'head_round' },
-    { type: 'ears_round', count: 2, dir: 'top' },
-    { type: 'eyes', count: 2 },
-    { type: 'nose_oval' }
-  ]},
+  '猫|猫咪|小猫': {
+    w: 16,
+    h: 16,
+    shapes: [
+      { type: 'head_cat' },
+      { type: 'ears', count: 2, dir: 'top' },
+      { type: 'eyes', count: 2 },
+      { type: 'nose_triangle' },
+      { type: 'whiskers', count: 6 },
+    ],
+  },
+  '狗|小狗|狗狗': {
+    w: 16,
+    h: 16,
+    shapes: [
+      { type: 'head_round' },
+      { type: 'ears_floppy', count: 2, dir: 'top' },
+      { type: 'eyes', count: 2 },
+      { type: 'nose_oval' },
+      { type: 'tongue' },
+    ],
+  },
+  '兔|兔子|小兔': {
+    w: 16,
+    h: 18,
+    shapes: [
+      { type: 'head_round' },
+      { type: 'ears_long', count: 2, dir: 'top' },
+      { type: 'eyes', count: 2 },
+      { type: 'nose_triangle' },
+    ],
+  },
+  '熊|小熊|熊熊': {
+    w: 18,
+    h: 18,
+    shapes: [
+      { type: 'head_round' },
+      { type: 'ears_round', count: 2, dir: 'top' },
+      { type: 'eyes', count: 2 },
+      { type: 'nose_oval' },
+    ],
+  },
 
   // 食物类
-  '草莓': { w: 14, h: 16, shapes: [
-    { type: 'triangle_inv', colors: ['#E53935'] },
-    { type: 'dots', count: 8, colors: ['#FFF59D'] },
-    { type: 'leaf_top', colors: ['#43A047'] }
-  ]},
-  '西瓜': { w: 18, h: 12, shapes: [
-    { type: 'semicircle', colors: ['#E53935', '#43A047'] },
-    { type: 'dots', count: 5, colors: ['#1A1A1A'] }
-  ]},
-  '蛋糕': { w: 18, h: 20, shapes: [
-    { type: 'rect', y: 8, h: 12, colors: ['#F8BBD0'] },
-    { type: 'rect', y: 0, h: 6, colors: ['#FDD835'] },
-    { type: 'candle', count: 3 }
-  ]},
-  '冰淇淋': { w: 14, h: 20, shapes: [
-    { type: 'triangle_inv', colors: ['#FFCCBC'] },
-    { type: 'circle', y: 2, r: 5, colors: ['#F48FB1'] },
-    { type: 'rect', y: 16, h: 4, colors: ['#A1887F'] }
-  ]},
-  '苹果': { w: 14, h: 14, shapes: [
-    { type: 'circle', colors: ['#E53935'] },
-    { type: 'leaf_top_small', colors: ['#43A047'] }
-  ]},
+  草莓: {
+    w: 14,
+    h: 16,
+    shapes: [
+      { type: 'triangle_inv', colors: ['#E53935'] },
+      { type: 'dots', count: 8, colors: ['#FFF59D'] },
+      { type: 'leaf_top', colors: ['#43A047'] },
+    ],
+  },
+  西瓜: {
+    w: 18,
+    h: 12,
+    shapes: [
+      { type: 'semicircle', colors: ['#E53935', '#43A047'] },
+      { type: 'dots', count: 5, colors: ['#1A1A1A'] },
+    ],
+  },
+  蛋糕: {
+    w: 18,
+    h: 20,
+    shapes: [
+      { type: 'rect', y: 8, h: 12, colors: ['#F8BBD0'] },
+      { type: 'rect', y: 0, h: 6, colors: ['#FDD835'] },
+      { type: 'candle', count: 3 },
+    ],
+  },
+  冰淇淋: {
+    w: 14,
+    h: 20,
+    shapes: [
+      { type: 'triangle_inv', colors: ['#FFCCBC'] },
+      { type: 'circle', y: 2, r: 5, colors: ['#F48FB1'] },
+      { type: 'rect', y: 16, h: 4, colors: ['#A1887F'] },
+    ],
+  },
+  苹果: {
+    w: 14,
+    h: 14,
+    shapes: [
+      { type: 'circle', colors: ['#E53935'] },
+      { type: 'leaf_top_small', colors: ['#43A047'] },
+    ],
+  },
 
   // 自然类
-  '花|花朵|小花': { w: 16, h: 16, shapes: [
-    { type: 'petals', count: 5, colors: ['#F48FB1'] },
-    { type: 'circle', r: 3, colors: ['#FDD835'] },
-    { type: 'stem', colors: ['#43A047'] }
-  ]},
-  '树|树木': { w: 18, h: 22, shapes: [
-    { type: 'triangle', y: 0, h: 12, colors: ['#43A047'] },
-    { type: 'rect', y: 12, h: 10, w: 4, colors: ['#795548'] }
-  ]},
-  '星星': { w: 16, h: 16, shapes: [
-    { type: 'star5', colors: ['#FDD835'] }
-  ]},
-  '爱心|心形|心': { w: 16, h: 16, shapes: [
-    { type: 'heart', colors: ['#E53935'] }
-  ]},
-  '月亮': { w: 16, h: 16, shapes: [
-    { type: 'crescent', colors: ['#FDD835'] }
-  ]},
-  '太阳': { w: 16, h: 16, shapes: [
-    { type: 'circle', r: 5, colors: ['#FDD835'] },
-    { type: 'rays', count: 8, colors: ['#FB8C00'] }
-  ]},
-  '彩虹': { w: 24, h: 14, shapes: [
-    { type: 'rainbow_bands', count: 6 }
-  ]},
+  '花|花朵|小花': {
+    w: 16,
+    h: 16,
+    shapes: [
+      { type: 'petals', count: 5, colors: ['#F48FB1'] },
+      { type: 'circle', r: 3, colors: ['#FDD835'] },
+      { type: 'stem', colors: ['#43A047'] },
+    ],
+  },
+  '树|树木': {
+    w: 18,
+    h: 22,
+    shapes: [
+      { type: 'triangle', y: 0, h: 12, colors: ['#43A047'] },
+      { type: 'rect', y: 12, h: 10, w: 4, colors: ['#795548'] },
+    ],
+  },
+  星星: { w: 16, h: 16, shapes: [{ type: 'star5', colors: ['#FDD835'] }] },
+  '爱心|心形|心': { w: 16, h: 16, shapes: [{ type: 'heart', colors: ['#E53935'] }] },
+  月亮: { w: 16, h: 16, shapes: [{ type: 'crescent', colors: ['#FDD835'] }] },
+  太阳: {
+    w: 16,
+    h: 16,
+    shapes: [
+      { type: 'circle', r: 5, colors: ['#FDD835'] },
+      { type: 'rays', count: 8, colors: ['#FB8C00'] },
+    ],
+  },
+  彩虹: { w: 24, h: 14, shapes: [{ type: 'rainbow_bands', count: 6 }] },
 
   // 表情类
-  '笑脸|微笑|happy': { w: 16, h: 16, shapes: [
-    { type: 'circle', colors: ['#FDD835'] },
-    { type: 'eyes_smile', count: 2 },
-    { type: 'mouth_smile' }
-  ]},
-  '爱心眼|喜欢': { w: 16, h: 16, shapes: [
-    { type: 'circle', colors: ['#FDD835'] },
-    { type: 'eyes_heart', count: 2 },
-    { type: 'mouth_smile' }
-  ]},
+  '笑脸|微笑|happy': {
+    w: 16,
+    h: 16,
+    shapes: [
+      { type: 'circle', colors: ['#FDD835'] },
+      { type: 'eyes_smile', count: 2 },
+      { type: 'mouth_smile' },
+    ],
+  },
+  '爱心眼|喜欢': {
+    w: 16,
+    h: 16,
+    shapes: [
+      { type: 'circle', colors: ['#FDD835'] },
+      { type: 'eyes_heart', count: 2 },
+      { type: 'mouth_smile' },
+    ],
+  },
 
   // 像素风经典
-  '蘑菇': { w: 16, h: 16, shapes: [
-    { type: 'mushroom_cap', colors: ['#E53935'] },
-    { type: 'mushroom_stem', colors: ['#EFEBE9'] },
-    { type: 'dots', count: 3, colors: ['#FFFFFF'] }
-  ]},
-  '钻石': { w: 14, h: 16, shapes: [
-    { type: 'diamond', colors: ['#42A5F5'] }
-  ]},
-  '幽灵': { w: 14, h: 16, shapes: [
-    { type: 'ghost', colors: ['#FFFFFF'] },
-    { type: 'eyes', count: 2, colors: ['#1A1A1A'] }
-  ]},
-  '像素剑': { w: 6, h: 20, shapes: [
-    { type: 'sword', colors: ['#9E9E9E', '#FDD835'] }
-  ]},
+  蘑菇: {
+    w: 16,
+    h: 16,
+    shapes: [
+      { type: 'mushroom_cap', colors: ['#E53935'] },
+      { type: 'mushroom_stem', colors: ['#EFEBE9'] },
+      { type: 'dots', count: 3, colors: ['#FFFFFF'] },
+    ],
+  },
+  钻石: { w: 14, h: 16, shapes: [{ type: 'diamond', colors: ['#42A5F5'] }] },
+  幽灵: {
+    w: 14,
+    h: 16,
+    shapes: [
+      { type: 'ghost', colors: ['#FFFFFF'] },
+      { type: 'eyes', count: 2, colors: ['#1A1A1A'] },
+    ],
+  },
+  像素剑: { w: 6, h: 20, shapes: [{ type: 'sword', colors: ['#9E9E9E', '#FDD835'] }] },
 }
 
 /** 形状绘制函数 — 每个形状在 grid 上绘制指定图案 */
 function drawShape(grid, w, h, shape) {
-  const cx = Math.floor(w / 2), cy = Math.floor(h / 2)
+  const cx = Math.floor(w / 2),
+    cy = Math.floor(h / 2)
   const colors = shape.colors || ['#1A1A1A']
-  const cMain = colors[0], cAlt = colors[1] || cMain
+  const cMain = colors[0],
+    cAlt = colors[1] || cMain
 
   switch (shape.type) {
     case 'circle':
       for (let r = 0; r < h; r++)
         for (let c = 0; c < w; c++) {
-          const dx = c - cx, dy = r - cy
+          const dx = c - cx,
+            dy = r - cy
           const radius = shape.r || Math.min(cx, cy) - 2
           if (dx * dx + dy * dy <= radius * radius) grid[r][c] = cMain
         }
@@ -137,10 +192,10 @@ function drawShape(grid, w, h, shape) {
     case 'rect': {
       const x = Math.max(0, Math.floor((w - (shape.w || w - 2)) / 2))
       const y = shape.y || 0
-      const rw = shape.w || (w - 2 * x), rh = shape.h || h
+      const rw = shape.w || w - 2 * x,
+        rh = shape.h || h
       for (let r = y; r < Math.min(h, y + rh); r++)
-        for (let c = x; c < Math.min(w, x + rw); c++)
-          grid[r][c] = cMain
+        for (let c = x; c < Math.min(w, x + rw); c++) grid[r][c] = cMain
       break
     }
 
@@ -165,24 +220,31 @@ function drawShape(grid, w, h, shape) {
     case 'heart':
       for (let r = 0; r < h; r++)
         for (let c = 0; c < w; c++) {
-          const x = (c - w / 2) / (w / 4), y = (h / 2 - r) / (h / 4)
+          const x = (c - w / 2) / (w / 4),
+            y = (h / 2 - r) / (h / 4)
           if (Math.pow(x * x + y * y - 1, 3) - x * x * y * y * y <= 0.1) grid[r][c] = cMain
         }
       break
 
     case 'star5': {
-      const points = 5, outerR = Math.min(cx, cy) - 1
+      const points = 5,
+        outerR = Math.min(cx, cy) - 1
       const innerR = outerR * 0.4
       for (let r = 0; r < h; r++)
         for (let c = 0; c < w; c++) {
-          const dx = c - cx, dy = r - cy
+          const dx = c - cx,
+            dy = r - cy
           const dist = Math.sqrt(dx * dx + dy * dy)
           const angle = Math.atan2(dy, dx) + Math.PI / 2
-          const starR = innerR + (outerR - innerR) *
-            Math.abs(Math.cos(angle * points / 2)) % 1 > 0.5 ? outerR : innerR
+          const starR =
+            innerR + (((outerR - innerR) * Math.abs(Math.cos((angle * points) / 2))) % 1) > 0.5
+              ? outerR
+              : innerR
           if (dist <= outerR && dist > 0) {
-            const expectedR = innerR + (outerR - innerR) *
-              (Math.abs(Math.cos(angle * points / 2 + Math.PI / points)) < 0.3 ? 1 : 0)
+            const expectedR =
+              innerR +
+              (outerR - innerR) *
+                (Math.abs(Math.cos((angle * points) / 2 + Math.PI / points)) < 0.3 ? 1 : 0)
             if (dist <= outerR * 0.95) grid[r][c] = cMain
           }
         }
@@ -200,8 +262,7 @@ function drawShape(grid, w, h, shape) {
 
     case 'mushroom_stem':
       for (let r = Math.floor(h * 0.55); r < h - 1; r++)
-        for (let c = cx - 2; c <= cx + 2; c++)
-          if (c > 0 && c < w - 1) grid[r][c] = cMain
+        for (let c = cx - 2; c <= cx + 2; c++) if (c > 0 && c < w - 1) grid[r][c] = cMain
       break
 
     case 'dots':
@@ -216,7 +277,8 @@ function drawShape(grid, w, h, shape) {
 
     case 'eyes':
       for (let i = 0; i < 2; i++) {
-        const ex = cx + (i === 0 ? -3 : 3), ey = cy - 2
+        const ex = cx + (i === 0 ? -3 : 3),
+          ey = cy - 2
         if (ex > 1 && ex < w - 1) {
           grid[ey][ex] = cMain
           if (ey + 1 < h) grid[ey + 1][ex] = cMain
@@ -231,8 +293,7 @@ function drawShape(grid, w, h, shape) {
         const bandH = Math.floor(h / (shape.count || 6))
         const bandColor = ['#E53935', '#FB8C00', '#FDD835', '#43A047', '#1E88E5', '#8E24AA'][i % 6]
         for (let r = i * bandH; r < Math.min(h, (i + 1) * bandH); r++)
-          for (let c = 0; c < w; c++)
-            grid[r][c] = bandColor
+          for (let c = 0; c < w; c++) grid[r][c] = bandColor
       }
       break
   }
@@ -292,7 +353,12 @@ export function generateFromText(prompt, targetW = 32, targetH = 32, brand = 'Ha
       const oklab = rgbToOklab(rr, gg, bb)
       const match = findBestMatchOklab(oklab, beadColors)
       if (match) {
-        grid[r][c] = { name: match.name, hex: match.hex, brand: match.brand, series: match.series || '' }
+        grid[r][c] = {
+          name: match.name,
+          hex: match.hex,
+          brand: match.brand,
+          series: match.series || '',
+        }
       } else {
         grid[r][c] = { name: '未知', hex, brand, series: '' }
       }
@@ -300,9 +366,11 @@ export function generateFromText(prompt, targetW = 32, targetH = 32, brand = 'Ha
   }
 
   return {
-    grid, gridW: w, gridH: h,
+    grid,
+    gridW: w,
+    gridH: h,
     matchedKeyword,
-    message: `AI 已根据"${matchedKeyword}"生成 ${w}×${h} 像素图案`
+    message: `AI 已根据"${matchedKeyword}"生成 ${w}×${h} 像素图案`,
   }
 }
 
@@ -314,7 +382,7 @@ function generateAbstractPattern(w, h, brand, seedText) {
 
   // 用文本哈希生成伪随机种子图案
   let hash = 0
-  for (let i = 0; i < seedText.length; i++) hash = ((hash << 5) - hash) + seedText.charCodeAt(i)
+  for (let i = 0; i < seedText.length; i++) hash = (hash << 5) - hash + seedText.charCodeAt(i)
 
   const patternType = Math.abs(hash) % 4
 
@@ -323,7 +391,13 @@ function generateAbstractPattern(w, h, brand, seedText) {
       for (let r = 0; r < h; r++)
         for (let c = 0; c < w; c++) {
           const idx = ((r + c) % 2) * (beadColors.length - 1)
-          if (beadColors[idx]) grid[r][c] = { name: beadColors[idx].name, hex: beadColors[idx].hex, brand: beadColors[idx].brand, series: '' }
+          if (beadColors[idx])
+            grid[r][c] = {
+              name: beadColors[idx].name,
+              hex: beadColors[idx].hex,
+              brand: beadColors[idx].brand,
+              series: '',
+            }
         }
       break
     case 1: // 条纹
@@ -332,30 +406,51 @@ function generateAbstractPattern(w, h, brand, seedText) {
         for (let c = 0; c < w; c++) {
           const idx = Math.floor(c / stripeW) % 3
           const ci = Math.min(idx * Math.floor(beadColors.length / 3), beadColors.length - 1)
-          if (beadColors[ci]) grid[r][c] = { name: beadColors[ci].name, hex: beadColors[ci].hex, brand: beadColors[ci].brand, series: '' }
+          if (beadColors[ci])
+            grid[r][c] = {
+              name: beadColors[ci].name,
+              hex: beadColors[ci].hex,
+              brand: beadColors[ci].brand,
+              series: '',
+            }
         }
       break
     case 2: // 渐变
       for (let r = 0; r < h; r++)
         for (let c = 0; c < w; c++) {
           const idx = Math.floor((r / h) * (beadColors.length - 1))
-          if (beadColors[idx]) grid[r][c] = { name: beadColors[idx].name, hex: beadColors[idx].hex, brand: beadColors[idx].brand, series: '' }
+          if (beadColors[idx])
+            grid[r][c] = {
+              name: beadColors[idx].name,
+              hex: beadColors[idx].hex,
+              brand: beadColors[idx].brand,
+              series: '',
+            }
         }
       break
     case 3: // 同心圆
-      const cx = Math.floor(w / 2), cy = Math.floor(h / 2)
+      const cx = Math.floor(w / 2),
+        cy = Math.floor(h / 2)
       for (let r = 0; r < h; r++)
         for (let c = 0; c < w; c++) {
           const dist = Math.sqrt((c - cx) ** 2 + (r - cy) ** 2)
           const idx = Math.floor(dist / 2) % beadColors.length
-          if (beadColors[idx]) grid[r][c] = { name: beadColors[idx].name, hex: beadColors[idx].hex, brand: beadColors[idx].brand, series: '' }
+          if (beadColors[idx])
+            grid[r][c] = {
+              name: beadColors[idx].name,
+              hex: beadColors[idx].hex,
+              brand: beadColors[idx].brand,
+              series: '',
+            }
         }
       break
   }
 
   return {
-    grid, gridW: w, gridH: h,
+    grid,
+    gridW: w,
+    gridH: h,
     matchedKeyword: '抽象图案',
-    message: `AI 已生成 ${w}×${h} 抽象几何图案（基于"${seedText}"）`
+    message: `AI 已生成 ${w}×${h} 抽象几何图案（基于"${seedText}"）`,
   }
 }

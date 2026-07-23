@@ -39,10 +39,11 @@ function boxFilter(data, w, h, r) {
       const y2 = Math.min(h - 1, y + r)
       const x2 = Math.min(w - 1, x + r)
 
-      const sum = integral[(y2 + 1) * stride + (x2 + 1)]
-                - integral[y1 * stride + (x2 + 1)]
-                - integral[(y2 + 1) * stride + x1]
-                + integral[y1 * stride + x1]
+      const sum =
+        integral[(y2 + 1) * stride + (x2 + 1)] -
+        integral[y1 * stride + (x2 + 1)] -
+        integral[(y2 + 1) * stride + x1] +
+        integral[y1 * stride + x1]
 
       result[y * w + x] = sum / ((x2 - x1 + 1) * (y2 - y1 + 1))
     }
@@ -143,7 +144,7 @@ export function guidedFilter(pixels, w, h, r = 4, eps = 0.02) {
   const result = new Uint8Array(total * 3)
   for (let i = 0; i < total; i++) {
     const off = i * 3
-    result[off]     = Math.max(0, Math.min(255, Math.round(qR[i])))
+    result[off] = Math.max(0, Math.min(255, Math.round(qR[i])))
     result[off + 1] = Math.max(0, Math.min(255, Math.round(qG[i])))
     result[off + 2] = Math.max(0, Math.min(255, Math.round(qB[i])))
   }
@@ -183,28 +184,42 @@ export function bilateralFilter(pixels, w, h, d = 5, sigmaColor = 35, sigmaSpace
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const ci = (y * w + x) * 3
-      const cr = pixels[ci], cg = pixels[ci + 1], cb = pixels[ci + 2]
+      const cr = pixels[ci],
+        cg = pixels[ci + 1],
+        cb = pixels[ci + 2]
 
-      let sumR = 0, sumG = 0, sumB = 0, sumW = 0
-      const yMin = Math.max(0, y - radius), yMax = Math.min(h - 1, y + radius)
-      const xMin = Math.max(0, x - radius), xMax = Math.min(w - 1, x + radius)
+      let sumR = 0,
+        sumG = 0,
+        sumB = 0,
+        sumW = 0
+      const yMin = Math.max(0, y - radius),
+        yMax = Math.min(h - 1, y + radius)
+      const xMin = Math.max(0, x - radius),
+        xMax = Math.min(w - 1, x + radius)
 
       for (let ny = yMin; ny <= yMax; ny++) {
         for (let nx = xMin; nx <= xMax; nx++) {
           const ni = (ny * w + nx) * 3
-          const nr = pixels[ni], ng = pixels[ni + 1], nb = pixels[ni + 2]
+          const nr = pixels[ni],
+            ng = pixels[ni + 1],
+            nb = pixels[ni + 2]
 
           // 颜色权重
-          const dR = cr - nr, dG = cg - ng, dB = cb - nb
+          const dR = cr - nr,
+            dG = cg - ng,
+            dB = cb - nb
           const colorDist = dR * dR + dG * dG + dB * dB
           const colorWeight = Math.exp(-colorDist / twoSigmaColor2)
 
           const weight = spatialWeights[ny - y][nx - x] * colorWeight
-          sumR += nr * weight; sumG += ng * weight; sumB += nb * weight; sumW += weight
+          sumR += nr * weight
+          sumG += ng * weight
+          sumB += nb * weight
+          sumW += weight
         }
       }
 
-      result[ci]     = Math.round(sumR / sumW)
+      result[ci] = Math.round(sumR / sumW)
       result[ci + 1] = Math.round(sumG / sumW)
       result[ci + 2] = Math.round(sumB / sumW)
     }

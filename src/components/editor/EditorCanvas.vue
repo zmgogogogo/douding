@@ -3,67 +3,151 @@
     底层 globalGridCanvas — 全局坐标网格（无限延伸）
     顶层 mainCanvas — 珠子 + 参考图 + 范围网格 + 色号标签
   坐标原点 (0,0) = 有效拼豆范围左上角
-  ============================================ --><template>
+  ============================================ -->
+<template>
   <div
     ref="canvasWrap"
     class="absolute inset-0 overflow-hidden"
     :style="{ backgroundColor: 'var(--ui-bg-canvas)', touchAction: 'none' }"
-    @pointerdown="onPointerDown" @pointermove="onPointerMove"
-    @pointerup="onPointerUp" @pointerleave="onPointerUp" @pointercancel="onPointerUp"
-    @wheel.prevent="onWheel" @contextmenu.prevent
-    @keydown="onKeyDown" @keyup="onKeyUp" tabindex="0">
-
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="onPointerUp"
+    @pointerleave="onPointerUp"
+    @pointercancel="onPointerUp"
+    @wheel.prevent="onWheel"
+    @contextmenu.prevent
+    @keydown="onKeyDown"
+    @keyup="onKeyUp"
+    tabindex="0"
+  >
     <!-- === 底层：全局坐标网格层（无限延伸，覆盖整个可视区域）=== -->
-    <canvas ref="globalGridCanvas" class="absolute inset-0 pointer-events-none" style="z-index:0" />
+    <canvas
+      ref="globalGridCanvas"
+      class="absolute inset-0 pointer-events-none"
+      style="z-index: 0"
+    />
 
     <!-- === 顶层：白底 + 珠子 + 参考图 + 范围网格 + 色号 === -->
-    <canvas ref="mainCanvas" class="absolute" style="background:#ffffff;z-index:1" />
+    <canvas ref="mainCanvas" class="absolute" style="background: #ffffff; z-index: 1" />
 
     <!-- 画笔大小预览 — 网格点阵 -->
-    <div v-if="showBrushPreview" class="absolute pointer-events-none z-20"
-      :style="{ left: brushLeft + 'px', top: brushTop + 'px', width: brushSize * zoom + 'px', height: brushSize * zoom + 'px' }">
-      <div class="w-full h-full grid"
-        :style="{ gridTemplateColumns: `repeat(${brushSize}, 1fr)`, gridTemplateRows: `repeat(${brushSize}, 1fr)` }">
-        <div v-for="i in brushSize * brushSize" :key="i"
+    <div
+      v-if="showBrushPreview"
+      class="absolute pointer-events-none z-20"
+      :style="{
+        left: brushLeft + 'px',
+        top: brushTop + 'px',
+        width: brushSize * zoom + 'px',
+        height: brushSize * zoom + 'px',
+      }"
+    >
+      <div
+        class="w-full h-full grid"
+        :style="{
+          gridTemplateColumns: `repeat(${brushSize}, 1fr)`,
+          gridTemplateRows: `repeat(${brushSize}, 1fr)`,
+        }"
+      >
+        <div
+          v-for="i in brushSize * brushSize"
+          :key="i"
           class="border border-slate-400/25"
-          :style="{ background: curColor?.hex ? curColor.hex + '40' : 'transparent', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }" />
+          :style="{
+            background: curColor?.hex ? curColor.hex + '40' : 'transparent',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          }"
+        />
       </div>
     </div>
 
     <!-- 施工引导栏 -->
-    <EditorGuideBar v-if="guideMode"
+    <EditorGuideBar
+      v-if="guideMode"
       :currentColor="guideCurrentColor"
       :progress="guideProgress"
       :hasPrev="guideColorIdx > 0"
       :autoPlay="guideAutoPlay"
       :speed="guideSpeed"
-      @prev="$emit('guidePrev')" @next="$emit('guideNext')" @exit="$emit('toggleGuide')"
-      @toggleAutoPlay="$emit('toggleAutoPlay')" @setSpeed="v => $emit('setGuideSpeed', v)" />
+      @prev="$emit('guidePrev')"
+      @next="$emit('guideNext')"
+      @exit="$emit('toggleGuide')"
+      @toggleAutoPlay="$emit('toggleAutoPlay')"
+      @setSpeed="(v) => $emit('setGuideSpeed', v)"
+    />
 
     <!-- 参考图控制面板 -->
-    <div v-if="refOpacity > 0 && refPixels" class="absolute top-10 right-3 glass-panel rounded-2xl px-2.5 py-1.5 flex flex-col gap-1 z-10 select-none" style="min-width:150px">
+    <div
+      v-if="refOpacity > 0 && refPixels"
+      class="absolute top-10 right-3 glass-panel rounded-2xl px-2.5 py-1.5 flex flex-col gap-1 z-10 select-none"
+      style="min-width: 150px"
+    >
       <div class="flex items-center gap-1.5">
         <EyeIcon :size="11" class="text-[var(--ui-text-tertiary)]" />
-        <input type="range" min="0.05" max="0.7" step="0.05" :value="refOpacity"
+        <input
+          type="range"
+          min="0.05"
+          max="0.7"
+          step="0.05"
+          :value="refOpacity"
           class="w-12 h-1 accent-primary cursor-pointer"
-          @input="$emit('setRefOpacity', parseFloat($event.target.value))" />
-        <span class="text-[10px] font-mono text-[var(--ui-text-tertiary)] w-7">{{ Math.round(refOpacity*100) }}%</span>
-        <button class="text-[9px] text-slate-400 hover:text-primary ml-auto" @click="$emit('refReset')" title="重置参考图">↺</button>
+          @input="$emit('setRefOpacity', parseFloat($event.target.value))"
+        />
+        <span class="text-[10px] font-mono text-[var(--ui-text-tertiary)] w-7"
+          >{{ Math.round(refOpacity * 100) }}%</span
+        >
+        <button
+          class="text-[9px] text-slate-400 hover:text-primary ml-auto"
+          @click="$emit('refReset')"
+          title="重置参考图"
+        >
+          ↺
+        </button>
       </div>
       <div class="flex items-center gap-1">
         <span class="text-[8px] text-slate-400 w-7">缩放</span>
-        <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refZoomOut')">−</button>
-        <span class="text-[9px] font-mono w-7 text-center text-slate-500">{{ Math.round((refScale||1)*100) }}%</span>
-        <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refZoomIn')">+</button>
+        <button
+          class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200"
+          @click="$emit('refZoomOut')"
+        >
+          −
+        </button>
+        <span class="text-[9px] font-mono w-7 text-center text-slate-500"
+          >{{ Math.round((refScale || 1) * 100) }}%</span
+        >
+        <button
+          class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200"
+          @click="$emit('refZoomIn')"
+        >
+          +
+        </button>
         <div class="flex gap-0.5 ml-1">
-          <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refMove',0,-1)">↑</button>
-          <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refMove',-1,0)">←</button>
-          <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refMove',1,0)">→</button>
-          <button class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200" @click="$emit('refMove',0,1)">↓</button>
+          <button
+            class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200"
+            @click="$emit('refMove', 0, -1)"
+          >
+            ↑
+          </button>
+          <button
+            class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200"
+            @click="$emit('refMove', -1, 0)"
+          >
+            ←
+          </button>
+          <button
+            class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200"
+            @click="$emit('refMove', 1, 0)"
+          >
+            →
+          </button>
+          <button
+            class="w-5 h-5 rounded bg-slate-100 text-[10px] hover:bg-slate-200"
+            @click="$emit('refMove', 0, 1)"
+          >
+            ↓
+          </button>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -74,30 +158,66 @@ import { CanvasRenderer } from '@/utils/canvas.js'
 import EditorGuideBar from './EditorGuideBar.vue'
 
 const props = defineProps({
-  gridW: Number, gridH: Number, grid: Array,
-  zoom: Number, panX: Number, panY: Number,
-  tool: String, brushSize: Number, curColor: Object,
-  highlightHex: String, symmetryMode: String,
-  showGrid: { type: Boolean, default: true }, editMode: { type: Boolean, default: true }, guideMode: { type: Boolean, default: false },
-  refOpacity: Number, refPixels: Array, refW: Number, refH: Number,
-  refOffsetX: Number, refOffsetY: Number, refScale: Number,
-  guideCurrentColor: Object, guideProgress: Number, guideColorIdx: Number,
-  guideAutoPlay: Boolean, guideSpeed: Number,
+  gridW: Number,
+  gridH: Number,
+  grid: Array,
+  zoom: Number,
+  panX: Number,
+  panY: Number,
+  tool: String,
+  brushSize: Number,
+  curColor: Object,
+  highlightHex: String,
+  symmetryMode: String,
+  showGrid: { type: Boolean, default: true },
+  editMode: { type: Boolean, default: true },
+  guideMode: { type: Boolean, default: false },
+  refOpacity: Number,
+  refPixels: Array,
+  refW: Number,
+  refH: Number,
+  refOffsetX: Number,
+  refOffsetY: Number,
+  refScale: Number,
+  guideCurrentColor: Object,
+  guideProgress: Number,
+  guideColorIdx: Number,
+  guideAutoPlay: Boolean,
+  guideSpeed: Number,
   selectionRect: Object,
-  beadCount: Number, hasSelection: Boolean,
-  replaceSourceHex: String, focusDimHex: String,
+  beadCount: Number,
+  hasSelection: Boolean,
+  replaceSourceHex: String,
+  focusDimHex: String,
 })
 
 const emit = defineEmits([
-  'setCell', 'saveSnapshot', 'scheduleRender',
+  'setCell',
+  'saveSnapshot',
+  'scheduleRender',
   'expandGrid',
-  'update:panX', 'update:panY',
-  'setRefOpacity', 'refZoomIn', 'refZoomOut', 'refMove', 'refReset',
-  'toggleGuide', 'guidePrev', 'guideNext', 'toggleAutoPlay', 'setGuideSpeed',
-  'update:mouseCol', 'update:mouseRow', 'update:mouseColor',
-  'pickColor', 'floodFill',
-  'magicWand', 'lassoClick',
-  'shapePreview', 'drawShape', 'placeText',
+  'update:panX',
+  'update:panY',
+  'setRefOpacity',
+  'refZoomIn',
+  'refZoomOut',
+  'refMove',
+  'refReset',
+  'toggleGuide',
+  'guidePrev',
+  'guideNext',
+  'toggleAutoPlay',
+  'setGuideSpeed',
+  'update:mouseCol',
+  'update:mouseRow',
+  'update:mouseColor',
+  'pickColor',
+  'floodFill',
+  'magicWand',
+  'lassoClick',
+  'shapePreview',
+  'drawShape',
+  'placeText',
 ])
 
 const canvasWrap = ref(null)
@@ -112,11 +232,11 @@ const isDrawing = ref(false)
 const lastCell = ref(null)
 
 // 形状工具拖拽状态
-const shapeStart = ref(null)    // {r, c} 起始点
-const shapePreview = ref(null)  // [{r, c}, ...] 预览格子
+const shapeStart = ref(null) // {r, c} 起始点
+const shapePreview = ref(null) // [{r, c}, ...] 预览格子
 const strokeCells = new Set()
-const spaceHeld = ref(false)  // 空格键拖拽平移
-const shiftHeld = ref(false)  // Shift 画直线
+const spaceHeld = ref(false) // 空格键拖拽平移
+const shiftHeld = ref(false) // Shift 画直线
 const lineStartCell = ref(null) // 直线起点
 
 // ---- 原点锚定坐标计算 ----
@@ -142,8 +262,8 @@ function posToGrid(e) {
 }
 
 // ---- 画笔预览 ----
-const showBrushPreview = computed(() =>
-  (props.tool === 'brush' || props.tool === 'eraser') && !props.guideMode
+const showBrushPreview = computed(
+  () => (props.tool === 'brush' || props.tool === 'eraser') && !props.guideMode
 )
 const brushLeft = computed(() => {
   const { row, col } = posToGridFromMouse()
@@ -172,7 +292,7 @@ let crossTimer = null
 function ensureBrushInBounds(row, col, e) {
   const bs = props.brushSize
   if (row >= 0 && row + bs <= props.gridH && col >= 0 && col + bs <= props.gridW) {
-    return { row, col }  // 在边界内，无需扩展
+    return { row, col } // 在边界内，无需扩展
   }
   // 触发同步扩展（父组件 expandGridToFit + 调整 pan）
   emit('expandGrid', { row, col, brushSize: bs })
@@ -188,7 +308,13 @@ function onPointerDown(e) {
   if (spaceHeld.value || e.button === 1) {
     canvasWrap.value.setPointerCapture(e.pointerId)
     isDrawing.value = true
-    lastCell.value = { x: e.clientX, y: e.clientY, panX: props.panX, panY: props.panY, button: e.button }
+    lastCell.value = {
+      x: e.clientX,
+      y: e.clientY,
+      panX: props.panX,
+      panY: props.panY,
+      button: e.button,
+    }
     return
   }
 
@@ -275,15 +401,21 @@ function onPointerMove(e) {
   crossCol.value = col
   crossRow.value = row
 
-  if (crossTimer) { clearTimeout(crossTimer); crossTimer = null }
-  crossTimer = setTimeout(() => { crossCol.value = -1; crossRow.value = -1 }, 300)
+  if (crossTimer) {
+    clearTimeout(crossTimer)
+    crossTimer = null
+  }
+  crossTimer = setTimeout(() => {
+    crossCol.value = -1
+    crossRow.value = -1
+  }, 300)
 
   // 通知父组件鼠标坐标（给状态栏使用）
   emit('update:mouseCol', col)
   emit('update:mouseRow', row)
   // 获取当前位置颜色
-  const cellAtMouse = (row >= 0 && row < props.gridH && col >= 0 && col < props.gridW)
-    ? props.grid[row]?.[col] : null
+  const cellAtMouse =
+    row >= 0 && row < props.gridH && col >= 0 && col < props.gridW ? props.grid[row]?.[col] : null
   emit('update:mouseColor', cellAtMouse?.hex ? cellAtMouse : null)
 
   // —— 空格键/中键拖拽平移（最高优先级） ——
@@ -319,7 +451,10 @@ function onPointerMove(e) {
       }
       return
     }
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null }
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
+    }
     // 检测边界，必要时动态扩展画布
     const adjusted = ensureBrushInBounds(row, col, e)
     if (adjusted.row !== lastCell.value?.row || adjusted.col !== lastCell.value?.col) {
@@ -330,11 +465,20 @@ function onPointerMove(e) {
 }
 
 function onPointerUp(e) {
-  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null }
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
   if (isDrawing.value) {
     // 形状工具：结束拖拽，绘制形状
     if (['line', 'rect', 'circle'].includes(props.tool) && shapeStart.value) {
-      emit('drawShape', { tool: props.tool, r1: shapeStart.value.r, c1: shapeStart.value.c, r2: lastCell.value?.row ?? shapeStart.value.r, c2: lastCell.value?.col ?? shapeStart.value.c })
+      emit('drawShape', {
+        tool: props.tool,
+        r1: shapeStart.value.r,
+        c1: shapeStart.value.c,
+        r2: lastCell.value?.row ?? shapeStart.value.r,
+        c2: lastCell.value?.col ?? shapeStart.value.c,
+      })
       shapeStart.value = null
       shapePreview.value = null
       isDrawing.value = false
@@ -343,13 +487,18 @@ function onPointerUp(e) {
     if (strokeCells.size > 0) emit('saveSnapshot')
     isDrawing.value = false
     strokeCells.clear()
-    try { canvasWrap.value?.releasePointerCapture(e.pointerId) } catch (_) { /* noop */ }
+    try {
+      canvasWrap.value?.releasePointerCapture(e.pointerId)
+    } catch (_) {
+      /* noop */
+    }
   }
 }
 
 // 画直线（Shift 吸附）
 function drawLine(r1, c1, r2, c2) {
-  const dr = Math.abs(r2 - r1), dc = Math.abs(c2 - c1)
+  const dr = Math.abs(r2 - r1),
+    dc = Math.abs(c2 - c1)
   const steps = Math.max(dr, dc)
   for (let i = 0; i <= steps; i++) {
     const t = steps === 0 ? 0 : i / steps
@@ -380,7 +529,8 @@ function drawSingleCell(row, col) {
   strokeCells.add(key)
   for (let dr = 0; dr < props.brushSize; dr++) {
     for (let dc = 0; dc < props.brushSize; dc++) {
-      const tr = row + dr, tc = col + dc
+      const tr = row + dr,
+        tc = col + dc
       if (tr >= 0 && tr < props.gridH && tc >= 0 && tc < props.gridW) {
         emit('setCell', tr, tc, props.tool === 'eraser' ? null : props.curColor)
       }
@@ -414,7 +564,8 @@ function onWheel(e) {
 
 function onKeyDown(e) {
   if (e.code === 'Space') {
-    e.preventDefault(); spaceHeld.value = true
+    e.preventDefault()
+    spaceHeld.value = true
     canvasWrap.value.style.cursor = 'grab'
   }
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
@@ -424,9 +575,13 @@ function onKeyDown(e) {
 }
 
 function onKeyUp(e) {
-  if (e.code === 'Space') { spaceHeld.value = false; canvasWrap.value.style.cursor = '' }
+  if (e.code === 'Space') {
+    spaceHeld.value = false
+    canvasWrap.value.style.cursor = ''
+  }
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-    shiftHeld.value = false; lineStartCell.value = null
+    shiftHeld.value = false
+    lineStartCell.value = null
     canvasWrap.value.style.cursor = ''
   }
 }
@@ -435,7 +590,10 @@ function onKeyUp(e) {
 let rafId = null
 function scheduleRender() {
   if (rafId) return
-  rafId = requestAnimationFrame(() => { rafId = null; renderAll() })
+  rafId = requestAnimationFrame(() => {
+    rafId = null
+    renderAll()
+  })
 }
 
 // ---- 渲染 ----
@@ -449,11 +607,15 @@ function renderAll() {
     renderer.renderAll(props.grid, {
       highlightHex: props.highlightHex || null,
       dimHex: props.focusDimHex || null,
-      refPixels: props.refPixels, refW: props.refW, refH: props.refH,
+      refPixels: props.refPixels,
+      refW: props.refW,
+      refH: props.refH,
       refOpacity: props.refOpacity,
-      refOffsetX: props.refOffsetX || 0, refOffsetY: props.refOffsetY || 0,
+      refOffsetX: props.refOffsetX || 0,
+      refOffsetY: props.refOffsetY || 0,
       refScale: props.refScale || 1,
-      showGrid: props.showGrid, zoom: props.zoom
+      showGrid: props.showGrid,
+      zoom: props.zoom,
     })
   } catch (e) {
     console.error('Canvas renderAll 失败:', e)
@@ -494,7 +656,11 @@ function initCanvas() {
 }
 
 function _doInitCanvas() {
-  renderer = new CanvasRenderer(mainCanvas.value, { gridW: props.gridW, gridH: props.gridH, zoom: props.zoom })
+  renderer = new CanvasRenderer(mainCanvas.value, {
+    gridW: props.gridW,
+    gridH: props.gridH,
+    zoom: props.zoom,
+  })
   renderer.resize(props.gridW, props.gridH, props.zoom)
   if (globalGridCanvas.value) {
     renderer.setGlobalGridCanvas(globalGridCanvas.value)
@@ -503,7 +669,11 @@ function _doInitCanvas() {
 }
 
 onMounted(() => {
-  nextTick(() => { initCanvas(); renderAll(); positionCanvas() })
+  nextTick(() => {
+    initCanvas()
+    renderAll()
+    positionCanvas()
+  })
 })
 
 watch([() => props.gridW, () => props.gridH], ([w, h]) => {
@@ -515,24 +685,44 @@ watch([() => props.gridW, () => props.gridH], ([w, h]) => {
 })
 
 // 缩放变化时需重设 canvas 尺寸（1:1 渲染要求）
-watch(() => props.zoom, (z) => {
-  nextTick(() => {
-    renderer?.resize(props.gridW, props.gridH, z)
-    positionCanvas()
-    renderAll()
-  })
+watch(
+  () => props.zoom,
+  (z) => {
+    nextTick(() => {
+      renderer?.resize(props.gridW, props.gridH, z)
+      positionCanvas()
+      renderAll()
+    })
+  }
+)
+
+watch([() => props.panX, () => props.panY], () => {
+  positionCanvas()
 })
 
-watch([() => props.panX, () => props.panY], () => { positionCanvas() })
-
 // 网格开关变化时重绘全局网格层
-watch(() => props.showGrid, () => { if (props.showGrid) renderGlobalGrid() })
+watch(
+  () => props.showGrid,
+  () => {
+    if (props.showGrid) renderGlobalGrid()
+  }
+)
 
-watch([
-  () => props.grid, () => props.highlightHex, () => props.showGrid,
-  () => props.refOpacity, () => props.refPixels,
-  () => props.guideMode, () => props.guideCurrentColor
-], () => { scheduleRender() }, { deep: true })
+watch(
+  [
+    () => props.grid,
+    () => props.highlightHex,
+    () => props.showGrid,
+    () => props.refOpacity,
+    () => props.refPixels,
+    () => props.guideMode,
+    () => props.guideCurrentColor,
+  ],
+  () => {
+    scheduleRender()
+  },
+  { deep: true }
+)
 
 defineExpose({ scheduleRender, renderAll, posToGrid, initCanvas, positionCanvas, canvasWrap })
 </script>

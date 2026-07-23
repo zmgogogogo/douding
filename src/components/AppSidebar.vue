@@ -16,24 +16,28 @@
     class="sidebar"
     :class="{
       'translate-x-0': mobileOpen,
-      '-translate-x-full md:translate-x-0': !mobileOpen
+      '-translate-x-full md:translate-x-0': !mobileOpen,
     }"
   >
     <!-- ===== 第一区块：顶部用户信息 ===== -->
     <div class="user-section" @click="goProfile">
       <!-- 圆形头像 -->
       <div class="avatar-circle">
-        <img v-if="auth.isLoggedIn.value && auth.user.value?.avatar"
+        <img
+          v-if="auth.isLoggedIn.value && auth.user.value?.avatar"
           :src="auth.user.value.avatar"
-          class="w-full h-full object-cover rounded-full" />
+          class="w-full h-full object-cover rounded-full"
+        />
         <UserIcon v-else :size="28" class="text-slate-300" />
       </div>
 
       <!-- 用户名 -->
       <div class="username">
-        {{ auth.isLoggedIn.value
-          ? (auth.user.value?.nickname || auth.user.value?.username || '豆友')
-          : '游客' }}
+        {{
+          auth.isLoggedIn.value
+            ? auth.user.value?.nickname || auth.user.value?.username || '豆友'
+            : '游客'
+        }}
       </div>
 
       <!-- 辅助提示小字 -->
@@ -44,29 +48,41 @@
 
     <!-- ===== 第二区块：中部功能导航菜单 ===== -->
     <nav class="nav-section">
-      <router-link to="/" class="menu-item" :class="$route.path === '/' ? 'active' : ''"
-        @click="mobileOpen = false">
+      <router-link
+        to="/"
+        class="menu-item"
+        :class="$route.path === '/' ? 'active' : ''"
+        @click="mobileOpen = false"
+      >
         <HomeIcon :size="20" />
         <span>首页</span>
       </router-link>
 
-      <router-link to="/editor" class="menu-item"
+      <router-link
+        to="/editor"
+        class="menu-item"
         :class="$route.path.startsWith('/editor') ? 'active' : ''"
-        @click="mobileOpen = false">
+        @click="mobileOpen = false"
+      >
         <PenIcon :size="20" />
         <span>创作</span>
       </router-link>
 
-      <router-link to="/warehouse" class="menu-item"
+      <router-link
+        to="/warehouse"
+        class="menu-item"
         :class="$route.path.startsWith('/warehouse') ? 'active' : ''"
-        @click="mobileOpen = false">
+        @click="mobileOpen = false"
+      >
         <FolderIcon :size="20" />
         <span>仓库</span>
       </router-link>
 
-      <a class="menu-item"
+      <a
+        class="menu-item"
         :class="$route.path.startsWith('/user/') ? 'active' : ''"
-        @click="goProfile">
+        @click="goProfile"
+      >
         <UserIcon :size="20" />
         <span>我的</span>
       </a>
@@ -84,9 +100,7 @@
 
   <!-- 移动端汉堡按钮 -->
   <button
-    class="fixed bottom-6 left-4 z-50 w-11 h-11 bg-primary text-white rounded-full shadow-lg
-           flex items-center justify-center md:hidden
-           hover:bg-primary-dark transition-colors active:scale-95"
+    class="fixed bottom-6 left-4 z-50 w-11 h-11 bg-primary text-white rounded-full shadow-lg flex items-center justify-center md:hidden hover:bg-primary-dark transition-colors active:scale-95"
     @click="mobileOpen = !mobileOpen"
   >
     <MenuIcon v-if="!mobileOpen" :size="22" />
@@ -97,10 +111,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  HomeIcon, PenIcon, FolderIcon, UserIcon,
-  MenuIcon, XIcon
-} from 'lucide-vue-next'
+import { HomeIcon, PenIcon, FolderIcon, UserIcon, MenuIcon, XIcon } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth.js'
 import { useToast } from '@/composables/useToast.js'
 
@@ -156,11 +167,15 @@ function goProfile() {
          text-slate-500 transition-all duration-150 cursor-pointer w-full
          select-none;
 }
-.menu-item:hover { @apply bg-slate-50 text-slate-700; }
+.menu-item:hover {
+  @apply bg-slate-50 text-slate-700;
+}
 .menu-item.active {
   @apply bg-green-50 text-green-600 font-semibold;
 }
-.menu-item.active:hover { @apply bg-green-100 text-green-600; }
+.menu-item.active:hover {
+  @apply bg-green-100 text-green-600;
+}
 .logout-btn {
   @apply text-slate-400 hover:text-red-500;
 }

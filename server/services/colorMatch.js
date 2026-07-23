@@ -12,25 +12,33 @@ import { rgbToLab, rgbToOklab, deltaE2000, oklabDist } from '../utils/colorSpace
 export function loadBeadColors(brand) {
   let colors
   if (brand && brand !== '全部') {
-    colors = db.prepare(`
+    colors = db
+      .prepare(
+        `
       SELECT c.id, c.name, c.hex, b.name as brand
       FROM bead_colors c
       JOIN bead_series s ON c.series_id = s.id
       JOIN bead_brands b ON s.brand_id = b.id
       WHERE b.name = ?
       ORDER BY c.id
-    `).all(brand)
+    `
+      )
+      .all(brand)
   } else {
-    colors = db.prepare(`
+    colors = db
+      .prepare(
+        `
       SELECT c.id, c.name, c.hex, b.name as brand
       FROM bead_colors c
       JOIN bead_series s ON c.series_id = s.id
       JOIN bead_brands b ON s.brand_id = b.id
       ORDER BY c.id
-    `).all()
+    `
+      )
+      .all()
   }
 
-  return colors.map(c => {
+  return colors.map((c) => {
     const hex = c.hex.replace('#', '')
     const r = parseInt(hex.substring(0, 2), 16)
     const g = parseInt(hex.substring(2, 4), 16)
@@ -38,7 +46,7 @@ export function loadBeadColors(brand) {
     return {
       ...c,
       lab: rgbToLab(r, g, b),
-      oklab: rgbToOklab(r, g, b)
+      oklab: rgbToOklab(r, g, b),
     }
   })
 }
@@ -50,10 +58,14 @@ export function loadBeadColors(brand) {
  * @returns {object} 最佳匹配的珠子颜色
  */
 export function findBestMatchCIEDE2000(pixelLab, beadColors) {
-  let best = null, bestDist = Infinity
+  let best = null,
+    bestDist = Infinity
   for (const c of beadColors) {
     const dist = deltaE2000(pixelLab, c.lab)
-    if (dist < bestDist) { bestDist = dist; best = c }
+    if (dist < bestDist) {
+      bestDist = dist
+      best = c
+    }
   }
   return best
 }
@@ -65,10 +77,14 @@ export function findBestMatchCIEDE2000(pixelLab, beadColors) {
  * @returns {object} 最佳匹配的珠子颜色
  */
 export function findBestMatchOklab(pixelOklab, beadColors) {
-  let best = null, bestDist = Infinity
+  let best = null,
+    bestDist = Infinity
   for (const c of beadColors) {
     const dist = oklabDist(pixelOklab, c.oklab)
-    if (dist < bestDist) { bestDist = dist; best = c }
+    if (dist < bestDist) {
+      bestDist = dist
+      best = c
+    }
   }
   return best
 }
@@ -88,13 +104,17 @@ export function findCrossBrandAlternative(hex, targetBrand, allColors = null) {
   const lab = rgbToLab(r, g, b)
 
   const targetColors = allColors
-    ? allColors.filter(c => c.brand === targetBrand)
+    ? allColors.filter((c) => c.brand === targetBrand)
     : loadBeadColors(targetBrand)
 
-  let best = null, bestDist = Infinity
+  let best = null,
+    bestDist = Infinity
   for (const c of targetColors) {
     const dist = deltaE2000(lab, c.lab)
-    if (dist < bestDist) { bestDist = dist; best = c }
+    if (dist < bestDist) {
+      bestDist = dist
+      best = c
+    }
   }
   return { color: best, deltaE: bestDist }
 }
@@ -105,26 +125,30 @@ export function findCrossBrandAlternative(hex, targetBrand, allColors = null) {
  */
 export function buildCrossBrandMatrix() {
   const allColors = loadBeadColors()
-  const brands = [...new Set(allColors.map(c => c.brand))]
+  const brands = [...new Set(allColors.map((c) => c.brand))]
   const matrix = {}
 
   for (const srcBrand of brands) {
     matrix[srcBrand] = {}
-    const srcColors = allColors.filter(c => c.brand === srcBrand)
+    const srcColors = allColors.filter((c) => c.brand === srcBrand)
     for (const tgtBrand of brands) {
       if (srcBrand === tgtBrand) continue
-      const tgtColors = allColors.filter(c => c.brand === tgtBrand)
+      const tgtColors = allColors.filter((c) => c.brand === tgtBrand)
       const mappings = []
       for (const sc of srcColors) {
-        let best = null, bestDist = Infinity
+        let best = null,
+          bestDist = Infinity
         for (const tc of tgtColors) {
           const dist = deltaE2000(sc.lab, tc.lab)
-          if (dist < bestDist) { bestDist = dist; best = tc }
+          if (dist < bestDist) {
+            bestDist = dist
+            best = tc
+          }
         }
         mappings.push({
           source: { name: sc.name, hex: sc.hex },
           target: { name: best.name, hex: best.hex },
-          deltaE: Math.round(bestDist * 100) / 100
+          deltaE: Math.round(bestDist * 100) / 100,
         })
       }
       matrix[srcBrand][tgtBrand] = mappings

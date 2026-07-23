@@ -59,10 +59,13 @@ router.get('/challenge/today', authOptional, (req, res) => {
       ...theme,
       date: new Date().toISOString().slice(0, 10),
       // 今日已有投稿数
-      submissionCount: db.prepare(
-        `SELECT COUNT(*) as c FROM designs WHERE is_public = 1 AND DATE(created_at) = DATE('now')`
-      ).get()?.c || 0
-    }
+      submissionCount:
+        db
+          .prepare(
+            `SELECT COUNT(*) as c FROM designs WHERE is_public = 1 AND DATE(created_at) = DATE('now')`
+          )
+          .get()?.c || 0,
+    },
   })
 })
 

@@ -120,7 +120,9 @@ export class RefOverlay {
   }
 
   /** @param {boolean} v */
-  setVisible(v) { this.container.visible = v }
+  setVisible(v) {
+    this.container.visible = v
+  }
 
   destroy() {
     if (this.#sprite?.texture) {

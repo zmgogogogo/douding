@@ -1,23 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0058BC">
-  <meta name="description" content="豆丁 - 在线拼豆图纸设计工具">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="manifest" href="/manifest.json">
-  <title>豆丁 - 在线拼豆图纸工具</title>
-</head>
-<body class="bg-slate-50 text-slate-900 antialiased">
-  <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {})
-    }
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#0058BC" />
+    <meta name="description" content="豆丁 - 在线拼豆图纸设计工具" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>豆丁 - 在线拼豆图纸工具</title>
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased">
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {})
+      }
+    </script>
+  </body>
 </html>

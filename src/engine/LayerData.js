@@ -47,7 +47,7 @@ export class LayerData {
    */
   set(x, y, index) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) return
-    this.data[y * this.width + x] = index & 0xFF
+    this.data[y * this.width + x] = index & 0xff
   }
 
   /**
@@ -55,7 +55,7 @@ export class LayerData {
    * @param {number} index 颜色索引，0 = 清空
    */
   fill(index) {
-    this.data.fill(index & 0xFF)
+    this.data.fill(index & 0xff)
   }
 
   // ==================== 区域操作 ====================
@@ -165,7 +165,10 @@ export class LayerData {
    * @returns {{x:number, y:number, w:number, h:number}} 裁剪后的包围盒
    */
   autoFit(padding = 4) {
-    let minX = this.width, minY = this.height, maxX = -1, maxY = -1
+    let minX = this.width,
+      minY = this.height,
+      maxX = -1,
+      maxY = -1
 
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {

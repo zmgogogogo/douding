@@ -10,7 +10,8 @@
  * @returns {{hex:string}|null}
  */
 export function findNearestColor(pixel, beadColors) {
-  let best = null, bestDist = Infinity
+  let best = null,
+    bestDist = Infinity
   for (const c of beadColors) {
     const hex = c.hex.replace('#', '')
     const cr = parseInt(hex.substring(0, 2), 16)
@@ -20,7 +21,10 @@ export function findNearestColor(pixel, beadColors) {
     const dg = pixel.g - cg
     const db = pixel.b - cb
     const dist = dr * dr * 2 + dg * dg * 3 + db * db
-    if (dist < bestDist) { bestDist = dist; best = c }
+    if (dist < bestDist) {
+      bestDist = dist
+      best = c
+    }
   }
   return best
 }

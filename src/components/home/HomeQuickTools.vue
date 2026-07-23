@@ -14,13 +14,15 @@
     <!-- 2行4列宫格 -->
     <div class="grid grid-cols-4 gap-x-2 gap-y-3">
       <div
-        v-for="tool in tools" :key="tool.name"
+        v-for="tool in tools"
+        :key="tool.name"
         class="flex flex-col items-center gap-1 cursor-pointer group py-1"
         @click="onClick(tool)"
       >
         <!-- 图标 -->
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center
-                    bg-slate-100 group-hover:bg-slate-200/80 transition-colors">
+        <div
+          class="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 group-hover:bg-slate-200/80 transition-colors"
+        >
           <component :is="tool.icon" :size="20" class="text-slate-600" />
         </div>
         <!-- 文字 -->
@@ -42,7 +44,7 @@ import {
   CalculatorIcon,
   BookOpenIcon,
   PrinterIcon,
-  MoreHorizontalIcon
+  MoreHorizontalIcon,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -55,7 +57,7 @@ const tools = [
   { name: '尺寸计算', icon: CalculatorIcon, route: '/calculator' },
   { name: '制作教程', icon: BookOpenIcon, route: '/tutorials' },
   { name: '图纸打印', icon: PrinterIcon, route: '/print' },
-  { name: '更多工具', icon: MoreHorizontalIcon, route: '/tools' }
+  { name: '更多工具', icon: MoreHorizontalIcon, route: '/tools' },
 ]
 
 function onClick(tool) {
