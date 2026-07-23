@@ -472,7 +472,7 @@ const previewOrigCanvas = ref(null)
 const showGridPreview = ref(false)
 
 // 后处理参数
-const denoiseLevel = ref(2) // 杂点去除: 0关/1轻/2中/3强
+const denoiseLevel = ref(0) // 杂点去除: 0关/1轻/2中/3强（默认关闭）
 const colorLimit = ref(16) // 颜色总数 4-32
 const presetSizes = [40, 80, 120, 200]
 
