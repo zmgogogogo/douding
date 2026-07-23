@@ -9,3 +9,4 @@ public/uploads/*
 .env
 .cache/
 server-python/.venv/
+__pycache__/
