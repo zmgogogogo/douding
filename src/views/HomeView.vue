@@ -1,27 +1,13 @@
 <!-- ============================================
-  HomeView.vue — 首页 Feed 流主页面
-  文档：顶部导航 → Banner → 核心功能 → 快捷工具
-       → 分类标签 → 双列瀑布流 → 悬浮按钮
-============================================ -->
+  HomeView.vue — 首页作品展示
+  ============================================ -->
 <template>
   <div class="home-scroll-container overflow-y-auto h-full scrollbar-hide">
-    <!-- 3.1 顶部导航栏 -->
+    <!-- 顶部导航栏 -->
     <HomeTopNav />
 
-    <!-- 3.3 Banner 轮播区 -->
-    <HomeBanner :banners="banners" />
-
-    <!-- 3.4 核心功能入口（四大金刚） -->
-    <HomeCoreTools />
-
-    <!-- 3.5 快捷工具宫格 -->
-    <HomeQuickTools />
-
-    <!-- 3.6 分类标签栏（sticky 吸顶，在导航栏下方） -->
-    <HomeCategoryTabs :activeTab="activeTab" @change="changeTab" />
-
-    <!-- ============ 内容区 ============ -->
-    <div class="px-4 pb-20">
+    <!-- ============ 作品区 ============ -->
+    <div class="px-4 pb-20 pt-2">
       <!-- 骨架屏加载 -->
       <div v-if="loading" class="columns-2 gap-3">
         <div
@@ -57,7 +43,7 @@
         class="flex flex-col items-center justify-center py-20 gap-3"
       >
         <PackageIcon :size="40" class="text-slate-200" />
-        <p class="text-sm text-slate-400">暂无内容，去看看其他分类吧</p>
+        <p class="text-sm text-slate-400">暂无作品，快去创作吧</p>
         <button
           class="px-5 py-2 bg-primary text-white rounded-full text-sm font-semibold active:scale-95 transition-all"
           @click="$router.push('/editor')"
@@ -74,7 +60,6 @@
           :item="item"
           @click="goDetail(item)"
           @like="handleLike(item)"
-          @join="handleJoin(item)"
         />
       </div>
 
@@ -84,7 +69,7 @@
           <LoaderIcon :size="18" class="animate-spin" />加载中...
         </div>
         <div v-else-if="!hasMore && items.length > 0" class="text-[11px] text-slate-300 py-4">
-          — 没有更多内容了 —
+          — 没有更多了 —
         </div>
         <div
           v-else-if="loadError"
@@ -98,9 +83,6 @@
       <!-- 滚动哨兵 -->
       <div ref="sentinelRef" class="h-1" />
     </div>
-
-    <!-- 3.9 悬浮创作按钮 -->
-    <HomeFAB />
   </div>
 </template>
 
@@ -111,22 +93,10 @@ import { LoaderIcon, PackageIcon } from 'lucide-vue-next'
 import API from '@/api/index.js'
 
 import HomeTopNav from '@/components/home/HomeTopNav.vue'
-import HomeBanner from '@/components/home/HomeBanner.vue'
-import HomeCoreTools from '@/components/home/HomeCoreTools.vue'
-import HomeQuickTools from '@/components/home/HomeQuickTools.vue'
-import HomeCategoryTabs from '@/components/home/HomeCategoryTabs.vue'
 import HomeFeedCard from '@/components/home/HomeFeedCard.vue'
-import HomeFAB from '@/components/home/HomeFAB.vue'
 
 const router = useRouter()
 
-// ====== Banner（首版硬编码，后续接后台） ======
-const banners = ref([
-  { bgColor: '#22c55e', title: '欢迎来到豆丁', subtitle: '开始你的拼豆创作之旅', link: '/editor' },
-])
-
-// ====== 分类与数据 ======
-const activeTab = ref('recommend')
 const items = ref([])
 const loading = ref(true)
 const loadingMore = ref(false)
@@ -135,12 +105,6 @@ const error = ref('')
 const hasMore = ref(true)
 const page = ref(1)
 const sentinelRef = ref(null)
-
-function changeTab(tab) {
-  if (activeTab.value === tab) return
-  activeTab.value = tab
-  fetchData(true)
-}
 
 async function refresh() {
   await fetchData(true)
@@ -157,12 +121,7 @@ async function fetchData(reset = false) {
   }
 
   try {
-    // 首页使用 /api/home/content/list 分页接口
-    const params = new URLSearchParams({
-      category: activeTab.value,
-      page: String(page.value),
-      limit: '20',
-    })
+    const params = new URLSearchParams({ page: String(page.value), limit: '20' })
     const res = await API.get(`/api/home/content/list?${params}`, false)
     const list = (res.data.list || []).map((d) => ({
       ...d,
@@ -190,13 +149,11 @@ function loadMore() {
   fetchData(false)
 }
 
-// ====== 卡片事件 ======
 function goDetail(item) {
   router.push('/detail/' + item.id)
 }
 
 function handleLike(item) {
-  // 点赞/取消点赞
   API.post(`/api/designs/${item.id}/like`)
     .then((res) => {
       if (res.code === 200) {
@@ -207,12 +164,7 @@ function handleLike(item) {
     .catch(() => {})
 }
 
-function handleJoin(item) {
-  // 参与活动
-  router.push('/detail/' + item.id)
-}
-
-// ====== 无限滚动 ======
+// 无限滚动
 let observer = null
 function setupObserver() {
   if (observer) observer.disconnect()
@@ -235,6 +187,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  observer?.disconnect()
+  if (observer) observer.disconnect()
 })
 </script>
