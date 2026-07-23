@@ -164,10 +164,7 @@
                     ? 'bg-primary/10 text-primary ring-1 ring-primary'
                     : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                 "
-                @click="
-                  targetW = ps
-                  targetH = ps
-                "
+                @click="targetW = ps; targetH = ps"
               >
                 {{ ps }}px
               </button>
