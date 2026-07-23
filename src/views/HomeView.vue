@@ -9,7 +9,7 @@
     <!-- ============ 作品区 ============ -->
     <div class="px-4 pb-20 pt-2">
       <!-- 骨架屏加载 -->
-      <div v-if="loading" class="columns-2 gap-3">
+      <div v-if="loading" class="columns-2 sm:columns-3 lg:columns-4 gap-2">
         <div
           v-for="i in 6"
           :key="i"
@@ -53,7 +53,7 @@
       </div>
 
       <!-- 双列瀑布流 -->
-      <div v-else class="columns-2 gap-3">
+      <div v-else class="columns-2 sm:columns-3 lg:columns-4 gap-2">
         <HomeFeedCard
           v-for="item in items"
           :key="item.id"
