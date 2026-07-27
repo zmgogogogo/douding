@@ -87,25 +87,6 @@
             <ChevronRightIcon :size="16" class="text-slate-300" />
           </div>
         </div>
-        <div class="tool-card" @click="$router.push('/ocr')">
-          <div
-            class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style="
-              background: linear-gradient(
-                135deg,
-                rgba(59, 130, 246, 0.15),
-                rgba(59, 130, 246, 0.04)
-              );
-            "
-          >
-            <ScanTextIcon :size="20" class="text-blue-600" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-bold text-sm text-slate-800">OCR 识别图纸</div>
-            <div class="text-[11px] text-slate-400 mt-0.5">拍照或上传图纸自动识别颜色符号</div>
-          </div>
-          <ChevronRightIcon :size="16" class="text-slate-300" />
-        </div>
       </div>
 
       <!-- 最近编辑 -->
@@ -527,7 +508,6 @@ import {
   ArrowRightIcon,
   BookIcon,
   CameraIcon,
-  ScanTextIcon,
   ChevronRightIcon,
   ClockIcon,
 } from 'lucide-vue-next'
