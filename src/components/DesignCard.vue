@@ -20,6 +20,17 @@
         loading="lazy"
       />
       <div v-else class="text-slate-300 text-4xl">🧩</div>
+
+      <!-- 发布状态标签 -->
+      <span
+        v-if="showStatus"
+        class="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-medium backdrop-blur-sm"
+        :class="design.isPublic
+          ? 'bg-emerald-500/90 text-white'
+          : 'bg-slate-700/60 text-white/80'"
+      >
+        {{ design.isPublic ? '已发布' : '草稿' }}
+      </span>
     </div>
     <!-- 信息区 -->
     <div class="p-2.5 pb-3">
@@ -32,6 +43,14 @@
         <span>{{ design.beadCount || 0 }}颗</span>
         <span>❤ {{ design.likesCount || 0 }}</span>
       </div>
+      <div class="mt-2">
+        <button
+          class="w-full h-7 rounded-lg text-[11px] font-medium bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100 active:scale-95 transition-all"
+          @click.stop="$router.push('/make/' + design.id)"
+        >
+          开始制作
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -42,6 +61,7 @@ import { ref, onMounted, nextTick, watch } from 'vue'
 const props = defineProps({
   design: { type: Object, required: true },
   authorName: { type: String, default: '' },
+  showStatus: { type: Boolean, default: false },
 })
 
 const thumbCanvas = ref(null)

@@ -1,16 +1,20 @@
 <!-- ============================================
-  App.vue — 根组件：全高侧边栏 + 主内容区
+  App.vue — 根组件：按路由类型切换布局
 ============================================ -->
 <template>
-  <div class="flex h-full bg-slate-50">
-    <!-- 左侧导航菜单（全高，Logo 在顶部） -->
-    <AppSidebar />
+  <!-- 管理端路由：完全独立布局，不包裹任何容器 -->
+  <div v-if="isAdminRoute" class="admin-root">
+    <router-view />
+    <AppToast :message="toastMessage" :visible="toastVisible" />
+    <AppDialog ref="dialogRef" />
+  </div>
 
-    <!-- 右侧主内容区 -->
+  <!-- 用户端路由：保持现有侧边栏布局 -->
+  <div v-else class="flex h-full bg-slate-50">
+    <AppSidebar />
     <main class="flex-1 min-w-0 overflow-hidden">
       <router-view />
     </main>
-
     <AppToast :message="toastMessage" :visible="toastVisible" />
     <AppDialog ref="dialogRef" />
 
@@ -34,12 +38,18 @@
 </template>
 
 <script setup>
-import { ref, provide, onMounted, onUnmounted } from 'vue'
+import { ref, computed, provide, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import AppSidebar from './components/AppSidebar.vue'
 import AppToast from './components/AppToast.vue'
 import AppDialog from './components/AppDialog.vue'
 import { useToast } from './composables/useToast.js'
 import { DIALOG_KEY } from './composables/useDialog.js'
+
+const route = useRoute()
+
+// 判断是否为管理端路由
+const isAdminRoute = computed(() => route.path.startsWith('/admin'))
 
 const { message: toastMessage, visible: toastVisible } = useToast()
 

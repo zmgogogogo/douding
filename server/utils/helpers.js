@@ -30,6 +30,8 @@ export function formatDesign(d) {
     gridData: safeParseJSON(d.grid_data),
     thumbnail: d.thumbnail,
     isPublic: !!d.is_public,
+    status: d.status !== undefined ? d.status : 1,
+    publishedAt: d.published_at || null,
     beadCount: d.bead_count || 0,
     colorCount: d.color_count || 0,
     likesCount: d.likes_count || 0,

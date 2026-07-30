@@ -42,12 +42,34 @@
             >
               {{ design.liked ? '❤️ 已赞' : '🤍 点赞' }}
             </button>
+            <button
+              class="h-9 px-4 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-all duration-150 active:scale-95"
+              @click="$router.push('/make/' + design.id)"
+            >
+              🔨 开始制作
+            </button>
             <template v-if="auth.user?.value?.id === design.userId">
               <button
                 class="h-9 px-4 rounded-full text-xs font-medium border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all duration-150"
                 @click="$router.push(`/editor/${design.id}`)"
               >
                 ✏️ 编辑
+              </button>
+              <!-- 发布按钮（仅未发布时显示） -->
+              <button
+                v-if="!design.isPublic"
+                class="h-9 px-4 rounded-full text-xs font-medium bg-primary text-white border border-transparent hover:bg-primary/90 transition-all duration-150"
+                @click="handlePublish"
+              >
+                🚀 发布
+              </button>
+              <!-- 取消发布按钮（仅已发布时显示） -->
+              <button
+                v-if="design.isPublic"
+                class="h-9 px-4 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 transition-all duration-150"
+                @click="handleUnpublish"
+              >
+                👁 取消发布
               </button>
               <button
                 class="h-9 px-4 rounded-full text-xs font-medium bg-red-50 text-red-500 border border-transparent hover:bg-red-100 transition-all duration-150"
@@ -168,6 +190,32 @@ async function handleDelete() {
     await API.del('/api/designs/' + design.value.id)
     toast.show('已删除')
     router.push('/warehouse')
+  } catch (e) {
+    toast.show(e.message)
+  }
+}
+
+async function handlePublish() {
+  try {
+    const res = await API.put(`/api/designs/${design.value.id}/publish`, {}, true)
+    if (res.code === 200) {
+      design.value.isPublic = true
+      design.value.publishedAt = res.data.publishedAt
+      toast.show('发布成功！作品已展示在首页')
+    }
+  } catch (e) {
+    toast.show(e.message)
+  }
+}
+
+async function handleUnpublish() {
+  if (!(await dialog.confirm('取消发布后，作品将从首页和发现页隐藏。确定吗？', '取消发布'))) return
+  try {
+    const res = await API.put(`/api/designs/${design.value.id}/unpublish`, {}, true)
+    if (res.code === 200) {
+      design.value.isPublic = false
+      toast.show('已取消发布')
+    }
   } catch (e) {
     toast.show(e.message)
   }

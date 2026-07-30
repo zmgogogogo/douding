@@ -202,7 +202,7 @@
                 v-model.number="colorLimit"
                 type="range"
                 min="4"
-                max="32"
+                max="60"
                 class="w-full h-1.5 rounded-full appearance-none bg-slate-200 accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-sm"
               />
             </div>
@@ -473,7 +473,7 @@ const showGridPreview = ref(false)
 
 // 后处理参数
 const denoiseLevel = ref(0) // 杂点去除: 0关/1轻/2中/3强（默认关闭）
-const colorLimit = ref(16) // 颜色总数 4-32
+const colorLimit = ref(16) // 颜色总数 4-60
 const presetSizes = [40, 80, 120, 200]
 
 const cropStyle = computed(() => cropCtrl.cropStyle.value)

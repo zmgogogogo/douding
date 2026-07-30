@@ -244,4 +244,191 @@ export const MIGRATIONS = [
       ALTER TABLE user_bead_inventory ADD COLUMN location TEXT DEFAULT '';
     `,
   },
+
+  // ===== v5: 管理后台系统表 =====
+  {
+    version: 5,
+    name: '管理后台系统表（管理员/角色/操作日志/Banner/系统配置）',
+    sql: `
+      CREATE TABLE IF NOT EXISTS sys_admins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        nickname TEXT,
+        avatar TEXT,
+        role_id INTEGER DEFAULT 0,
+        status INTEGER DEFAULT 1,
+        last_login_at TEXT,
+        last_login_ip TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS sys_roles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        slug TEXT UNIQUE NOT NULL,
+        description TEXT DEFAULT '',
+        permissions TEXT DEFAULT '[]',
+        status INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS sys_operation_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admin_id INTEGER,
+        admin_name TEXT,
+        module TEXT NOT NULL,
+        action TEXT NOT NULL,
+        target_type TEXT,
+        target_id INTEGER,
+        detail TEXT DEFAULT '',
+        ip TEXT,
+        user_agent TEXT,
+        status INTEGER DEFAULT 1,
+        error_msg TEXT,
+        duration_ms INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_oplog_admin ON sys_operation_logs(admin_id);
+      CREATE INDEX IF NOT EXISTS idx_oplog_module ON sys_operation_logs(module);
+      CREATE INDEX IF NOT EXISTS idx_oplog_created ON sys_operation_logs(created_at);
+
+      CREATE TABLE IF NOT EXISTS sys_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        config_key TEXT UNIQUE NOT NULL,
+        config_value TEXT,
+        description TEXT DEFAULT '',
+        updated_by TEXT DEFAULT '',
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS banners (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        subtitle TEXT DEFAULT '',
+        image_url TEXT,
+        bg_color TEXT DEFAULT '#22c55e',
+        link_type TEXT DEFAULT 'route',
+        link_value TEXT DEFAULT '',
+        sort_order INTEGER DEFAULT 0,
+        status INTEGER DEFAULT 1,
+        start_time TEXT,
+        end_time TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+
+      -- 增强现有 users 表
+      ALTER TABLE users ADD COLUMN status INTEGER DEFAULT 1;
+      ALTER TABLE users ADD COLUMN ban_reason TEXT DEFAULT '';
+      ALTER TABLE users ADD COLUMN banned_at TEXT;
+
+      -- 增强现有 designs 表
+      ALTER TABLE designs ADD COLUMN status INTEGER DEFAULT 1;
+      ALTER TABLE designs ADD COLUMN is_recommended INTEGER DEFAULT 0;
+      ALTER TABLE designs ADD COLUMN weight INTEGER DEFAULT 0;
+      ALTER TABLE designs ADD COLUMN review_comment TEXT DEFAULT '';
+    `,
+  },
+
+  // ===== v6: 作品发布系统 — published_at 字段 =====
+  {
+    version: 6,
+    name: '作品发布系统 — published_at 字段',
+    sql: `
+      ALTER TABLE designs ADD COLUMN published_at TEXT;
+    `,
+  },
+
+  // ===== v7: 设计收藏功能 =====
+  {
+    version: 7,
+    name: '设计收藏功能（design_favorites 表）',
+    sql: `
+      CREATE TABLE IF NOT EXISTS design_favorites (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        design_id INTEGER NOT NULL REFERENCES designs(id) ON DELETE CASCADE,
+        created_at TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, design_id)
+      );
+
+      ALTER TABLE designs ADD COLUMN favorites_count INTEGER DEFAULT 0;
+    `,
+  },
+
+  // ===== v8: 制作进度系统 =====
+  {
+    version: 8,
+    name: '制作进度系统（make_sessions 表）',
+    sql: `
+      CREATE TABLE IF NOT EXISTS make_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        design_id INTEGER NOT NULL REFERENCES designs(id) ON DELETE CASCADE,
+        archive_name TEXT DEFAULT '默认存档',
+        current_step INTEGER DEFAULT 0,
+        finished_steps TEXT DEFAULT '[]',
+        step_mode TEXT DEFAULT 'color',
+        total_duration INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'in_progress',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_make_user ON make_sessions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_make_design ON make_sessions(design_id);
+    `,
+  },
+
+  // ===== v9: 制作模式增强 — 制作记录 + 用户设置 + 历史快照 =====
+  {
+    version: 9,
+    name: '制作模式增强（make_records + user_make_settings + 进度快照）',
+    sql: `
+      -- 制作记录表（独立于进度会话）
+      CREATE TABLE IF NOT EXISTS make_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        design_id INTEGER NOT NULL REFERENCES designs(id) ON DELETE CASCADE,
+        session_id INTEGER REFERENCES make_sessions(id) ON DELETE SET NULL,
+        drawing_title TEXT,
+        total_beans INTEGER DEFAULT 0,
+        color_count INTEGER DEFAULT 0,
+        duration INTEGER DEFAULT 0,
+        step_mode TEXT DEFAULT 'color',
+        loss_rate REAL DEFAULT 0.05,
+        deduct_stock INTEGER DEFAULT 1,
+        finish_time TEXT DEFAULT (datetime('now')),
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_make_records_user ON make_records(user_id);
+      CREATE INDEX IF NOT EXISTS idx_make_records_design ON make_records(design_id);
+      CREATE INDEX IF NOT EXISTS idx_make_records_finish ON make_records(finish_time);
+
+      -- 用户制作设置表（云端同步）
+      CREATE TABLE IF NOT EXISTS user_make_settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        display_settings TEXT DEFAULT '{}',
+        operation_settings TEXT DEFAULT '{}',
+        theme TEXT DEFAULT 'dark',
+        updated_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(user_id)
+      );
+
+      -- 扩展 make_sessions — 多存档排序 + 历史快照
+      ALTER TABLE make_sessions ADD COLUMN archive_order INTEGER DEFAULT 0;
+      ALTER TABLE make_sessions ADD COLUMN snapshot_history TEXT DEFAULT '[]';
+
+      -- 进度历史快照表
+      CREATE TABLE IF NOT EXISTS make_progress_snapshots (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL REFERENCES make_sessions(id) ON DELETE CASCADE,
+        snapshot_data TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_snapshots_session ON make_progress_snapshots(session_id);
+    `,
+  },
 ]

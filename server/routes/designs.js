@@ -79,6 +79,78 @@ router.put('/:id', authRequired, (req, res) => {
   }
 })
 
+// 发布设计（设为公开）
+router.put('/:id/publish', authRequired, (req, res) => {
+  try {
+    const design = db.prepare('SELECT * FROM designs WHERE id = ? AND user_id = ?')
+      .get(req.params.id, req.user.id)
+    if (!design) return res.status(404).json(fail(404, '设计不存在或无权操作'))
+
+    // 首次发布时写入 published_at
+    const isFirstPublish = design.is_public === 0
+    db.prepare(
+      `UPDATE designs SET is_public = 1,
+        published_at = CASE WHEN ? THEN datetime('now') ELSE published_at END,
+        updated_at = datetime('now')
+       WHERE id = ?`
+    ).run(isFirstPublish ? 1 : 0, design.id)
+
+    const updated = db.prepare('SELECT * FROM designs WHERE id = ?').get(design.id)
+    res.json(success(formatDesign(updated)))
+  } catch (err) {
+    console.error('发布设计错误:', err)
+    res.status(500).json(fail(500, '发布失败'))
+  }
+})
+
+// 取消发布（设为私有）
+router.put('/:id/unpublish', authRequired, (req, res) => {
+  try {
+    const design = db.prepare('SELECT * FROM designs WHERE id = ? AND user_id = ?')
+      .get(req.params.id, req.user.id)
+    if (!design) return res.status(404).json(fail(404, '设计不存在或无权操作'))
+
+    db.prepare(
+      `UPDATE designs SET is_public = 0, updated_at = datetime('now') WHERE id = ?`
+    ).run(design.id)
+
+    const updated = db.prepare('SELECT * FROM designs WHERE id = ?').get(design.id)
+    res.json(success(formatDesign(updated)))
+  } catch (err) {
+    console.error('取消发布错误:', err)
+    res.status(500).json(fail(500, '操作失败'))
+  }
+})
+
+// 收藏/取消收藏
+router.post('/:id/favorite', authRequired, (req, res) => {
+  try {
+    const design = db.prepare('SELECT * FROM designs WHERE id = ?').get(req.params.id)
+    if (!design) return res.status(404).json(fail(404, '设计不存在'))
+
+    const existing = db.prepare(
+      'SELECT 1 FROM design_favorites WHERE user_id = ? AND design_id = ?'
+    ).get(req.user.id, design.id)
+
+    if (existing) {
+      db.prepare('DELETE FROM design_favorites WHERE user_id = ? AND design_id = ?')
+        .run(req.user.id, design.id)
+      db.prepare('UPDATE designs SET favorites_count = MAX(0, favorites_count - 1) WHERE id = ?')
+        .run(design.id)
+      res.json(success({ favorited: false }))
+    } else {
+      db.prepare('INSERT INTO design_favorites (user_id, design_id) VALUES (?, ?)')
+        .run(req.user.id, design.id)
+      db.prepare('UPDATE designs SET favorites_count = favorites_count + 1 WHERE id = ?')
+        .run(design.id)
+      res.json(success({ favorited: true }))
+    }
+  } catch (err) {
+    console.error('收藏操作错误:', err)
+    res.status(500).json(fail(500, '操作失败'))
+  }
+})
+
 // 设计详情
 router.get('/:id', authOptional, (req, res) => {
   try {
@@ -90,16 +162,21 @@ router.get('/:id', authOptional, (req, res) => {
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(design.user_id)
 
     let liked = false
+    let favorited = false
     if (req.user) {
       const like = db.prepare('SELECT 1 FROM design_likes WHERE user_id = ? AND design_id = ?')
         .get(req.user.id, design.id)
       liked = !!like
+      const fav = db.prepare('SELECT 1 FROM design_favorites WHERE user_id = ? AND design_id = ?')
+        .get(req.user.id, design.id)
+      favorited = !!fav
     }
 
     res.json(success({
       ...formatDesign(design),
       author: user ? userPublic(user) : null,
       liked,
+      favorited,
     }))
   } catch (err) {
     console.error('获取设计详情错误:', err)

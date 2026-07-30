@@ -65,6 +65,26 @@
         <SaveIcon :size="16" />
       </button>
 
+      <!-- 发布按钮（已保存但未发布时显示） -->
+      <button
+        v-if="designSaved && !isPublic"
+        class="topbar-action-btn text-[var(--ui-color-primary)]"
+        @click="$emit('publish')"
+        title="发布到首页"
+      >
+        <SendIcon :size="16" />
+      </button>
+
+      <!-- 已发布标签（已发布时显示，点击可取消发布） -->
+      <button
+        v-if="designSaved && isPublic"
+        class="topbar-action-btn text-emerald-500"
+        @click="$emit('unpublish')"
+        title="已发布 — 点击取消发布"
+      >
+        <SendIcon :size="16" />
+      </button>
+
       <div class="w-px h-5 bg-[var(--ui-border)] mx-1" />
 
       <!-- 网格切换 -->
@@ -96,6 +116,17 @@
       <!-- 施工引导 -->
       <button class="topbar-action-btn" @click="$emit('toggleGuide')" title="施工引导">
         <Wand2Icon :size="16" />
+      </button>
+
+      <!-- 制作模式入口 -->
+      <button
+        v-if="designId"
+        class="topbar-action-btn !px-3 !gap-1 !text-emerald-600 !border-emerald-200 !bg-emerald-50"
+        title="制作模式"
+        @click="$router.push('/make/' + designId)"
+      >
+        <PlayIcon :size="14" />
+        <span style="font-size:11px;font-weight:600">制作</span>
       </button>
 
       <!-- 导出下拉 -->
@@ -210,6 +241,8 @@ import {
   CodeIcon,
   ShuffleIcon,
   Wand2Icon,
+  PlayIcon,
+  SendIcon,
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -219,6 +252,9 @@ const props = defineProps({
   canRedo: { type: Boolean, default: false },
   showGrid: { type: Boolean, default: true },
   refOpacity: { type: Number, default: 0 },
+  designSaved: { type: Boolean, default: false },
+  isPublic: { type: Boolean, default: false },
+  designId: { type: [Number, String], default: null },
 })
 
 defineEmits([
@@ -233,6 +269,8 @@ defineEmits([
   'exportPDF',
   'exportJSON',
   'save',
+  'publish',
+  'unpublish',
   'showInfo',
   'openSizeDialog',
   'clear',

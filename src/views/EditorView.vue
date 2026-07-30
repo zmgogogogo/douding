@@ -86,6 +86,26 @@
             </div>
             <ChevronRightIcon :size="16" class="text-slate-300" />
           </div>
+
+          <div class="tool-card" @click="$router.push('/link-import')">
+            <div
+              class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  rgba(244, 114, 182, 0.15),
+                  rgba(244, 114, 182, 0.04)
+                );
+              "
+            >
+              <LinkIcon :size="20" class="text-pink-500" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-sm text-slate-800">小红书导入</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">粘贴笔记链接，一键生成图纸</div>
+            </div>
+            <ChevronRightIcon :size="16" class="text-slate-300" />
+          </div>
         </div>
       </div>
 
@@ -182,8 +202,12 @@
       :canUndo="historyIdx > 0"
       :canRedo="historyIdx < historyArr.length - 1"
       :showGrid="showGrid"
+      :designSaved="!!editId"
+      :isPublic="isPublished"
       @newDesign="exitEditor"
       @save="saveDesign"
+      @publish="publishDesign"
+      @unpublish="unpublishDesign"
       @exportPNG="exportPNG"
       @exportSVG="exportSVG"
       @exportPDF="exportPDFFile"
@@ -232,6 +256,9 @@
       :canRedo="historyIdx < historyArr.length - 1"
       :showGrid="showGrid"
       :refOpacity="refOpacity"
+      :designSaved="!!editId"
+      :designId="editId"
+      :isPublic="isPublished"
       @back="exitEditor"
       @update:title="editTitle = $event"
       @undo="undo; renderAll()"
@@ -243,6 +270,8 @@
       @exportPDF="exportPDFFile"
       @exportJSON="exportJSONFile"
       @save="saveDesign"
+      @publish="publishDesign"
+      @unpublish="unpublishDesign"
       @showInfo="showInfo = !showInfo"
       @openSizeDialog="showSizePanel = true"
       @clear="confirmClear"
@@ -510,6 +539,7 @@ import {
   CameraIcon,
   ChevronRightIcon,
   ClockIcon,
+  LinkIcon,
 } from 'lucide-vue-next'
 
 import EditorTopBar from '@/components/editor/EditorTopBar.vue'
@@ -660,6 +690,9 @@ const {
   removeLayerStyle,
   selectionMode,
 } = useEditor()
+
+// 发布状态
+const isPublished = ref(false)
 
 const compositeGrid = computed(() => getCompositeGrid())
 const editorCanvasRef = ref(null)
@@ -1219,6 +1252,7 @@ async function openDesign(id) {
       focusMode.value = false
       editId.value = d.id
       editTitle.value = d.title || '未命名图纸'
+      isPublished.value = !!d.isPublic
       const parsedGrid = typeof d.gridData === 'string' ? JSON.parse(d.gridData) : d.gridData
       initGrid(d.gridWidth, d.gridHeight)
       grid.value = parsedGrid
@@ -1285,18 +1319,57 @@ async function saveDesign() {
       gridData: JSON.stringify(cg),
       beadCount: beadCount.value,
       colorCount: gridColorStats.value.length,
-      isPublic: true,
     }
     if (editId.value) {
+      // 编辑已有设计：不修改发布状态
       await API.put(`/api/designs/${editId.value}`, payload, true)
     } else {
+      // 新建设计：默认私有
+      payload.isPublic = false
       const res = await API.post('/api/designs', payload, true)
       editId.value = res.data?.id
+      if (res.data) isPublished.value = !!res.data.isPublic
     }
     hasUnsavedChanges.value = false
     toast.show('保存成功')
   } catch (e) {
     toast.show('保存失败，请稍后重试')
+  }
+}
+
+// ---- 发布 ----
+async function publishDesign() {
+  // 如果还没保存过，先保存
+  if (!editId.value) {
+    await saveDesign()
+    if (!editId.value) return
+  } else if (hasUnsavedChanges.value) {
+    // 有未保存更改，先保存
+    await saveDesign()
+  }
+
+  try {
+    const res = await API.put(`/api/designs/${editId.value}/publish`, {}, true)
+    if (res.code === 200) {
+      isPublished.value = true
+      toast.show('发布成功！作品已展示在首页')
+    }
+  } catch (e) {
+    toast.show('发布失败，请稍后重试')
+  }
+}
+
+// ---- 取消发布 ----
+async function unpublishDesign() {
+  if (!editId.value) return
+  try {
+    const res = await API.put(`/api/designs/${editId.value}/unpublish`, {}, true)
+    if (res.code === 200) {
+      isPublished.value = false
+      toast.show('已取消发布，作品从首页隐藏')
+    }
+  } catch (e) {
+    toast.show('操作失败，请稍后重试')
   }
 }
 
@@ -1479,6 +1552,7 @@ onMounted(async () => {
         const d = res.data
         editId.value = d.id
         editTitle.value = d.title || '未命名图纸'
+        isPublished.value = !!d.isPublic
         const parsedGrid = typeof d.gridData === 'string' ? JSON.parse(d.gridData) : d.gridData
         initGrid(d.gridWidth, d.gridHeight)
         grid.value = parsedGrid

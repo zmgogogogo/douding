@@ -22,6 +22,7 @@ import designRoutes from './routes/designs.js'
 import exploreRoutes from './routes/explore.js'
 import folderRoutes from './routes/folders.js'
 import inventoryRoutes from './routes/inventory.js'
+import userRoutes from './routes/user.js'
 import imageRoutes from './routes/image.js'
 import exportRoutes from './routes/export.js'
 import ocrRoutes from './routes/ocr.js'
@@ -29,6 +30,7 @@ import crawlerRoutes from './routes/crawler.js'
 import aiRoutes from './routes/ai.js'
 import paletteRoutes from './routes/palette.js'
 import publicRoutes from './routes/public.js'
+import makeRoutes from './routes/make.js'
 import { responseMiddleware } from './utils/response.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/logger.js'
@@ -161,6 +163,12 @@ app.use('/api', exploreRoutes)
 // 文件夹管理
 app.use('/api', folderRoutes)
 
+// 用户相关（我的点赞 / 我的收藏）— 必须在 inventoryRoutes 之前，避免 /user/:id 拦截 /user/likes
+app.use('/api', userRoutes)
+
+// 制作模式（进度保存 / 制作记录）
+app.use('/api', makeRoutes)
+
 // 库存 + 用户主页
 app.use('/api', inventoryRoutes)
 
@@ -196,6 +204,46 @@ app.use('/api', publicRoutes)
 // 首页（Banner / 推荐 / 内容流）
 import homeRoutes from './routes/home.js'
 app.use('/api', homeRoutes)
+
+// 管理后台路由
+import adminAuthRoutes from './routes/admin/auth.js'
+import adminDashboardRoutes from './routes/admin/dashboard.js'
+import adminUsersRoutes from './routes/admin/users.js'
+import adminTemplatesRoutes from './routes/admin/templates.js'
+import adminBeadColorsRoutes from './routes/admin/beadColors.js'
+import adminBannersRoutes from './routes/admin/banners.js'
+import adminAdminsRoutes from './routes/admin/admins.js'
+import adminRolesRoutes from './routes/admin/roles.js'
+import adminLogsRoutes from './routes/admin/logs.js'
+import adminMakeRoutes from './routes/admin/make.js'
+app.use('/api/admin/auth', adminAuthRoutes)
+app.use('/api/admin/dashboard', adminDashboardRoutes)
+app.use('/api/admin/users', adminUsersRoutes)
+app.use('/api/admin/templates', adminTemplatesRoutes)
+app.use('/api/admin/bead-colors', adminBeadColorsRoutes)
+app.use('/api/admin/banners', adminBannersRoutes)
+app.use('/api/admin/admins', adminAdminsRoutes)
+app.use('/api/admin/roles', adminRolesRoutes)
+app.use('/api/admin/logs', adminLogsRoutes)
+app.use('/api/admin/make', adminMakeRoutes)
+
+// 初始化默认管理员账号
+import bcrypt from 'bcryptjs'
+import { BCRYPT_ROUNDS } from './config.js'
+import db from './db/connection.js'
+
+function seedDefaultAdmin() {
+  const count = db.prepare('SELECT COUNT(*) as c FROM sys_admins').get()
+  if (count.c === 0) {
+    const hash = bcrypt.hashSync('admin123', BCRYPT_ROUNDS)
+    db.prepare(
+      'INSERT INTO sys_admins (username, password_hash, nickname, role_id, status) VALUES (?, ?, ?, ?, ?)'
+    ).run('admin', hash, '超级管理员', 0, 1)
+    console.log('[管理后台] 已创建默认管理员账号: admin / admin123')
+    console.log('[管理后台] ⚠️  请尽快登录管理后台修改密码！')
+  }
+}
+seedDefaultAdmin()
 
 // 统一错误处理（捕获 AppError + Multer 错误 + 未预期异常）
 app.use(errorHandler)

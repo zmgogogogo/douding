@@ -234,6 +234,7 @@ import {
   InfoIcon,
   LogOutIcon,
   LogInIcon,
+  BookmarkIcon,
 } from 'lucide-vue-next'
 import API from '@/api/index.js'
 import { useAuth } from '@/composables/useAuth.js'
@@ -258,6 +259,13 @@ const serviceMenu = [
     color: 'text-red-400',
     bgColor: 'bg-red-50',
     route: '/likes',
+  },
+  {
+    label: '我的收藏',
+    icon: BookmarkIcon,
+    color: 'text-amber-500',
+    bgColor: 'bg-amber-50',
+    route: '/favorites',
   },
   {
     label: '豆子仓库',

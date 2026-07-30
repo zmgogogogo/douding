@@ -17,3 +17,15 @@ export const BCRYPT_ROUNDS = 10
 export const UPLOAD_MAX_SIZE = 30 * 1024 * 1024 // 30MB（手机原图 OCR/导入）
 export const ALLOWED_IMAGE_TYPES = /\.(jpg|jpeg|png|gif|webp|bmp)$/i
 export const DEFAULT_GRID_SIZE = 58
+
+// 管理端 JWT 配置（与 C 端用户体系隔离）
+export const JWT_ADMIN_SECRET =
+  process.env.JWT_ADMIN_SECRET ||
+  (() => {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('❌ JWT_ADMIN_SECRET 环境变量未设置！生产环境必须配置 JWT_ADMIN_SECRET')
+    }
+    console.warn('⚠️  未设置 JWT_ADMIN_SECRET 环境变量，使用开发默认值（仅限本地开发）')
+    return 'douding-admin-dev-secret-not-for-production'
+  })()
+export const JWT_ADMIN_EXPIRES_IN = '12h'

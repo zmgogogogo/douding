@@ -1,5 +1,5 @@
 <!-- ============================================
-  WarehouseView.vue — 我的仓库（库存 + 图纸 + 清单 + 统计）
+  WarehouseView.vue — 我的仓库（库存 + 作品 + 清单 + 统计）
   ============================================ -->
 <template>
   <div class="flex flex-col h-full" v-if="auth.isLoggedIn.value">
@@ -56,7 +56,7 @@
       @select-substitute="onSelectSubstitute"
     />
 
-    <!-- ====== 🎨 图纸管理 ====== -->
+    <!-- ====== 🎨 作品管理 ====== -->
     <div v-if="activeTab === 'designs'" class="flex flex-1 overflow-hidden">
       <aside
         class="w-[200px] min-w-[200px] bg-white border-r border-slate-100 p-3 overflow-y-auto max-md:hidden"
@@ -92,17 +92,17 @@
       </aside>
       <div class="flex-1 overflow-y-auto p-4">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold">我的图纸</h2>
+          <h2 class="text-lg font-bold">我的作品</h2>
         </div>
         <div
           v-if="designs.length"
           class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4"
         >
-          <DesignCard v-for="d in designs" :key="d.id" :design="d" />
+          <DesignCard v-for="d in designs" :key="d.id" :design="d" :showStatus="true" />
         </div>
         <div v-else class="text-center py-16 text-slate-400">
           <div class="text-5xl mb-3">📭</div>
-          <p class="text-sm mb-4">还没有图纸，去创作一个吧！</p>
+          <p class="text-sm mb-4">还没有作品，去创作一个吧！</p>
           <button class="btn-primary" @click="$router.push('/editor')">开始创作</button>
         </div>
       </div>
@@ -112,7 +112,7 @@
     <div v-if="activeTab === 'purchases'" class="flex-1 overflow-y-auto p-4">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold">📋 采购清单</h2>
-        <button class="btn-sm-outline" @click="generatePurchaseList">+ 根据图纸生成</button>
+        <button class="btn-sm-outline" @click="generatePurchaseList">+ 根据作品生成</button>
       </div>
       <div v-if="purchaseLists.length" class="space-y-4">
         <div
@@ -160,7 +160,7 @@
       </div>
       <div v-else class="text-center py-16 text-slate-400">
         <div class="text-5xl mb-3">📋</div>
-        <p class="text-sm">暂无采购清单，点击上方按钮根据图纸生成</p>
+        <p class="text-sm">暂无采购清单，点击上方按钮根据作品生成</p>
       </div>
     </div>
 
@@ -215,12 +215,12 @@ const toast = useToast()
 const dialog = useDialog()
 
 const tabs = [
+  { key: 'designs', label: '作品', icon: '🎨' },
   { key: 'inventory', label: '库存', icon: '📦' },
-  { key: 'designs', label: '图纸', icon: '🎨' },
   { key: 'purchases', label: '清单', icon: '📋' },
   { key: 'stats', label: '统计', icon: '📊' },
 ]
-const activeTab = ref('inventory')
+const activeTab = ref('designs')
 
 // 色号详情弹窗
 const cardGridRef = ref(null)
@@ -228,7 +228,7 @@ const showDetailDialog = ref(false)
 const detailColorId = ref(null)
 const detailItem = ref(null)
 
-// 图纸
+// 作品
 const folders = ref([])
 const designs = ref([])
 const currentFolder = ref('')
@@ -392,7 +392,7 @@ async function generatePurchaseList() {
   }
 }
 
-// 图纸管理
+// 作品管理
 async function loadFolders() {
   try {
     const res = await API.get('/api/folders')

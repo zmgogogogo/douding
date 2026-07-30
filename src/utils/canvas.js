@@ -106,14 +106,14 @@ export class CanvasRenderer {
   }
 
   // ========== 1. 珠子渲染（fillRect，按颜色合批） ==========
-  renderBeads(grid, highlightHex = null, dimHex = null) {
+  renderBeads(grid, highlightHex = null, dimHex = null, exclusiveHex = null) {
     const z = this.zoom
     const w = this.gridW,
       h = this.gridH
     const ctx = this.ctx
 
-    // 清空 + 底板色（白色底板，珠子绘制区域）
-    ctx.fillStyle = '#ffffff'
+    // 清空 + 底板色
+    ctx.fillStyle = exclusiveHex ? '#e2e8f0' : '#ffffff'
     ctx.fillRect(0, 0, w * z, h * z)
 
     // 按颜色分组，合批渲染
@@ -131,23 +131,24 @@ export class CanvasRenderer {
     }
 
     for (const [hex, cells] of batches) {
+      // 独占模式：只渲染选中的颜色，跳过所有其他颜色
+      if (exclusiveHex && hex !== exclusiveHex.toUpperCase()) {
+        continue
+      }
+
       const cell0 = grid[cells[0][0]]?.[cells[0][1]]
       const dimmed = dimHex && hex !== dimHex.toUpperCase()
       const hl = highlightHex && hex === highlightHex.toUpperCase()
 
       let color = hex
       if (dimmed) {
-        // 变暗
         const cr = parseInt(hex.slice(1, 3), 16)
         const cg = parseInt(hex.slice(3, 5), 16)
         const cb = parseInt(hex.slice(5, 7), 16)
         color = `rgb(${Math.round(cr * 0.25)},${Math.round(cg * 0.25)},${Math.round(cb * 0.25)})`
-      } else if (hl) {
-        // 高亮
-        const cr = parseInt(hex.slice(1, 3), 16)
-        const cg = parseInt(hex.slice(3, 5), 16)
-        const cb = parseInt(hex.slice(5, 7), 16)
-        color = `rgb(${Math.min(255, cr + Math.round((255 - cr) * 0.3))},${Math.min(255, cg + Math.round((255 - cg) * 0.3))},${Math.min(255, cb + Math.round((255 - cb) * 0.3))})`
+      } else if (hl || exclusiveHex) {
+        // 独占模式或高亮：保持原色
+        color = hex
       }
 
       ctx.fillStyle = color
@@ -192,7 +193,7 @@ export class CanvasRenderer {
   }
 
   // ========== 3. 网格线（1:1 像素，锐利对齐） ==========
-  renderGridLines(show = true) {
+  renderGridLines(show = true, gridColor = 'rgba(0,0,0,0.12)') {
     if (!show) return
     const z = this.zoom
     const w = this.gridW,
@@ -200,7 +201,7 @@ export class CanvasRenderer {
     const ctx = this.ctx
 
     // 细网格线：+0.5 偏移确保 1px 线条锐利
-    ctx.strokeStyle = 'rgba(0,0,0,0.12)'
+    ctx.strokeStyle = gridColor
     ctx.lineWidth = 1
     ctx.beginPath()
     for (let r = 0; r <= h; r++) {
@@ -262,6 +263,7 @@ export class CanvasRenderer {
     const {
       highlightHex,
       dimHex,
+      exclusiveHex,
       refPixels,
       refW,
       refH,
@@ -280,7 +282,7 @@ export class CanvasRenderer {
         this.renderGridLines(showGrid)
         return
       }
-      this.renderBeads(grid, highlightHex || null, dimHex || null)
+      this.renderBeads(grid, highlightHex || null, dimHex || null, exclusiveHex || null)
       if (refPixels)
         this.renderRefOverlay(
           refPixels,
@@ -296,6 +298,87 @@ export class CanvasRenderer {
     } catch (e) {
       console.error('Canvas renderAll error:', e)
     }
+  }
+
+  // ========== 5. 十字定位线（辅助层叠加） ==========
+  renderCrosshair(crosshairCol, crosshairRow, containerW, containerH, zoom, panX, panY, color = '#ef4444', mode = 'follow') {
+    if (mode === 'off') return
+    if (mode === 'follow' && (crosshairCol === null || crosshairRow === null)) return
+
+    const ctx = this.ctx
+    const cw = containerW
+    const ch = containerH
+    if (cw <= 0 || ch <= 0) return
+
+    // 计算十字线中心在画布上的位置
+    const gridCx = crosshairCol * zoom + zoom / 2
+    const gridCy = crosshairRow * zoom + zoom / 2
+
+    // 画布偏移量
+    const ox = cw / 2 + panX
+    const oy = ch / 2 + panY
+
+    ctx.save()
+    ctx.strokeStyle = color
+    ctx.lineWidth = 1.5
+    ctx.setLineDash([4, 4])
+    ctx.beginPath()
+    // 水平线
+    ctx.moveTo(0, Math.round(oy + gridCy - (this.gridH * zoom) / 2) + 0.5)
+    ctx.lineTo(cw, Math.round(oy + gridCy - (this.gridH * zoom) / 2) + 0.5)
+    // 垂直线
+    ctx.moveTo(Math.round(ox + gridCx - (this.gridW * zoom) / 2) + 0.5, 0)
+    ctx.lineTo(Math.round(ox + gridCx - (this.gridW * zoom) / 2) + 0.5, ch)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.restore()
+  }
+
+  // ========== 6. 已完成/高亮覆盖层渲染 ==========
+  /**
+   * 在已有画布上叠加半透明覆盖层
+   * @param {Set<string>} finishedCells — "r,c" 格式的已完成格子的 Set
+   * @param {number} opacity — 透明度 (0~1)
+   * @param {string} overlayColor — 覆盖颜色（默认白色）
+   */
+  renderOverlay(finishedCells, opacity = 0.4, overlayColor = '#ffffff') {
+    if (!finishedCells || finishedCells.size === 0) return
+    const z = this.zoom
+    const ctx = this.ctx
+
+    ctx.fillStyle = overlayColor + Math.round(opacity * 255).toString(16).padStart(2, '0')
+
+    for (const key of finishedCells) {
+      const [r, c] = key.split(',').map(Number)
+      ctx.fillRect(c * z, r * z, z, z)
+    }
+  }
+
+  // ========== 7. 高光效果渲染（发光边框） ==========
+  /**
+   * 给指定格子添加发光效果
+   * @param {Array<{r:number, c:number}>} cells — 要高亮的格子的数组
+   * @param {string} glowColor — 发光颜色
+   * @param {number} intensity — 强度 (0~1)
+   */
+  renderGlowEffect(cells, glowColor = '#fbbf24', intensity = 0.5) {
+    if (!cells || cells.length === 0) return
+    const z = this.zoom
+    const ctx = this.ctx
+
+    ctx.save()
+    ctx.strokeStyle = glowColor
+    ctx.lineWidth = Math.max(2, z * 0.25)
+    ctx.shadowColor = glowColor
+    ctx.shadowBlur = Math.max(4, z * 0.5) * intensity
+
+    for (const { r, c } of cells) {
+      // 只画边框，不填充
+      ctx.strokeRect(c * z + 0.5, r * z + 0.5, z - 1, z - 1)
+    }
+
+    ctx.shadowBlur = 0
+    ctx.restore()
   }
 
   // ========== 静态方法 ==========
@@ -347,5 +430,102 @@ export class CanvasRenderer {
       grid.push(row)
     }
     return grid
+  }
+
+  /**
+   * 渲染放大镜内容 — 从源 Canvas 截取局部区域并放大
+   * @param {HTMLCanvasElement} sourceCanvas — 源画布（图纸画布）
+   * @param {HTMLCanvasElement} targetCanvas — 目标画布（放大镜画布）
+   * @param {number} centerX — 放大中心在源画布上的 X 坐标
+   * @param {number} centerY — 放大中心在源画布上的 Y 坐标
+   * @param {number} scale — 放大倍数（默认3）
+   * @param {number} size — 放大镜窗口尺寸（默认150px）
+   * @param {boolean} showGrid — 是否显示网格线
+   * @param {boolean} showCrosshair — 是否显示十字分割线
+   */
+  static renderMagnifier(
+    sourceCanvas,
+    targetCanvas,
+    centerX,
+    centerY,
+    scale = 3,
+    size = 150,
+    showGrid = true,
+    showCrosshair = true
+  ) {
+    const ctx = targetCanvas.getContext('2d')
+    if (!ctx) return
+
+    const halfSize = size / 2
+    const srcHalf = halfSize / scale
+
+    // 确保源区域不超出画布边界
+    const srcX = Math.max(0, Math.min(sourceCanvas.width - srcHalf * 2, centerX - srcHalf))
+    const srcY = Math.max(0, Math.min(sourceCanvas.height - srcHalf * 2, centerY - srcHalf))
+    const srcW = Math.min(srcHalf * 2, sourceCanvas.width - srcX)
+    const srcH = Math.min(srcHalf * 2, sourceCanvas.height - srcY)
+
+    targetCanvas.width = size
+    targetCanvas.height = size
+
+    // 背景
+    ctx.fillStyle = '#1e293b'
+    ctx.fillRect(0, 0, size, size)
+
+    // 圆形裁剪
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2)
+    ctx.clip()
+
+    // 从源 canvas 放大截取区域
+    ctx.fillStyle = '#f8fafc'
+    ctx.fillRect(0, 0, size, size)
+
+    // 计算目标绘制区域（居中）
+    const destX = (size - srcW * scale) / 2
+    const destY = (size - srcH * scale) / 2
+
+    ctx.imageSmoothingEnabled = false
+    ctx.drawImage(sourceCanvas, srcX, srcY, srcW, srcH, destX, destY, srcW * scale, srcH * scale)
+
+    // 网格线
+    if (showGrid) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      for (let i = 0; i <= srcW; i++) {
+        const x = Math.round(destX + i * scale) + 0.5
+        ctx.moveTo(x, destY)
+        ctx.lineTo(x, destY + srcH * scale)
+      }
+      for (let j = 0; j <= srcH; j++) {
+        const y = Math.round(destY + j * scale) + 0.5
+        ctx.moveTo(destX, y)
+        ctx.lineTo(destX + srcW * scale, y)
+      }
+      ctx.stroke()
+    }
+
+    // 十字分割线
+    if (showCrosshair) {
+      ctx.strokeStyle = 'rgba(239,68,68,0.6)'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.moveTo(size / 2, destY)
+      ctx.lineTo(size / 2, destY + srcH * scale)
+      ctx.moveTo(destX, size / 2)
+      ctx.lineTo(destX + srcW * scale, size / 2)
+      ctx.stroke()
+    }
+
+    ctx.restore()
+
+    // 边框
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2)
+    ctx.stroke()
   }
 }

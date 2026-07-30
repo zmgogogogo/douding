@@ -13,8 +13,42 @@
       </div>
       <div v-else-if="error" class="text-center py-20 text-slate-400 text-sm">{{ error }} <button class="text-primary underline ml-1" @click="refresh">重试</button></div>
       <div v-else-if="!items.length" class="text-center py-20 text-slate-400 text-sm">暂无作品 <button class="text-primary underline ml-1" @click="$router.push('/editor')">去创作</button></div>
-      <div v-else class="columns-2 sm:columns-3 lg:columns-4 gap-2">
-        <HomeFeedCard v-for="item in items" :key="item.id" :item="item" @click="goDetail(item)" @like="handleLike(item)" />
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        <div v-for="(item, idx) in items" :key="idx"
+          style="background:#fff;border-radius:12px;overflow:hidden;cursor:pointer;border:1px solid rgba(0,0,0,0.08);box-shadow:0 1px 3px rgba(0,0,0,0.06)"
+          @click="goDetail(item)">
+          <div style="position:relative;width:100%;background:#f1f5f9;overflow:hidden;padding-bottom:100%">
+            <HomeThumbCanvas v-if="item.gridData?.length" :gridData="item.gridData" :gridWidth="item.gridWidth" :gridHeight="item.gridHeight" />
+            <div v-else style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#cbd5e1">🧩</div>
+          </div>
+          <div style="padding:10px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <div style="width:16px;height:16px;border-radius:50%;background:#e2e8f0;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-size:9px;color:#94a3b8">👤</span>
+              </div>
+              <span style="font-size:11px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">{{ item.author?.nickname || '匿名' }}</span>
+            </div>
+            <div style="font-size:13px;color:#1e293b;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:6px">{{ item.title }}</div>
+            <div style="display:flex;gap:12px;font-size:11px;color:#94a3b8">
+              <button
+                style="display:flex;align-items:center;gap:2px;border:none;background:none;cursor:pointer;padding:0;font:inherit;color:inherit;transition:color 0.15s"
+                :style="{ color: item.isLiked ? '#ef4444' : '#94a3b8' }"
+                @click.stop="handleLike(item)"
+              >
+                <HeartIcon :size="12" :class="item.isLiked ? 'fill-red-500 text-red-500' : ''" />
+                {{ formatNum(item.likesCount || 0) }}
+              </button>
+              <button
+                style="display:flex;align-items:center;gap:2px;border:none;background:none;cursor:pointer;padding:0;font:inherit;color:inherit;transition:color 0.15s"
+                :style="{ color: item.isFavorited ? '#f59e0b' : '#94a3b8' }"
+                @click.stop="handleFavorite(item)"
+              >
+                <BookmarkIcon :size="12" :class="item.isFavorited ? 'fill-amber-500 text-amber-500' : ''" />
+                {{ formatNum(item.favoritesCount || 0) }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 加载更多状态 -->
@@ -43,13 +77,16 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { LoaderIcon } from 'lucide-vue-next'
+import { LoaderIcon, HeartIcon, BookmarkIcon } from 'lucide-vue-next'
 import API from '@/api/index.js'
+import { useAuth } from '@/composables/useAuth.js'
+import { useToast } from '@/composables/useToast.js'
 
 import HomeTopNav from '@/components/home/HomeTopNav.vue'
-import HomeFeedCard from '@/components/home/HomeFeedCard.vue'
-
+import HomeThumbCanvas from '@/components/home/HomeThumbCanvas.vue'
 const router = useRouter()
+const auth = useAuth()
+const toast = useToast()
 
 const items = ref([])
 const loading = ref(true)
@@ -76,7 +113,7 @@ async function fetchData(reset = false) {
 
   try {
     const params = new URLSearchParams({ page: String(page.value), limit: '20' })
-    const res = await API.get(`/api/home/content/list?${params}`, false)
+    const res = await API.get(`/api/home/content/list?${params}`, auth.isLoggedIn.value)
     const list = (res.data.list || []).map((d) => ({
       ...d,
       type: d.type || 'works',
@@ -107,12 +144,31 @@ function goDetail(item) {
   router.push('/detail/' + item.id)
 }
 
+function formatNum(n) {
+  if (n >= 10000) return (n / 10000).toFixed(1) + 'w'
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
+  return String(n)
+}
+
 function handleLike(item) {
+  if (!auth.isLoggedIn.value) return router.push('/login')
   API.post(`/api/designs/${item.id}/like`)
     .then((res) => {
       if (res.code === 200) {
-        item.isLiked = !item.isLiked
+        item.isLiked = res.data.liked
         item.likesCount = (item.likesCount || 0) + (item.isLiked ? 1 : -1)
+      }
+    })
+    .catch(() => {})
+}
+
+function handleFavorite(item) {
+  if (!auth.isLoggedIn.value) return router.push('/login')
+  API.post(`/api/designs/${item.id}/favorite`)
+    .then((res) => {
+      if (res.code === 200) {
+        item.isFavorited = res.data.favorited
+        item.favoritesCount = (item.favoritesCount || 0) + (item.isFavorited ? 1 : -1)
       }
     })
     .catch(() => {})

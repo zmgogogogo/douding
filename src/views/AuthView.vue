@@ -13,8 +13,8 @@
         {{ isLogin ? '登录你的豆丁账号' : '注册成为豆丁用户' }}
       </p>
 
-      <!-- 登录方式 -->
-      <div class="flex bg-slate-100 rounded-xl p-1 mb-4">
+      <!-- 登录方式（仅登录时显示手机号选项） -->
+      <div v-if="isLogin" class="flex bg-slate-100 rounded-xl p-1 mb-4">
         <button
           class="flex-1 py-1.5 rounded-lg text-xs font-medium transition-all"
           :class="mode === 'user' ? 'bg-white text-primary shadow-sm' : 'text-slate-500'"
@@ -122,7 +122,7 @@
         {{ isLogin ? '还没有账号？' : '已有账号？' }}
         <button
           class="text-primary font-semibold hover:underline"
-          @click="isLogin = !isLogin; password = ''; code = ''"
+          @click="isLogin = !isLogin; password = ''; code = ''; mode = 'user'"
         >
           {{ isLogin ? '注册新账号' : '去登录' }}
         </button>

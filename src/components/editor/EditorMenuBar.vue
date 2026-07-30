@@ -89,6 +89,21 @@
             <span>另存为...</span><kbd>⇧⌘S</kbd>
           </button>
           <div class="dd-sep" />
+          <button
+            v-if="designSaved && !isPublic"
+            class="dd-item"
+            @click="act('publish')"
+          >
+            <span>发布到发现广场</span>
+          </button>
+          <button
+            v-if="designSaved && isPublic"
+            class="dd-item"
+            @click="act('unpublish')"
+          >
+            <span>取消发布</span>
+          </button>
+          <div class="dd-sep" />
           <button class="dd-item" @click="act('exportPNG')"><span>导出 PNG</span></button>
           <button class="dd-item" @click="act('exportSVG')"><span>导出 SVG</span></button>
           <button class="dd-item" @click="act('exportPDF')"><span>导出 PDF</span></button>
@@ -211,6 +226,8 @@ const props = defineProps({
   canUndo: { type: Boolean, default: false },
   canRedo: { type: Boolean, default: false },
   showGrid: { type: Boolean, default: true },
+  designSaved: { type: Boolean, default: false },
+  isPublic: { type: Boolean, default: false },
 })
 
 const emit = defineEmits([
@@ -218,6 +235,8 @@ const emit = defineEmits([
   'open',
   'save',
   'saveAs',
+  'publish',
+  'unpublish',
   'exportPNG',
   'exportSVG',
   'exportPDF',
