@@ -347,11 +347,12 @@ export function useProgress() {
   /**
    * 标记制作完成
    */
-  async function finishMake(designId) {
+  async function finishMake(designId, lossRate = 5) {
     try {
       const res = await API.post('/api/make/progress/finish', {
         designId,
         totalDuration: elapsed.value,
+        lossRate,
       })
       clearProgress(designId)
       return res.data

@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs'
 import db from '../db/connection.js'
 import { BCRYPT_ROUNDS } from '../config.js'
 import { authRequired } from '../middleware/auth.js'
+import { upload } from '../middleware/upload.js'
 import { signToken } from '../utils/jwt.js'
 import { userPublic } from '../utils/helpers.js'
 
@@ -74,14 +75,53 @@ router.get('/me', authRequired, (req, res) => {
   res.json({ code: 200, data: userPublic(user) })
 })
 
-// 更新个人资料
-router.put('/profile', authRequired, (req, res) => {
-  const { nickname, bio } = req.body || {}
-  db.prepare(
-    "UPDATE users SET nickname = ?, bio = ?, updated_at = datetime('now') WHERE id = ?"
-  ).run(nickname || null, bio || null, req.user.id)
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
-  res.json({ code: 200, data: userPublic(user) })
+// 更新个人资料（支持头像上传）
+router.put('/profile', authRequired, (req, res, next) => {
+  upload.single('avatar')(req, res, (err) => {
+    if (err) return next(err)
+    handleProfileUpdate(req, res)
+  })
 })
+
+function handleProfileUpdate(req, res) {
+  try {
+    const { nickname, bio } = req.body || {}
+    console.log('[profile] nickname:', nickname, 'bio:', bio, 'file:', req.file?.filename || 'none')
+
+    // 构建更新语句
+    const updates = []
+    const values = []
+
+    if (nickname !== undefined) {
+      updates.push('nickname = ?')
+      values.push(nickname)
+    }
+    if (bio !== undefined) {
+      if (bio.length > 200) return res.status(400).json({ code: 400, message: '简介不能超过200字' })
+      updates.push('bio = ?')
+      values.push(bio)
+    }
+    if (req.file) {
+      // 头像路径：相对于 public 目录
+      const avatarPath = '/uploads/' + req.file.filename
+      updates.push("avatar = ?")
+      values.push(avatarPath)
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ code: 400, message: '没有要更新的内容' })
+    }
+
+    updates.push("updated_at = datetime('now')")
+    values.push(req.user.id)
+
+    db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values)
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)
+    res.json({ code: 200, data: userPublic(user) })
+  } catch (err) {
+    console.error('更新资料错误:', err)
+    res.status(500).json({ code: 500, message: '更新失败，请稍后重试' })
+  }
+}
 
 export default router

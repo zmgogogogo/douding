@@ -75,7 +75,7 @@ export function floydSteinbergDitherWithRegions(
 
       // Oklab 最邻近匹配（感知均匀色彩空间）
       const pixelOklab = rgbToOklab(r, g, b)
-      let best = palette[0],
+      let best = palette[0] || null,
         bestDist = Infinity
       for (const c of palette) {
         const d = oklabDist(pixelOklab, c.oklab || c.lab)
@@ -87,7 +87,8 @@ export function floydSteinbergDitherWithRegions(
 
       row.push(best ? { id: best.id, name: best.name, hex: best.hex.toUpperCase() } : null)
 
-      // 量化误差 = 原始 - 量化后
+      // 量化误差 = 原始 - 量化后（无最佳匹配则跳过误差扩散）
+      if (!best) continue
       const qh = best.hex.replace('#', '')
       const er = r - parseInt(qh.substring(0, 2), 16)
       const eg = g - parseInt(qh.substring(2, 4), 16)

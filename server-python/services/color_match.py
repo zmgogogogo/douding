@@ -48,6 +48,8 @@ def load_bead_colors(db, brand: Optional[str] = None) -> list[dict]:
 
 def find_best_match_ciede2000(pixel_lab: np.ndarray, bead_colors: list[dict]) -> dict:
     """CIEDE2000 最近邻匹配（文档推荐主算法）"""
+    if not bead_colors:
+        return None
     best, best_dist = None, float('inf')
     for c in bead_colors:
         d = delta_e_2000(pixel_lab, c['lab'])
@@ -59,6 +61,8 @@ def find_best_match_ciede2000(pixel_lab: np.ndarray, bead_colors: list[dict]) ->
 
 def find_best_match_oklab(pixel_oklab: np.ndarray, bead_colors: list[dict]) -> dict:
     """Oklab 最近邻匹配（快速预览）"""
+    if not bead_colors:
+        return None
     best, best_dist = None, float('inf')
     for c in bead_colors:
         d = oklab_dist(pixel_oklab, c['oklab'])
@@ -84,6 +88,8 @@ def match_centers_to_beads(
             if d < best_dist:
                 best_dist = d
                 best = bc
+        if best is None:
+            raise ValueError('调色板为空，无法匹配聚类中心到珠子颜色')
         if best_dist > 10:
             print(f"  ⚠️ 聚类中心 RGB({center[0]:.0f},{center[1]:.0f},{center[2]:.0f}) ΔE={best_dist:.2f}>10，无完美匹配色号")
         results.append({

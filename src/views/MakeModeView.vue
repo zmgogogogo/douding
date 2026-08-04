@@ -211,9 +211,28 @@
           <span>{{ totalColors }} 种颜色</span>
           <span>{{ progress.formatDuration(progress.elapsed.value) }}</span>
         </div>
+        <!-- 豆仓扣料结果 -->
+        <div v-if="deductResult" class="deduct-result">
+          <div class="deduct-result-title">📦 已自动消耗库存</div>
+          <div class="deduct-result-detail">
+            共消耗 <strong>{{ deductResult.totalDeducted?.toLocaleString() || 0 }}</strong> 颗
+            · {{ deductResult.colorCount }} 种颜色
+            · 损耗率 {{ deductResult.lossRate }}%
+          </div>
+          <div v-if="deductResult.warnings?.length" class="deduct-warnings">
+            <div class="deduct-warn-title">⚠️ {{ deductResult.warnings.length }} 种颜色库存不足：</div>
+            <div v-for="w in deductResult.warnings.slice(0, 3)" :key="w.colorId" class="deduct-warn-item">
+              <span class="deduct-warn-swatch" :style="{ background: w.colorHex }" />
+              {{ w.colorName }} — 缺 {{ w.shortage }} 颗
+            </div>
+            <div v-if="deductResult.warnings.length > 3" class="text-[10px] text-slate-400 mt-1">
+              还有 {{ deductResult.warnings.length - 3 }} 种颜色缺料…
+            </div>
+          </div>
+        </div>
         <div class="make-dialog-actions">
           <button class="make-dialog-btn secondary" @click="$router.push('/detail/' + designId)">查看详情</button>
-          <button class="make-dialog-btn primary" @click="$router.push('/')">返回首页</button>
+          <button class="make-dialog-btn primary" @click="$router.push('/warehouse')">查看豆仓</button>
         </div>
       </div>
     </div>
@@ -302,6 +321,7 @@ const canvasAreaH = ref(0)
 const makeCanvasRef = ref(null)
 const pageRef = ref(null)
 const menuOpen = ref(false)
+const deductResult = ref(null)   // 豆仓扣料结果
 const showStepPanel = ref(false)
 const showColorPanel = ref(false)
 const showSettings = ref(false)
@@ -691,12 +711,14 @@ function handleResetBrowseProgress() {
 
 async function handleFinishMake() {
   menuOpen.value = false
-  const result = await progress.finishMake(designId.value)
+  const result = await progress.finishMake(designId.value, 0)
   if (result) {
     // 标记全部完成
     for (let i = 0; i < stepControl.totalSteps.value; i++) {
       stepControl.finishedSet.value = new Set([...stepControl.finishedSet.value, i])
     }
+    // 保存扣料结果供弹窗展示
+    deductResult.value = result.deduct || null
     showFinishDialog.value = true
   }
 }
@@ -895,6 +917,52 @@ watch(menuOpen, (v) => {
 }
 .make-dialog-btn.primary { background: #2563eb; color: #fff; }
 .make-dialog-btn.secondary { background: #f1f5f9; color: #475569; }
+
+/* 扣料结果 */
+.deduct-result {
+  margin: 12px 0;
+  padding: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  text-align: left;
+}
+.deduct-result-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+  margin-bottom: 4px;
+}
+.deduct-result-detail {
+  font-size: 11px;
+  color: #4b5563;
+}
+.deduct-warnings {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #dcfce7;
+}
+.deduct-warn-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 4px;
+}
+.deduct-warn-item {
+  font-size: 10px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.deduct-warn-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+  flex-shrink: 0;
+}
 
 /* 加载/错误状态 */
 .make-status-overlay {

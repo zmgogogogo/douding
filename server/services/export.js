@@ -1,309 +1,338 @@
 // ============================================
-//  高清导出服务 — Sharp PNG + PDFKit PDF 导出
+//  导出服务 — PNG/PDF/SVG/JSON/CSV/ZIP
+//  文档参考：.claude/导出.md
 // ============================================
 import sharp from 'sharp'
 import PDFDocument from 'pdfkit'
 
-/**
- * 用 Sharp 从 gridData 生成高清 PNG
- * @param {Array<Array<object|null>>} grid - 二维网格数据
- * @param {number} gridW - 网格宽度
- * @param {number} gridH - 网格高度
- * @param {object} opts - 导出选项
- * @param {number} [opts.scale=10] - 每珠子的像素倍数
- * @param {boolean} [opts.showGrid=false] - 是否显示网格线
- * @param {string} [opts.bgColor='#f0f0f0'] - 空白格背景色
- * @param {string} [opts.gridColor='#cccccc'] - 网格线颜色
- * @returns {Promise<Buffer>} PNG 格式的图片 Buffer
- */
+// 中文字体（Arial Unicode 支持 CJK，macOS 自带独立 TTF）
+const CN_FONT_PATH = '/Library/Fonts/Arial Unicode.ttf'
+const CN_FONT_NAME = 'ArialUni'
+
+// 给 PDFDocument 注册中文字体（如果可用）
+function registerChineseFont(doc) {
+  try {
+    doc.registerFont(CN_FONT_NAME, CN_FONT_PATH)
+    return true
+  } catch (_) {
+    return false
+  }
+}
+
+// 安全字体调用：优先中文，降级 Helvetica
+function cnFont(doc) {
+  try {
+    return doc.font(CN_FONT_NAME)
+  } catch {
+    return doc.font('Helvetica')
+  }
+}
+
+// ============================================
+//  列坐标工具（A-Z, AA-AZ...）
+// ============================================
+function colLabel(n) {
+  let s = ''
+  while (n >= 0) { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1 }
+  return s
+}
+
+// ============================================
+//  PNG 高清导出
+// ============================================
 export async function exportHighRes(grid, gridW, gridH, opts = {}) {
   const scale = Math.min(50, Math.max(1, opts.scale || 10))
   const showGrid = !!opts.showGrid
+  const showLabels = !!opts.showLabels
   const bgColor = opts.bgColor || '#f0f0f0'
   const gridColor = opts.gridColor || '#cccccc'
 
   const pixelW = gridW * scale
   const pixelH = gridH * scale
 
-  // 构建 SVG（比逐个 composite 高效得多）
   let svgRects = ''
-  let idx = 0
+  let svgLabels = ''
   for (let r = 0; r < gridH; r++) {
-    const row = grid[r]
-    if (!row) continue
+    const row = grid[r]; if (!row) continue
     for (let c = 0; c < gridW; c++) {
       const cell = row[c]
       if (cell && cell.hex) {
         svgRects += `<rect x="${c * scale}" y="${r * scale}" width="${scale}" height="${scale}" fill="${cell.hex}" />\n`
+        if (showLabels && scale >= 8) {
+          const label = (cell.name || '').split(' ')[0] || cell.name || ''
+          if (label && label.length <= 4) {
+            const hx = cell.hex.replace('#', '')
+            const cr = parseInt(hx.substring(0, 2), 16), cg = parseInt(hx.substring(2, 4), 16), cb = parseInt(hx.substring(4, 6), 16)
+            const lum = 0.299 * cr + 0.587 * cg + 0.114 * cb
+            const fs = Math.max(4, scale * 0.55)
+            svgLabels += `<text x="${c * scale + scale / 2}" y="${r * scale + scale / 2 + fs / 3}" font-size="${fs}" fill="${lum > 128 ? '#000' : '#fff'}" text-anchor="middle" font-family="monospace">${label}</text>\n`
+          }
+        }
       }
     }
   }
 
-  // 网格线
   let svgGrid = ''
   if (showGrid) {
-    for (let r = 0; r < pixelH; r += scale) {
+    for (let r = 0; r <= pixelH; r += scale) {
       svgGrid += `<line x1="0" y1="${r}" x2="${pixelW}" y2="${r}" stroke="${gridColor}" stroke-width="1" />\n`
     }
-    for (let c = 0; c < pixelW; c += scale) {
+    for (let c = 0; c <= pixelW; c += scale) {
       svgGrid += `<line x1="${c}" y1="0" x2="${c}" y2="${pixelH}" stroke="${gridColor}" stroke-width="1" />\n`
     }
   }
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pixelW}" height="${pixelH}">
-    <rect width="${pixelW}" height="${pixelH}" fill="${bgColor}" />
-    ${svgRects}
-    ${svgGrid}
-  </svg>`
+  const bgRect = bgColor === 'transparent' ? '' : `<rect width="${pixelW}" height="${pixelH}" fill="${bgColor}" />\n`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pixelW}" height="${pixelH}">\n${bgRect}${svgRects}${svgGrid}${svgLabels}</svg>`
 
   return sharp(Buffer.from(svg)).png().toBuffer()
 }
 
-/**
- * 批量导出多个设计为 ZIP 包
- * @param {Array<{grid, gridW, gridH}>} designs - 设计数据列表
- * @param {object} opts - 导出选项
- * @returns {Promise<Buffer>} ZIP 格式的 Buffer
- */
+// ============================================
+//  PDF 施工图纸导出（仅网格施工图）
+// ============================================
+export async function exportPDF(grid, gridW, gridH, opts = {}) {
+  const title = opts.title || '拼豆图纸'
+  const showLabels = opts.showLabels !== false
+  const mode = opts.mode || 'color'
+
+  const pageW = 595.28, pageH = 841.89, margin = 40, drawW = pageW - margin * 2, drawH = pageH - margin * 2
+
+  const doc = new PDFDocument({ size: 'A4', margin: 0, info: { Title: title, Author: '豆丁', Subject: `${gridW}×${gridH}` } })
+  const chunks = []
+  doc.on('data', (c) => chunks.push(c))
+  registerChineseFont(doc);
+
+  // ===== 网格施工图 =====
+  const MAX_PER_PAGE = 60
+  const pagesX = Math.ceil(gridW / MAX_PER_PAGE), pagesY = Math.ceil(gridH / MAX_PER_PAGE)
+  for (let py = 0; py < pagesY; py++) {
+    for (let px = 0; px < pagesX; px++) {
+      doc.addPage()
+      const gxs = px * MAX_PER_PAGE, gys = py * MAX_PER_PAGE
+      const gxe = Math.min(gxs + MAX_PER_PAGE, gridW), gye = Math.min(gys + MAX_PER_PAGE, gridH)
+      const gW = gxe - gxs, gH = gye - gys
+      const pg = py * pagesX + px + 1, tp = pagesX * pagesY
+
+      cnFont(doc.fontSize(12)).fillColor('#1e293b').text(`${title} — 施工图 (${pg}/${tp})`, margin, margin)
+      cnFont(doc.fontSize(8)).fillColor('#64748b').text(`列 ${colLabel(gxs)}-${colLabel(gxe - 1)} · 行 ${gys + 1}-${gye}`, margin, margin + 16)
+
+      const cm = 18, topH = 14
+      const gcs = Math.floor(Math.min((drawW - cm) / gW, (drawH - topH - 40) / gH))
+      const agw = gcs * gW, agh = gcs * gH
+      const gx = margin + cm, gy = margin + topH + 24
+
+      // 列坐标
+      cnFont(doc.fontSize(6)).fillColor('#64748b')
+      for (let c = 0; c < gW; c++) doc.text(colLabel(gxs + c), gx + c * gcs + gcs / 2 - 5, margin + 26, { width: 12, align: 'center' })
+      // 行坐标
+      for (let r = 0; r < gH; r++) doc.text(String(gys + r + 1), margin, gy + r * gcs + gcs / 2 - 3, { width: cm - 2, align: 'right' })
+
+      // 色块
+      for (let r = 0; r < gH; r++) {
+        const row = grid[gys + r]; if (!row) continue
+        for (let c = 0; c < gW; c++) {
+          const cell = row[gxs + c], cx = gx + c * gcs, cy = gy + r * gcs
+          if (mode === 'bw') {
+            if (cell?.hex) doc.rect(cx, cy, gcs, gcs).fill('#ffffff').stroke('#94a3b8').lineWidth(0.3)
+          } else {
+            doc.rect(cx, cy, gcs, gcs).fill(cell?.hex || '#f8fafc')
+          }
+        }
+      }
+
+      // 网格线（5/10加粗）
+      for (let r = 0; r <= gH; r++) {
+        const b10 = (gys + r) % 10 === 0, b5 = (gys + r) % 5 === 0
+        doc.lineWidth(b10 ? 1.2 : b5 ? 0.6 : 0.2).strokeColor(b10 ? '#475569' : b5 ? '#94a3b8' : '#cbd5e1')
+          .moveTo(gx, gy + r * gcs).lineTo(gx + agw, gy + r * gcs).stroke()
+      }
+      for (let c = 0; c <= gW; c++) {
+        const b10 = (gxs + c) % 10 === 0, b5 = (gxs + c) % 5 === 0
+        doc.lineWidth(b10 ? 1.2 : b5 ? 0.6 : 0.2).strokeColor(b10 ? '#475569' : b5 ? '#94a3b8' : '#cbd5e1')
+          .moveTo(gx + c * gcs, gy).lineTo(gx + c * gcs, gy + agh).stroke()
+      }
+
+      // 色号标注
+      if (showLabels && gcs >= 10) {
+        for (let r = 0; r < gH; r++) {
+          const row = grid[gys + r]; if (!row) continue
+          for (let c = 0; c < gW; c++) {
+            const cell = row[gxs + c]; if (!cell?.hex) continue
+            const hx = cell.hex.replace('#', '')
+            const cr = parseInt(hx.substring(0, 2), 16), cg = parseInt(hx.substring(2, 4), 16), cb = parseInt(hx.substring(4, 6), 16)
+            const lum = 0.299 * cr + 0.587 * cg + 0.114 * cb
+            const fs = Math.max(3.5, gcs * 0.45)
+            const label = (cell.name || '').split(' ')[0] || cell.name || '?'
+            cnFont(doc.fontSize(fs)).fillColor(lum > 128 ? '#1e293b' : '#ffffff')
+              .text(label, gx + c * gcs + 1, gy + r * gcs + gcs / 2 - fs / 2, { width: gcs - 2, align: 'center', lineBreak: false })
+          }
+        }
+      }
+
+      doc.fontSize(7).fillColor('#94a3b8').text(`${colLabel(gxs)}${gys + 1} — ${colLabel(gxe - 1)}${gye}`, margin, pageH - 30, { width: drawW, align: 'center' })
+      if (tp > 1) {
+        const arrows = []
+        if (py > 0) arrows.push('↑上接')
+        if (py < pagesY - 1) arrows.push('↓下接')
+        if (px > 0) arrows.push('←左接')
+        if (px < pagesX - 1) arrows.push('→右接')
+        doc.fontSize(7).fillColor('#0058BC').text(arrows.join(' '), margin, pageH - 22, { width: drawW, align: 'center' })
+      }
+    }
+  }
+
+  doc.end()
+  return new Promise((resolve) => { doc.on('end', () => resolve(Buffer.concat(chunks))) })
+}
+
+// ============================================
+//  SVG 矢量导出（分层结构）
+// ============================================
+export function exportSVGString(grid, gridW, gridH, opts = {}) {
+  const cellSize = opts.cellSize || 10
+  const showLabels = opts.showLabels !== false
+  const showCoords = opts.showCoords !== false
+  const totalW = gridW * cellSize, totalH = gridH * cellSize
+
+  let gridLayer = '', colorLayer = '', textLayer = '', coordLayer = ''
+
+  for (let r = 0; r < gridH; r++) {
+    const row = grid[r]; if (!row) continue
+    for (let c = 0; c < gridW; c++) {
+      const cell = row[c]
+      if (cell?.hex) {
+        colorLayer += `<rect x="${c * cellSize}" y="${r * cellSize}" width="${cellSize}" height="${cellSize}" fill="${cell.hex}" />\n`
+        if (showLabels && cellSize >= 8) {
+          const label = (cell.name || '').split(' ')[0] || ''
+          if (label && label.length <= 4) {
+            const hx = cell.hex.replace('#', '')
+            const cr = parseInt(hx.substring(0, 2), 16), cg = parseInt(hx.substring(2, 4), 16), cb = parseInt(hx.substring(4, 6), 16)
+            const lum = 0.299 * cr + 0.587 * cg + 0.114 * cb
+            textLayer += `<text x="${c * cellSize + cellSize / 2}" y="${r * cellSize + cellSize / 2 + 3}" font-size="${cellSize * 0.5}" fill="${lum > 128 ? '#000' : '#fff'}" text-anchor="middle" font-family="monospace">${label}</text>\n`
+          }
+        }
+      }
+    }
+  }
+
+  for (let r = 0; r <= gridH; r++) {
+    const sw = r % 5 === 0 ? 1.5 : 0.5
+    gridLayer += `<line x1="0" y1="${r * cellSize}" x2="${totalW}" y2="${r * cellSize}" stroke="#999" stroke-width="${sw}" />\n`
+  }
+  for (let c = 0; c <= gridW; c++) {
+    const sw = c % 5 === 0 ? 1.5 : 0.5
+    gridLayer += `<line x1="${c * cellSize}" y1="0" x2="${c * cellSize}" y2="${totalH}" stroke="#999" stroke-width="${sw}" />\n`
+  }
+
+  if (showCoords) {
+    for (let c = 0; c < gridW; c++) coordLayer += `<text x="${c * cellSize + cellSize / 2}" y="${totalH + 14}" font-size="8" fill="#666" text-anchor="middle">${colLabel(c)}</text>\n`
+    for (let r = 0; r < gridH; r++) coordLayer += `<text x="${totalW + 10}" y="${r * cellSize + cellSize / 2 + 3}" font-size="8" fill="#666" text-anchor="start">${r + 1}</text>\n`
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${showCoords ? totalW + 30 : totalW}" height="${showCoords ? totalH + 20 : totalH}" viewBox="0 0 ${showCoords ? totalW + 30 : totalW} ${showCoords ? totalH + 20 : totalH}">
+  <g id="color-layer">${colorLayer}</g>
+  <g id="grid-layer">${gridLayer}</g>
+  <g id="label-layer">${textLayer}</g>
+  <g id="coord-layer">${coordLayer}</g>
+</svg>`
+}
+
+// ============================================
+//  JSON 工程源文件导出
+// ============================================
+export function exportJSONData(grid, design, author) {
+  const pixelData = [], colorMap = new Map()
+  for (let r = 0; r < grid.length; r++) {
+    const row = grid[r]; if (!row) continue
+    for (let c = 0; c < row.length; c++) {
+      const cell = row[c]
+      if (cell?.hex) {
+        pixelData.push({ x: c, y: r, colorCode: cell.name || '', hex: cell.hex })
+        colorMap.set(cell.hex, (colorMap.get(cell.hex) || 0) + 1)
+      }
+    }
+  }
+  return {
+    workId: design.id, title: design.title,
+    width: design.grid_width, height: design.grid_height,
+    brand: design.brand || 'Hama',
+    pixelData, colorTotal: colorMap.size, totalBeadCount: pixelData.length,
+    authorInfo: author ? { id: author.id, nickname: author.nickname || author.username } : {},
+    paramInfo: { difficulty: design.difficulty || 1, costTime: design.cost_time || '', realSize: design.real_size || '' },
+    exportedAt: new Date().toISOString(),
+  }
+}
+
+// ============================================
+//  CSV 物料清单导出
+// ============================================
+export function exportCSVString(grid, design, lossRate = 5) {
+  const beadMap = new Map()
+  for (let r = 0; r < grid.length; r++) {
+    const row = grid[r]; if (!row) continue
+    for (let c = 0; c < row.length; c++) {
+      const cell = row[c]
+      if (cell?.hex) {
+        const key = cell.hex
+        if (!beadMap.has(key)) beadMap.set(key, { name: cell.name || '', hex: cell.hex, needCount: 0 })
+        beadMap.get(key).needCount++
+      }
+    }
+  }
+  const list = [...beadMap.values()].sort((a, b) => b.needCount - a.needCount)
+  let csv = 'colorCode,colorName,hexRgb,needCount,suggestCount,brand\n'
+  for (const b of list) {
+    const suggest = Math.ceil(b.needCount * (1 + lossRate / 100))
+    csv += `${(b.name || '').split(' ')[0] || b.name},${b.name},${b.hex},${b.needCount},${suggest},${design.brand || 'Hama'}\n`
+  }
+  return csv
+}
+
+// ============================================
+//  全格式 ZIP 打包 + readme.txt
+// ============================================
 export async function exportBatch(designs, opts = {}) {
   const archiver = (await import('archiver')).default
   const { PassThrough } = await import('stream')
-
   const archive = archiver('zip', { zlib: { level: 9 } })
   const passThrough = new PassThrough()
   archive.pipe(passThrough)
 
+  const formats = opts.formats || ['pdf', 'png', 'csv', 'svg', 'json']
+
   for (let i = 0; i < designs.length; i++) {
     const d = designs[i]
-    const pngBuffer = await exportHighRes(d.grid, d.gridW, d.gridH, opts)
-    archive.append(pngBuffer, { name: `拼豆_${d.gridW}x${d.gridH}_${i + 1}.png` })
+    const prefix = designs.length > 1 ? `${String(i + 1).padStart(2, '0')}_` : ''
+
+    if (formats.includes('pdf')) {
+      const buf = await exportPDF(d.grid, d.gridW, d.gridH, { title: d.title, author: d.author || '', lossRate: d.lossRate || 5 })
+      archive.append(buf, { name: `${prefix}打印施工图纸.pdf` })
+    }
+    if (formats.includes('png')) {
+      const buf = await exportHighRes(d.grid, d.gridW, d.gridH, { scale: 2, showGrid: true })
+      archive.append(buf, { name: `${prefix}高清预览图.png` })
+    }
+    if (formats.includes('csv')) {
+      archive.append(Buffer.from('﻿' + exportCSVString(d.grid, { brand: 'Hama' }, d.lossRate || 5), 'utf-8'), { name: `${prefix}物料采购清单.csv` })
+    }
+    if (formats.includes('svg')) {
+      archive.append(Buffer.from(exportSVGString(d.grid, d.gridW, d.gridH), 'utf-8'), { name: `${prefix}矢量图纸.svg` })
+    }
+    if (formats.includes('json')) {
+      archive.append(Buffer.from(JSON.stringify(exportJSONData(d.grid, { id: 0, title: d.title, grid_width: d.gridW, grid_height: d.gridH, brand: 'Hama', difficulty: 1, cost_time: '', real_size: '' }, null), null, 2), 'utf-8'), { name: `${prefix}工程源文件.json` })
+    }
+
+    // readme.txt
+    const readme = `拼豆图纸 — ${d.title}\n${'─'.repeat(40)}\n\n📐 基本信息\n  尺寸：${d.gridW}×${d.gridH} 格\n  品牌：${d.brand || 'Hama'}\n\n🖨️ 打印设置\n  纸张：A4 横向\n  缩放：100%\n\n📦 文件说明\n  01_打印施工图纸.pdf — 可打印施工图纸\n  02_高清预览图.png — 高清预览\n  03_物料采购清单.csv — 采购清单\n  04_矢量图纸.svg — 可导入 AI/Inkscape\n  05_工程源文件.json — 可回传平台编辑\n\n⚠️ 注意事项\n  备货量已含 ${d.lossRate || 5}% 损耗\n  熨烫温度 160-180°C\n  仅供个人使用，禁止商用\n`
+    archive.append(Buffer.from(readme, 'utf-8'), { name: 'readme.txt' })
   }
 
   archive.finalize()
-
-  // 收集 ZIP 数据
   return new Promise((resolve, reject) => {
     const chunks = []
-    passThrough.on('data', (chunk) => chunks.push(chunk))
+    passThrough.on('data', (c) => chunks.push(c))
     passThrough.on('end', () => resolve(Buffer.concat(chunks)))
     passThrough.on('error', reject)
-  })
-}
-
-/**
- * 生成 300DPI PDF 图纸（含色号标注 + 网格线 + 材料清单）
- * 参考 Bead Craft 的 PDF 导出标准
- * @param {Array<Array<object|null>>} grid - 二维网格数据
- * @param {number} gridW - 网格宽度
- * @param {number} gridH - 网格高度
- * @param {object} opts - 选项
- * @param {string} [opts.title='拼豆图纸'] - 图纸标题
- * @param {boolean} [opts.showLabels=false] - 是否显示色号标注
- * @param {string} [opts.bgColor='#f0f0f0'] - 空白格颜色
- * @returns {Promise<Buffer>} PDF 格式的 Buffer
- */
-export async function exportPDF(grid, gridW, gridH, opts = {}) {
-  const title = opts.title || '拼豆图纸'
-  const showLabels = !!opts.showLabels
-  const bgColor = opts.bgColor || '#f0f0f0'
-
-  // 页面参数：A4 210×297mm，带边距
-  const pageW = 595.28 // A4 宽度 (pt)
-  const pageH = 841.89 // A4 高度 (pt)
-  const margin = 50 // 页边距
-
-  // 可用绘图区域
-  const drawW = pageW - margin * 2
-  const drawH = pageH - margin * 2
-
-  // 计算每个珠子的尺寸（尽量放大但不超出页面）
-  if (!gridW || !gridH || gridW <= 0 || gridH <= 0) {
-    throw new Error(`无效的网格尺寸: ${gridW}×${gridH}`)
-  }
-  const cellSize = Math.floor(Math.min(drawW / gridW, drawH / gridH))
-
-  // 实际网格绘制尺寸
-  const gridW_px = cellSize * gridW
-  const gridH_px = cellSize * gridH
-
-  // 居中偏移
-  const offsetX = margin + (drawW - gridW_px) / 2
-  const offsetY = margin + 40 // 顶部留标题空间
-
-  // 统计材料清单
-  const beadMap = new Map()
-  for (let r = 0; r < gridH; r++) {
-    const row = grid[r]
-    if (!row) continue
-    for (let c = 0; c < gridW; c++) {
-      const cell = row[c]
-      if (cell?.name && cell?.hex) {
-        const key = cell.hex
-        if (!beadMap.has(key)) {
-          beadMap.set(key, { name: cell.name, hex: cell.hex, count: 0 })
-        }
-        beadMap.get(key).count++
-      }
-    }
-  }
-  const beadList = [...beadMap.values()].sort((a, b) => b.count - a.count)
-  const totalBeads = beadList.reduce((sum, b) => sum + b.count, 0)
-
-  // 创建 PDF
-  const doc = new PDFDocument({
-    size: 'A4',
-    margin: 0,
-    info: {
-      Title: title,
-      Author: '豆丁 - 拼豆图纸工具',
-      Subject: `${gridW}×${gridH} 拼豆图纸`,
-    },
-  })
-
-  const chunks = []
-  doc.on('data', (chunk) => chunks.push(chunk))
-
-  // === 第1页：网格图纸 ===
-  // 标题
-  doc.fontSize(16).font('Helvetica-Bold').text(title, margin, margin, { align: 'center' })
-  doc
-    .fontSize(9)
-    .font('Helvetica')
-    .fillColor('#666')
-    .text(
-      `${gridW} × ${gridH}  |  ${beadList.length} 色  |  共 ${totalBeads} 颗珠子`,
-      margin,
-      margin + 20,
-      { align: 'center' }
-    )
-  doc.fillColor('#000')
-
-  // 绘制网格背景
-  doc.rect(offsetX, offsetY, gridW_px, gridH_px).fill(bgColor)
-
-  // 绘制珠子
-  for (let r = 0; r < gridH; r++) {
-    const row = grid[r]
-    if (!row) continue
-    for (let c = 0; c < gridW; c++) {
-      const cell = row[c]
-      const fill = cell?.hex ? cell.hex : bgColor
-      doc.rect(offsetX + c * cellSize, offsetY + r * cellSize, cellSize, cellSize).fill(fill)
-    }
-  }
-
-  // 绘制网格线
-  if (gridW <= 60 && gridH <= 60) {
-    doc.strokeColor('#ccc').lineWidth(0.3)
-    for (let r = 0; r <= gridH; r++) {
-      doc
-        .moveTo(offsetX, offsetY + r * cellSize)
-        .lineTo(offsetX + gridW_px, offsetY + r * cellSize)
-        .stroke()
-    }
-    for (let c = 0; c <= gridW; c++) {
-      doc
-        .moveTo(offsetX + c * cellSize, offsetY)
-        .lineTo(offsetX + c * cellSize, offsetY + gridH_px)
-        .stroke()
-    }
-    doc.lineWidth(1)
-  }
-
-  // 色号标注（在珠子中央显示编号）
-  if (showLabels && beadList.length <= 30 && cellSize >= 12) {
-    // 构建颜色索引
-    const colorIndex = {}
-    beadList.forEach((b, i) => {
-      colorIndex[b.hex.toUpperCase()] = String(i + 1)
-    })
-
-    doc.fontSize(Math.max(4, cellSize * 0.5)).font('Helvetica')
-    for (let r = 0; r < gridH; r++) {
-      const row = grid[r]
-      if (!row) continue
-      for (let c = 0; c < gridW; c++) {
-        const cell = row[c]
-        if (!cell?.hex) continue
-        const idx = colorIndex[cell.hex.toUpperCase()]
-        if (!idx) continue
-        // 判断文字颜色（亮度高的背景用黑字，反之白字）
-        const hex = cell.hex.replace('#', '')
-        const cr = parseInt(hex.substring(0, 2), 16)
-        const cg = parseInt(hex.substring(2, 4), 16)
-        const cb = parseInt(hex.substring(4, 6), 16)
-        const lum = 0.299 * cr + 0.587 * cg + 0.114 * cb
-        doc.fillColor(lum > 128 ? '#000' : '#fff')
-        const tx = offsetX + c * cellSize + cellSize / 2
-        const ty = offsetY + r * cellSize + cellSize / 2
-        doc.text(idx, tx - cellSize * 0.15, ty - cellSize * 0.25, {
-          width: cellSize * 0.6,
-          align: 'center',
-        })
-      }
-    }
-  }
-
-  // === 第2页：材料清单 ===
-  doc.addPage()
-  doc.fontSize(14).font('Helvetica-Bold').text('材料清单', margin, margin)
-  doc
-    .fontSize(9)
-    .font('Helvetica')
-    .fillColor('#666')
-    .text(`共 ${beadList.length} 种颜色 · ${totalBeads} 颗珠子`, margin, margin + 18)
-  doc.fillColor('#000')
-
-  // 表格头
-  const tableTop = margin + 40
-  const colW = [30, 90, 70, 250, 60] // 序号、色号、名称、颜色、数量
-  const colX = [margin, margin + 35, margin + 130, margin + 205, margin + 460]
-
-  doc.fontSize(8).font('Helvetica-Bold')
-  doc.text('序号', colX[0], tableTop)
-  doc.text('色号', colX[1], tableTop)
-  doc.text('名称', colX[2], tableTop)
-  doc.text('颜色', colX[3], tableTop)
-  doc.text('数量', colX[4], tableTop)
-
-  // 分隔线
-  doc
-    .moveTo(margin, tableTop + 12)
-    .lineTo(pageW - margin, tableTop + 12)
-    .stroke('#ccc')
-
-  // 列表
-  doc.font('Helvetica')
-  beadList.forEach((b, i) => {
-    const y = tableTop + 18 + i * 16
-    if (y > pageH - margin) {
-      doc.addPage()
-      return
-    } // 超出则换页
-
-    doc.fontSize(8)
-    doc.text(String(i + 1), colX[0], y)
-    doc.text(b.hex, colX[1], y)
-    doc.text(b.name, colX[2], y, { width: 50 })
-    // 颜色色块
-    doc.rect(colX[3], y + 1, 10, 8).fill(b.hex)
-    doc.rect(colX[3], y + 1, 10, 8).stroke('#999')
-    doc.text(String(b.count) + ' 颗', colX[4], y)
-  })
-
-  // 页脚
-  const footerY = pageH - margin
-  doc.fontSize(7).fillColor('#999')
-  doc.text(
-    `由「豆丁」拼豆图纸工具生成 — ${new Date().toISOString().slice(0, 10)}`,
-    margin,
-    footerY,
-    { align: 'center' }
-  )
-
-  doc.end()
-
-  return new Promise((resolve) => {
-    doc.on('end', () => resolve(Buffer.concat(chunks)))
   })
 }

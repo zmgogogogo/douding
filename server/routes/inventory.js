@@ -95,7 +95,7 @@ router.put('/inventory/:colorId', authRequired, (req, res) => {
         ON CONFLICT(user_id,color_id) DO UPDATE SET quantity=excluded.quantity,updated_at=datetime('now')`
       ).run(userId, colorId, newQty)
       db.prepare(
-        `INSERT INTO inventory_logs (user_id,color_id,action,quantity,balance_after,source_type) VALUES (?,'adjust',?,?,'manual')`
+        `INSERT INTO inventory_logs (user_id,color_id,action,quantity,balance_after,source_type) VALUES (?,?,'adjust',?,?,'manual')`
       ).run(userId, colorId, newQty - oldQty, newQty)
     }
     if (minThreshold !== undefined) {
@@ -1275,20 +1275,9 @@ router.post('/compare-colors', (req, res) => {
 })
 
 // ============================================
-//  用户公开主页
+//  用户公开主页 — 已迁移至 server/routes/user.js
+//  新路由: GET /api/user/:id (authOptional, 含状态检查)
+//  GET /api/user/profile/:id (完整主页数据 + 统计 + 作品)
 // ============================================
-router.get('/user/:id', (req, res) => {
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id)
-  if (!user) return res.status(404).json({ code: 404, message: '用户不存在' })
-  const designs = db
-    .prepare(
-      'SELECT * FROM designs WHERE user_id = ? AND is_public = 1 ORDER BY updated_at DESC LIMIT 50'
-    )
-    .all(user.id)
-  res.json({
-    code: 200,
-    data: { ...userPublic(user), designs: designs.map(formatDesign), designCount: designs.length },
-  })
-})
 
 export default router

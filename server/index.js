@@ -31,6 +31,7 @@ import aiRoutes from './routes/ai.js'
 import paletteRoutes from './routes/palette.js'
 import publicRoutes from './routes/public.js'
 import makeRoutes from './routes/make.js'
+import stockRoutes from './routes/stock.js'
 import { responseMiddleware } from './utils/response.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/logger.js'
@@ -172,6 +173,9 @@ app.use('/api', makeRoutes)
 // 库存 + 用户主页
 app.use('/api', inventoryRoutes)
 
+// 豆仓 V3.0 — 新库存系统
+app.use('/api/stock', stockRoutes)
+
 // 图片处理（上传 + 图片转图纸）
 app.use('/api', imageRoutes)
 
@@ -204,6 +208,18 @@ app.use('/api', publicRoutes)
 // 首页（Banner / 推荐 / 内容流）
 import homeRoutes from './routes/home.js'
 app.use('/api', homeRoutes)
+
+// 作品专区（最热 / 推荐 / 我的 / 详情）
+import workRoutes from './routes/works.js'
+app.use('/api/work', workRoutes)
+
+// 评论系统（列表 / 发布 / 回复 / 点赞）
+import commentRoutes from './routes/comments.js'
+app.use('/api/work/comment', commentRoutes)
+
+// 用户关注
+import followRoutes from './routes/follow.js'
+app.use('/api/user', followRoutes)
 
 // 管理后台路由
 import adminAuthRoutes from './routes/admin/auth.js'

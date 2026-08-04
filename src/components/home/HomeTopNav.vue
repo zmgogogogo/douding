@@ -12,15 +12,7 @@
         : 'bg-transparent'
     "
   >
-    <!-- 品牌 Logo -->
-    <div class="flex items-center gap-1.5 flex-shrink-0 cursor-pointer" @click="goHome">
-      <div class="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
-        <span class="text-white text-[10px] font-bold">豆</span>
-      </div>
-      <span class="text-base font-bold text-slate-800 hidden sm:block">豆丁</span>
-    </div>
-
-    <!-- 搜索入口（折叠式） -->
+    <!-- 搜索入口 -->
     <div
       class="flex-1 h-8 bg-slate-100 rounded-full flex items-center gap-1.5 px-3 cursor-pointer hover:bg-slate-200/80 transition-colors max-w-[240px]"
       @click="$router.push('/search')"

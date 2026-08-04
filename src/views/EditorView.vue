@@ -206,16 +206,12 @@
       :isPublic="isPublished"
       @newDesign="exitEditor"
       @save="saveDesign"
+      @saveAs="saveAs"
       @publish="publishDesign"
       @unpublish="unpublishDesign"
-      @exportPNG="exportPNG"
-      @exportSVG="exportSVG"
-      @exportPDF="exportPDFFile"
-      @exportCSV="exportCSV"
-      @exportMaterial="exportMaterial"
-      @exportJSON="exportJSONFile"
-      @undo="undo"
-      @redo="redo"
+      @openExport="openExportPage"
+      @undo="handleUndo()"
+      @redo="handleRedo()"
       @cut="copySelection(); deleteSelection(); scheduleRender()"
       @copy="copySelection()"
       @paste="pasteSelection(); saveSnapshot(); renderAll()"
@@ -256,19 +252,18 @@
       :canRedo="historyIdx < historyArr.length - 1"
       :showGrid="showGrid"
       :refOpacity="refOpacity"
+      :symmetryMode="symmetryMode"
+      :guideMode="guideMode"
       :designSaved="!!editId"
       :designId="editId"
       :isPublic="isPublished"
       @back="exitEditor"
       @update:title="editTitle = $event"
-      @undo="undo; renderAll()"
-      @redo="redo; renderAll()"
+      @undo="handleUndo()"
+      @redo="handleRedo()"
       @toggleGrid="showGrid = !showGrid"
       @toggleRef="cycleRefOpacity"
-      @exportPNG="exportPNG"
-      @exportSVG="exportSVG"
-      @exportPDF="exportPDFFile"
-      @exportJSON="exportJSONFile"
+      @openExport="openExportPage"
       @save="saveDesign"
       @publish="publishDesign"
       @unpublish="unpublishDesign"
@@ -521,6 +516,60 @@
 
   <!-- 隐藏的文件输入 -->
   <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
+
+  <!-- ====== 保存作品弹窗 ====== -->
+  <Teleport to="body">
+    <Transition name="dialog">
+      <div v-if="showSaveDialog" class="editor-dialog-overlay" @click.self="showSaveDialog = false">
+        <div class="editor-dialog">
+          <!-- 标题栏 -->
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold text-slate-800">保存作品</h3>
+            <button class="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center" @click="showSaveDialog = false">
+              <XIcon :size="16" class="text-slate-400" />
+            </button>
+          </div>
+
+          <!-- 作品名称 -->
+          <label class="text-xs font-semibold text-slate-600 mb-1.5 block">作品名称</label>
+          <input
+            v-model="saveForm.title"
+            type="text"
+            placeholder="输入作品名称…"
+            class="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary mb-4"
+            maxlength="100"
+          />
+
+          <!-- 作品描述 -->
+          <label class="text-xs font-semibold text-slate-600 mb-1.5 block">
+            作品描述 <span class="text-slate-400 font-normal">（{{ (saveForm.description || '').length }}/256）</span>
+          </label>
+          <textarea
+            v-model="saveForm.description"
+            placeholder="描述一下你的作品…"
+            class="w-full h-24 px-3 py-2 rounded-xl border border-slate-200 text-sm outline-none focus:border-primary resize-none mb-4"
+            maxlength="256"
+          />
+
+          <!-- 按钮 -->
+          <div class="flex gap-2">
+            <button
+              class="flex-1 h-10 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium hover:bg-slate-200 transition-colors"
+              @click="doSave(false)"
+            >
+              保存
+            </button>
+            <button
+              class="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
+              @click="doSave(true)"
+            >
+              保存并发布
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -540,6 +589,7 @@ import {
   ChevronRightIcon,
   ClockIcon,
   LinkIcon,
+  XIcon,
 } from 'lucide-vue-next'
 
 import EditorTopBar from '@/components/editor/EditorTopBar.vue'
@@ -550,10 +600,7 @@ import EditorFocusMode from '@/components/editor/EditorFocusMode.vue'
 import EditorToolbar from '@/components/editor/EditorToolbar.vue'
 import EditorRightPanel from '@/components/editor/EditorRightPanel.vue'
 import EditorStatusBar from '@/components/editor/EditorStatusBar.vue'
-import { generateSVG, downloadSVG } from '@/utils/svgExport.js'
 import { bresenhamLine, drawRect, drawCircle, drawPixelText } from '@/utils/shapeDrawing.js'
-import { exportColorMatrixCSV, exportMaterialList, downloadCSV } from '@/utils/exportFormats.js'
-
 const route = useRoute()
 const router = useRouter()
 const auth = useAuth()
@@ -693,6 +740,11 @@ const {
 
 // 发布状态
 const isPublished = ref(false)
+
+// 保存弹窗
+const showSaveDialog = ref(false)
+const saveForm = ref({ title: '', description: '' })
+const editDesc = ref('')
 
 const compositeGrid = computed(() => getCompositeGrid())
 const editorCanvasRef = ref(null)
@@ -874,6 +926,16 @@ function scheduleRender() {
 
 function renderAll() {
   editorCanvasRef.value?.renderAll()
+}
+
+function handleUndo() {
+  undo()
+  nextTick(() => renderAll())
+}
+
+function handleRedo() {
+  redo()
+  nextTick(() => renderAll())
 }
 
 // ---- 工具栏操作 ----
@@ -1075,88 +1137,52 @@ function onJumpToHistory(index) {
 }
 
 // ---- 导出 ----
-async function exportPNG() {
-  toast.show('正在生成高清 PNG...')
-  try {
-    const cg = getCompositeGrid()
-    const blob = await API.download('/api/export/grid', {
-      gridData: cg,
-      gridWidth: gridW.value,
-      gridHeight: gridH.value,
-      scale: 10,
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = (editTitle.value || '拼豆图纸') + '.png'
-    a.click()
-    URL.revokeObjectURL(url)
-    toast.show('PNG 导出成功')
-  } catch (e) {
-    toast.show('导出失败，请稍后重试')
-  }
-}
-
-async function exportPDFFile() {
-  toast.show('正在生成 PDF 图纸...')
-  try {
-    const cg = getCompositeGrid()
-    const blob = await API.download('/api/export/pdf', {
-      gridData: cg,
-      gridWidth: gridW.value,
-      gridHeight: gridH.value,
-      title: editTitle.value,
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = (editTitle.value || '拼豆图纸') + '.pdf'
-    a.click()
-    URL.revokeObjectURL(url)
-    toast.show('PDF 导出成功')
-  } catch (e) {
-    toast.show('导出失败，请稍后重试')
-  }
-}
-
-function exportSVG() {
-  const comp = getCompositeGrid()
-  const svg = generateSVG(comp, gridW.value, gridH.value, {
-    cellSize: 10,
-    showGrid: true,
-    showLabels: false,
-  })
-  downloadSVG(svg, `${editTitle.value || '拼豆图纸'}.svg`)
-}
-
-function exportCSV() {
-  const comp = getCompositeGrid()
-  const csv = exportColorMatrixCSV(comp, gridW.value, gridH.value)
-  downloadCSV(csv, `${editTitle.value || '拼豆图纸'}_色号矩阵.csv`)
-}
-
-function exportMaterial() {
-  const csv = exportMaterialList(gridColorStats.value)
-  downloadCSV(csv, `${editTitle.value || '拼豆图纸'}_用料清单.csv`)
-}
-
-function exportJSONFile() {
+// ===== 跳转导出预览页 =====
+function openExportPage() {
   const cg = getCompositeGrid()
-  const data = {
-    title: editTitle.value,
-    gridW: gridW.value,
-    gridH: gridH.value,
-    grid: cg,
-    version: '2.0',
+  // 构建颜色映射：hex → { id, code, hex, name }
+  const colorMap = []
+  const seen = new Set()
+  for (let r = 0; r < gridH.value; r++) {
+    const row = cg[r]
+    if (!row) continue
+    for (let c = 0; c < gridW.value; c++) {
+      const cell = row[c]
+      if (!cell?.hex) continue
+      const hex = cell.hex.toUpperCase()
+      if (seen.has(hex)) continue
+      seen.add(hex)
+      // 从 beadData 中查找完整的颜色信息（含色号 code 和 brand）
+      const bead = beadData.value.find(b => b.hex && b.hex.toUpperCase() === hex)
+      colorMap.push({
+        id: hex,
+        code: bead?.code || bead?.name || cell.name || hex,
+        hex: cell.hex,
+        name: bead?.name || cell.name || '',
+        brand: bead?.brand || cell.brand || '',
+      })
+    }
   }
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = (editTitle.value || '拼豆图纸') + '.json'
-  a.click()
-  URL.revokeObjectURL(url)
-  toast.show('JSON 导出成功')
+
+  // 展平网格为一维数组（每个元素是 hex 或 null，用作 colorMap 的 key）
+  const pixels = []
+  for (let r = 0; r < gridH.value; r++) {
+    const row = cg[r]
+    for (let c = 0; c < gridW.value; c++) {
+      const cell = row?.[c]
+      pixels.push(cell?.hex ? cell.hex.toUpperCase() : null)
+    }
+  }
+
+  localStorage.setItem('export-canvas-data', JSON.stringify({
+    pixels,
+    width: gridW.value,
+    height: gridH.value,
+    title: editTitle.value || '拼豆图纸',
+  }))
+  localStorage.setItem('export-color-map', JSON.stringify(colorMap))
+
+  router.push('/export')
 }
 
 // ---- 图片导入 ----
@@ -1304,16 +1330,73 @@ function doResize() {
 }
 
 // ---- 保存 ----
+
+/** 静默保存（不弹窗，用于已保存过的设计更新） */
+async function doQuickSave() {
+  const cg = getCompositeGrid()
+  const payload = {
+    title: editTitle.value,
+    description: editDesc.value || '',
+    gridWidth: gridW.value,
+    gridHeight: gridH.value,
+    gridData: JSON.stringify(cg),
+    beadCount: beadCount.value,
+    colorCount: gridColorStats.value.length,
+  }
+  await API.put(`/api/designs/${editId.value}`, payload, true)
+  hasUnsavedChanges.value = false
+  toast.show('已保存')
+}
+
+/** 保存入口：已保存过的直接保存，新设计弹窗要求输入标题 */
 async function saveDesign() {
-  if (!editTitle.value.trim()) {
-    const name = await dialog.prompt('请输入图纸名称', '保存图纸', editTitle.value || '未命名图纸')
-    if (name) editTitle.value = name
-    else return
+  if (!auth.isLoggedIn.value) {
+    toast.show('请先登录后再保存作品')
+    return router.push('/login')
+  }
+
+  // 已保存过的设计 → 直接保存，不弹窗
+  if (editId.value) {
+    try {
+      await doQuickSave()
+    } catch (e) {
+      toast.show('保存失败，请稍后重试')
+    }
+    return
+  }
+
+  // 新设计首次保存 → 弹窗，标题留空强制用户输入
+  saveForm.value.title = ''
+  saveForm.value.description = editDesc.value || ''
+  showSaveDialog.value = true
+}
+
+/** 另存为：弹窗并预填当前标题（除非还是默认的"未命名图纸"） */
+function saveAs() {
+  if (!auth.isLoggedIn.value) {
+    toast.show('请先登录后再保存作品')
+    return router.push('/login')
+  }
+  saveForm.value.title = editTitle.value === '未命名图纸' ? '' : (editTitle.value || '')
+  saveForm.value.description = editDesc.value || ''
+  showSaveDialog.value = true
+}
+
+async function doSave(publishAfter) {
+  const title = saveForm.value.title.trim()
+  if (!title) {
+    toast.show('请输入作品名称')
+    return
+  }
+  if (title === '未命名图纸' || title === '导入图纸') {
+    toast.show('请输入自定义的作品名称')
+    return
   }
   try {
     const cg = getCompositeGrid()
     const payload = {
-      title: editTitle.value,
+      title,
+      description: saveForm.value.description || '',
       gridWidth: gridW.value,
       gridHeight: gridH.value,
       gridData: JSON.stringify(cg),
@@ -1321,16 +1404,29 @@ async function saveDesign() {
       colorCount: gridColorStats.value.length,
     }
     if (editId.value) {
-      // 编辑已有设计：不修改发布状态
       await API.put(`/api/designs/${editId.value}`, payload, true)
     } else {
-      // 新建设计：默认私有
       payload.isPublic = false
       const res = await API.post('/api/designs', payload, true)
       editId.value = res.data?.id
       if (res.data) isPublished.value = !!res.data.isPublic
     }
+    editTitle.value = title
+    editDesc.value = saveForm.value.description || ''
     hasUnsavedChanges.value = false
+    showSaveDialog.value = false
+
+    if (publishAfter && editId.value) {
+      // 保存后发布
+      try {
+        const pubRes = await API.put(`/api/designs/${editId.value}/publish`, {}, true)
+        if (pubRes.code === 200) {
+          isPublished.value = true
+          toast.show('保存并发布成功！作品已展示在首页')
+          return
+        }
+      } catch (_) {}
+    }
     toast.show('保存成功')
   } catch (e) {
     toast.show('保存失败，请稍后重试')
@@ -1339,29 +1435,37 @@ async function saveDesign() {
 
 // ---- 发布 ----
 async function publishDesign() {
-  // 如果还没保存过，先保存
-  if (!editId.value) {
-    await saveDesign()
-    if (!editId.value) return
-  } else if (hasUnsavedChanges.value) {
-    // 有未保存更改，先保存
-    await saveDesign()
+  if (!auth.isLoggedIn.value) {
+    toast.show('请先登录后再发布作品')
+    return router.push('/login')
   }
-
-  try {
-    const res = await API.put(`/api/designs/${editId.value}/publish`, {}, true)
-    if (res.code === 200) {
-      isPublished.value = true
-      toast.show('发布成功！作品已展示在首页')
+  // 已保存过的设计 → 直接发布
+  if (editId.value && !hasUnsavedChanges.value) {
+    try {
+      const res = await API.put(`/api/designs/${editId.value}/publish`, {}, true)
+      if (res.code === 200) {
+        isPublished.value = true
+        toast.show('发布成功！作品已展示在首页')
+      }
+    } catch (e) {
+      toast.show('发布失败，请稍后重试')
     }
-  } catch (e) {
-    toast.show('发布失败，请稍后重试')
+    return
   }
+  // 未保存或有未保存更改 → 弹窗（标题留空，强制输入）
+  saveForm.value.title = editTitle.value === '未命名图纸' ? '' : (editTitle.value || '')
+  saveForm.value.description = editDesc.value || ''
+  showSaveDialog.value = true
 }
 
 // ---- 取消发布 ----
 async function unpublishDesign() {
   if (!editId.value) return
+  // 未登录时提示并跳转到登录页
+  if (!auth.isLoggedIn.value) {
+    toast.show('请先登录')
+    return router.push('/login')
+  }
   try {
     const res = await API.put(`/api/designs/${editId.value}/unpublish`, {}, true)
     if (res.code === 200) {
@@ -1424,6 +1528,8 @@ async function exitEditor() {
   initGrid(gridW.value, gridH.value)
   saveSnapshot()
   loadRecentDesigns()
+  // 返回上一页
+  router.back()
 }
 
 // ---- 快捷键 ----
@@ -1629,3 +1735,18 @@ onUnmounted(() => {
   autoSave()
 })
 </script>
+
+<style scoped>
+.editor-dialog-overlay {
+  @apply fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm;
+}
+.editor-dialog {
+  @apply bg-white rounded-2xl shadow-xl p-5 w-[400px] max-w-[92vw];
+}
+.dialog-enter-active, .dialog-leave-active {
+  transition: opacity 0.15s ease;
+}
+.dialog-enter-from, .dialog-leave-to {
+  opacity: 0;
+}
+</style>

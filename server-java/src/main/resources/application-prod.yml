@@ -1,0 +1,38 @@
+# ============================================
+#  豆丁 Douding — 生产环境配置
+#  通过环境变量覆盖敏感信息
+# ============================================
+
+server:
+  port: ${PORT:8080}
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/douding?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+douding:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 30d
+    admin-secret: ${JWT_ADMIN_SECRET}
+    admin-expiration: 12h
+
+logging:
+  level:
+    root: WARN
+    com.douding: INFO
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl

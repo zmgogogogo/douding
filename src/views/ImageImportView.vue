@@ -580,12 +580,13 @@ function updatePreview() {
 
   // 预计算调色板所有颜色的 Oklab 值
   const paletteOklab = palette.map((bc) => {
+    if (!bc?.hex) return null
     const hex = bc.hex.replace('#', '')
     const br = parseInt(hex.substring(0, 2), 16)
     const bg = parseInt(hex.substring(2, 4), 16)
     const bb = parseInt(hex.substring(4, 6), 16)
     return { ...bc, oklab: rgbToOklab(br, bg, bb) }
-  })
+  }).filter(Boolean)
 
   // ============================================
   //  Step 2: Oklab 感知距离匹配 + 颜色频率统计
@@ -801,7 +802,7 @@ async function generate() {
     form.append('colorLimit', String(colorLimit.value))
 
     const res = await API.upload('/api/image-to-grid', form, auth.isLoggedIn.value)
-    if (res.code === 200) {
+    if (res && res.code === 200) {
       gridResult.value = res.data
       sessionStorage.setItem('imported_grid', JSON.stringify(res.data))
       sessionStorage.setItem('import_toast', '图片已转换为拼豆图纸！')
@@ -810,6 +811,8 @@ async function generate() {
       toast.show('转换失败: ' + (res.message || '请重试'))
     }
   } catch (e) {
+    console.error('[图片转像素图] 生成失败:', e)
+    console.error('[图片转像素图] 错误堆栈:', e.stack)
     toast.show('生成失败: ' + (e.message || '请重试'))
   } finally {
     generating.value = false

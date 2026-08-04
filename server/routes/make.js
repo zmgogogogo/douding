@@ -92,10 +92,10 @@ router.post('/make/progress/save', authRequired, (req, res) => {
   }
 })
 
-// POST /api/make/progress/finish — 标记制作完成
+// POST /api/make/progress/finish — 标记制作完成 + 自动扣料（豆仓 V3.0）
 router.post('/make/progress/finish', authRequired, (req, res) => {
   try {
-    const { designId, totalDuration } = req.body || {}
+    const { designId, totalDuration, lossRate } = req.body || {}
 
     if (!designId) {
       return res.status(400).json(fail(400, '缺少图纸 ID'))
@@ -121,12 +121,107 @@ router.post('/make/progress/finish', authRequired, (req, res) => {
       ).run(totalDuration || 0, session.id)
     }
 
+    // ====== 豆仓 V3.0：自动扣料（始终开启，损耗率 0%） ======
+    let deductResult = null
+    const deductLossRate = 0
+
+    try {
+      const gridData = JSON.parse(design.grid_data || '[]')
+        const usageMap = new Map()
+
+        for (const row of gridData) {
+          if (!Array.isArray(row)) continue
+          for (const cell of row) {
+            if (!cell?.hex) continue
+            const hex = cell.hex.toUpperCase()
+            usageMap.set(hex, (usageMap.get(hex) || 0) + 1)
+          }
+        }
+
+        const beads = []
+        for (const [hex, count] of usageMap) {
+          const bead = db
+            .prepare('SELECT id, name FROM bead_colors WHERE UPPER(hex) = ? LIMIT 1')
+            .get(hex)
+          if (bead) {
+            beads.push({ colorId: bead.id, quantity: count, name: bead.name, hex })
+          }
+        }
+
+        if (beads.length) {
+          const lossMultiplier = 1 + deductLossRate / 100
+          const warnings = []
+          let totalDeducted = 0
+
+          const txn = db.transaction(() => {
+            for (const b of beads) {
+              const actualQty = Math.ceil(b.quantity * lossMultiplier)
+              const cur = db
+                .prepare('SELECT quantity FROM user_bead_inventory WHERE user_id = ? AND color_id = ?')
+                .get(req.user.id, b.colorId)
+              const beforeStock = cur?.quantity || 0
+
+              let afterStock, deducted
+              if (beforeStock >= actualQty) {
+                deducted = actualQty
+                afterStock = beforeStock - actualQty
+              } else {
+                deducted = beforeStock
+                afterStock = 0
+                warnings.push({
+                  colorId: b.colorId,
+                  colorName: b.name || '',
+                  colorHex: b.hex || '',
+                  need: actualQty,
+                  available: beforeStock,
+                  shortage: actualQty - beforeStock,
+                })
+              }
+              totalDeducted += deducted
+
+              db.prepare(
+                `INSERT INTO user_bead_inventory (user_id, color_id, quantity, updated_at)
+                 VALUES (?, ?, ?, datetime('now'))
+                 ON CONFLICT(user_id, color_id)
+                 DO UPDATE SET quantity = excluded.quantity, updated_at = datetime('now')`
+              ).run(req.user.id, b.colorId, afterStock)
+
+              db.prepare(
+                `INSERT INTO inventory_logs (user_id, color_id, action, quantity, balance_after, source_type, source_id, source_name, note, created_at)
+                 VALUES (?, ?, 'outbound', ?, ?, 'deduct', ?, ?, ?, datetime('now'))`
+              ).run(
+                req.user.id, b.colorId, -deducted, afterStock,
+                designId, design.title,
+                `制作完成，损耗率${deductLossRate}%`
+              )
+
+              try {
+                db.prepare(
+                  'INSERT INTO design_bead_usage (user_id, design_id, color_id, quantity) VALUES (?, ?, ?, ?)'
+                ).run(req.user.id, designId, b.colorId, deducted)
+              } catch { /* 忽略重复 */ }
+            }
+          })
+          txn()
+
+          deductResult = {
+            totalDeducted,
+            colorCount: beads.length,
+            lossRate: 0,
+            warnings,
+          }
+        }
+    } catch (deductErr) {
+      console.error('[make/finish] 自动扣料失败:', deductErr)
+    }
+
     res.json(
       success({
         finished: true,
         designTitle: design.title,
         beadCount: design.bead_count,
         colorCount: design.color_count,
+        deduct: deductResult,
       })
     )
   } catch (err) {
@@ -267,10 +362,10 @@ router.delete('/make/archives/:archiveId', authRequired, (req, res) => {
 //  制作完成与库存扣减
 // ============================================================
 
-// POST /api/make/finish — 完成制作并写入制作记录
+// POST /api/make/finish — 完成制作并写入制作记录 + 自动扣料
 router.post('/make/finish', authRequired, (req, res) => {
   try {
-    const { designId, totalDuration, lossRate } = req.body || {}
+    const { designId, totalDuration, lossRate, autoDeduct } = req.body || {}
 
     if (!designId) return res.status(400).json(fail(400, '缺少图纸 ID'))
 
@@ -309,12 +404,106 @@ router.post('/make/finish', authRequired, (req, res) => {
       // make_records 表可能还未创建（迁移未执行），静默忽略
     }
 
+    // ====== 豆仓 V3.0：自动扣料（始终开启，损耗率 0%） ======
+    let deductResult = null
+    const deductLossRate = 0
+
+    try {
+      const gridData = JSON.parse(design.grid_data || '[]')
+
+          // 统计每种颜色用量
+          const usageMap = new Map()
+          for (const row of gridData) {
+            if (!Array.isArray(row)) continue
+            for (const cell of row) {
+              if (!cell?.hex) continue
+              const hex = cell.hex.toUpperCase()
+              usageMap.set(hex, (usageMap.get(hex) || 0) + 1)
+            }
+          }
+
+          // 构建扣料参数
+          const beads = []
+          for (const [hex, count] of usageMap) {
+            const bead = db
+              .prepare('SELECT id, name FROM bead_colors WHERE UPPER(hex) = ? LIMIT 1')
+              .get(hex)
+            if (bead) {
+              beads.push({ colorId: bead.id, quantity: count, name: bead.name, hex })
+            }
+          }
+
+          if (beads.length) {
+            const lossMultiplier = 1 + (deductLossRate || 5) / 100
+            const warnings = []
+
+            const txn = db.transaction(() => {
+              for (const b of beads) {
+                const actualQty = Math.ceil(b.quantity * lossMultiplier)
+                const cur = db
+                  .prepare('SELECT quantity FROM user_bead_inventory WHERE user_id = ? AND color_id = ?')
+                  .get(req.user.id, b.colorId)
+                const beforeStock = cur?.quantity || 0
+
+                let afterStock, deducted
+                if (beforeStock >= actualQty) {
+                  deducted = actualQty
+                  afterStock = beforeStock - actualQty
+                } else {
+                  deducted = beforeStock
+                  afterStock = 0
+                  warnings.push({
+                    colorId: b.colorId,
+                    colorName: b.name || '',
+                    colorHex: b.hex || '',
+                    need: actualQty,
+                    available: beforeStock,
+                    shortage: actualQty - beforeStock,
+                  })
+                }
+
+                db.prepare(
+                  `INSERT INTO user_bead_inventory (user_id, color_id, quantity, updated_at)
+                   VALUES (?, ?, ?, datetime('now'))
+                   ON CONFLICT(user_id, color_id)
+                   DO UPDATE SET quantity = excluded.quantity, updated_at = datetime('now')`
+                ).run(req.user.id, b.colorId, afterStock)
+
+                db.prepare(
+                  `INSERT INTO inventory_logs (user_id, color_id, action, quantity, balance_after, source_type, source_id, source_name, note, created_at)
+                   VALUES (?, ?, 'outbound', ?, ?, 'deduct', ?, ?, ?, datetime('now'))`
+                ).run(
+                  req.user.id, b.colorId, -deducted, afterStock,
+                  designId, design.title,
+                  `制作完成，损耗率${deductLossRate}%`
+                )
+
+                try {
+                  db.prepare(
+                    'INSERT INTO design_bead_usage (user_id, design_id, color_id, quantity) VALUES (?, ?, ?, ?)'
+                  ).run(req.user.id, designId, b.colorId, deducted)
+                } catch { /* 忽略重复 */ }
+              }
+            })
+            txn()
+
+            deductResult = {
+              deducted: beads.length,
+              warnings,
+              lossRate: deductLossRate,
+            }
+          }
+    } catch (deductErr) {
+      console.error('[make/finish] 自动扣料失败:', deductErr)
+    }
+
     res.json(
       success({
         finished: true,
         designTitle: design.title,
         beadCount: design.bead_count,
         colorCount: design.color_count,
+        deduct: deductResult,
       })
     )
   } catch (err) {

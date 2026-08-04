@@ -4,6 +4,7 @@
 
 /** Hex 颜色 → RGB 分量 */
 export function hexToRgb(hex) {
+  if (!hex || typeof hex !== 'string') return { r: 0, g: 0, b: 0 }
   const h = hex.replace('#', '')
   return {
     r: parseInt(h.substring(0, 2), 16),

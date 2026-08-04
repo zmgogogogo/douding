@@ -122,35 +122,6 @@ router.put('/:id/unpublish', authRequired, (req, res) => {
   }
 })
 
-// 收藏/取消收藏
-router.post('/:id/favorite', authRequired, (req, res) => {
-  try {
-    const design = db.prepare('SELECT * FROM designs WHERE id = ?').get(req.params.id)
-    if (!design) return res.status(404).json(fail(404, '设计不存在'))
-
-    const existing = db.prepare(
-      'SELECT 1 FROM design_favorites WHERE user_id = ? AND design_id = ?'
-    ).get(req.user.id, design.id)
-
-    if (existing) {
-      db.prepare('DELETE FROM design_favorites WHERE user_id = ? AND design_id = ?')
-        .run(req.user.id, design.id)
-      db.prepare('UPDATE designs SET favorites_count = MAX(0, favorites_count - 1) WHERE id = ?')
-        .run(design.id)
-      res.json(success({ favorited: false }))
-    } else {
-      db.prepare('INSERT INTO design_favorites (user_id, design_id) VALUES (?, ?)')
-        .run(req.user.id, design.id)
-      db.prepare('UPDATE designs SET favorites_count = favorites_count + 1 WHERE id = ?')
-        .run(design.id)
-      res.json(success({ favorited: true }))
-    }
-  } catch (err) {
-    console.error('收藏操作错误:', err)
-    res.status(500).json(fail(500, '操作失败'))
-  }
-})
-
 // 设计详情
 router.get('/:id', authOptional, (req, res) => {
   try {
@@ -162,21 +133,16 @@ router.get('/:id', authOptional, (req, res) => {
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(design.user_id)
 
     let liked = false
-    let favorited = false
     if (req.user) {
       const like = db.prepare('SELECT 1 FROM design_likes WHERE user_id = ? AND design_id = ?')
         .get(req.user.id, design.id)
       liked = !!like
-      const fav = db.prepare('SELECT 1 FROM design_favorites WHERE user_id = ? AND design_id = ?')
-        .get(req.user.id, design.id)
-      favorited = !!fav
     }
 
     res.json(success({
       ...formatDesign(design),
       author: user ? userPublic(user) : null,
       liked,
-      favorited,
     }))
   } catch (err) {
     console.error('获取设计详情错误:', err)

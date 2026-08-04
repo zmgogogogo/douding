@@ -90,7 +90,7 @@ router.get('/home/init', authOptional, (req, res) => {
       .prepare(
         `
       SELECT d.id, d.user_id, d.folder_id, d.title, d.description,
-        d.grid_width, d.grid_height, d.grid_data, d.thumbnail, d.is_public,
+        d.grid_width, d.grid_height, d.thumbnail, d.grid_data, d.is_public,
         d.bead_count, d.color_count, d.likes_count, d.views_count,
         d.brand, d.created_at, d.updated_at,
         u.username, u.nickname, u.avatar
@@ -154,9 +154,9 @@ router.get('/home/content/list', authOptional, (req, res) => {
       .prepare(
         `
       SELECT d.id, d.user_id, d.folder_id, d.title, d.description,
-        d.grid_width, d.grid_height, d.grid_data, d.thumbnail, d.is_public,
+        d.grid_width, d.grid_height, d.thumbnail, d.grid_data, d.is_public,
         d.bead_count, d.color_count, d.likes_count, d.views_count,
-        d.favorites_count, d.brand, d.created_at, d.updated_at,
+        d.brand, d.created_at, d.updated_at,
         u.username, u.nickname, u.avatar
       FROM designs d JOIN users u ON d.user_id = u.id
       WHERE d.is_public = 1
@@ -168,9 +168,8 @@ router.get('/home/content/list', authOptional, (req, res) => {
 
     const total = db.prepare('SELECT COUNT(*) as c FROM designs WHERE is_public = 1').get()
 
-    // 已登录用户：批量查询点赞和收藏状态
+    // 已登录用户：批量查询点赞状态
     let likedSet = new Set()
-    let favSet = new Set()
     if (req.user && designs.length > 0) {
       const ids = designs.map((d) => d.id)
       const placeholders = ids.map(() => '?').join(',')
@@ -181,13 +180,6 @@ router.get('/home/content/list', authOptional, (req, res) => {
         )
         .all(req.user.id, ...ids)
       likedRows.forEach((r) => likedSet.add(r.design_id))
-
-      const favRows = db
-        .prepare(
-          `SELECT design_id FROM design_favorites WHERE user_id = ? AND design_id IN (${placeholders})`
-        )
-        .all(req.user.id, ...ids)
-      favRows.forEach((r) => favSet.add(r.design_id))
     }
 
     res.json({
@@ -203,7 +195,6 @@ router.get('/home/content/list', authOptional, (req, res) => {
             avatar: d.avatar,
           },
           isLiked: likedSet.has(d.id),
-          isFavorited: favSet.has(d.id),
         })),
         total: total.c,
         hasMore: offset + designs.length < total.c,

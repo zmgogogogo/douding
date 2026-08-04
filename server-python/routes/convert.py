@@ -67,12 +67,15 @@ def _pixels_to_grid(pixels: np.ndarray, bead_colors: list) -> list:
             if rgb_key not in match_cache:
                 oklab = rgb_to_oklab(np.array(list(rgb_key)))
                 best = find_best_match_oklab(oklab, bead_colors)
-                match_cache[rgb_key] = {
-                    'id': best['id'],
-                    'name': best['name'],
-                    'hex': best['hex'],
-                    'brand': best.get('brand', '')
-                }
+                if best is None:
+                    match_cache[rgb_key] = None
+                else:
+                    match_cache[rgb_key] = {
+                        'id': best['id'],
+                        'name': best['name'],
+                        'hex': best['hex'],
+                        'brand': best.get('brand', '')
+                    }
             row.append(match_cache[rgb_key])
         grid.append(row)
     return grid

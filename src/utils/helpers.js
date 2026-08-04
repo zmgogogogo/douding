@@ -13,6 +13,7 @@ export function esc(str) {
 
 /** 从 hex 颜色计算对比色（黑或白） */
 export function contrastColor(hex) {
+  if (!hex) return '#000'
   const h = hex.replace('#', '')
   const r = parseInt(h.substring(0, 2), 16)
   const g = parseInt(h.substring(2, 4), 16)

@@ -431,4 +431,84 @@ export const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_snapshots_session ON make_progress_snapshots(session_id);
     `,
   },
+
+  // ===== v10: 豆仓系统 V3.0 — 用户库存设置表 =====
+  {
+    version: 10,
+    name: '豆仓系统 V3.0 — 用户库存设置（自动扣料/损耗率）',
+    sql: `
+      CREATE TABLE IF NOT EXISTS user_stock_settings (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        auto_deduct INTEGER DEFAULT 1,
+        default_loss_rate REAL DEFAULT 5.0,
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `,
+  },
+
+  // ===== v11: 作品详情页增强 — 扩展字段 + 评论表 + 关注表 =====
+  {
+    version: 11,
+    name: '作品详情页增强（版权/难度/评论/关注）',
+    sql: `
+      -- 扩展 designs 表：作品详情页所需字段
+      ALTER TABLE designs ADD COLUMN copyright_desc TEXT DEFAULT '';
+      ALTER TABLE designs ADD COLUMN is_remix INTEGER DEFAULT 0;
+      ALTER TABLE designs ADD COLUMN difficulty INTEGER DEFAULT 1;
+      ALTER TABLE designs ADD COLUMN cost_time TEXT DEFAULT '';
+      ALTER TABLE designs ADD COLUMN real_size TEXT DEFAULT '';
+
+      -- 评论表（支持楼中楼：parent_id=0 表示一级评论）
+      CREATE TABLE IF NOT EXISTS design_comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        design_id INTEGER NOT NULL REFERENCES designs(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        parent_id INTEGER DEFAULT 0,
+        reply_to_uid INTEGER DEFAULT 0,
+        content TEXT NOT NULL,
+        like_num INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        deleted INTEGER DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS idx_comment_design ON design_comments(design_id);
+      CREATE INDEX IF NOT EXISTS idx_comment_parent ON design_comments(parent_id);
+      CREATE INDEX IF NOT EXISTS idx_comment_user ON design_comments(user_id);
+
+      -- 评论点赞表
+      CREATE TABLE IF NOT EXISTS comment_likes (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        comment_id INTEGER NOT NULL REFERENCES design_comments(id) ON DELETE CASCADE,
+        created_at TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, comment_id)
+      );
+
+      -- 用户关注表
+      CREATE TABLE IF NOT EXISTS user_follow (
+        follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        following_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (follower_id, following_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_follow_follower ON user_follow(follower_id);
+      CREATE INDEX IF NOT EXISTS idx_follow_following ON user_follow(following_id);
+    `,
+  },
+
+  // ===== v12: 导出下载记录表 =====
+  {
+    version: 12,
+    name: '导出下载记录表（download_logs）',
+    sql: `
+      CREATE TABLE IF NOT EXISTS download_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        design_id INTEGER NOT NULL REFERENCES designs(id) ON DELETE CASCADE,
+        format TEXT NOT NULL DEFAULT 'png',
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_dl_user ON download_logs(user_id);
+      CREATE INDEX IF NOT EXISTS idx_dl_design ON download_logs(design_id);
+      CREATE INDEX IF NOT EXISTS idx_dl_created ON download_logs(created_at);
+    `,
+  },
 ]

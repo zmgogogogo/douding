@@ -17,6 +17,12 @@ const routes = [
   { path: '/warehouse', name: 'warehouse', component: () => import('./views/WarehouseView.vue') },
   { path: '/user/:id', name: 'profile', component: () => import('./views/ProfileView.vue') },
   { path: '/search', name: 'search', component: () => import('./views/SearchView.vue') },
+  {
+    path: '/export',
+    name: 'export',
+    component: () => import('./views/ExportView.vue'),
+    meta: { fullScreen: true },
+  },
   { path: '/ocr', name: 'ocr', component: () => import('./views/OcrView.vue') },
   {
     path: '/link-import',
@@ -25,7 +31,6 @@ const routes = [
   },
   // 占位路由（ProfileView 等页面引用的路径，功能待实现）
   { path: '/likes', name: 'likes', component: () => import('./views/LikedDesignsView.vue') },
-  { path: '/favorites', name: 'favorites', component: () => import('./views/FavoriteDesignsView.vue') },
   { path: '/make/:id', name: 'make', component: () => import('./views/MakeModeView.vue') },
   { path: '/make-records', name: 'makeRecords', component: () => import('./views/MakeRecordsView.vue') },
   { path: '/tutorial', name: 'tutorial', component: () => import('./views/PlaceholderView.vue') },

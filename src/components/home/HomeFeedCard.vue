@@ -19,6 +19,13 @@
         loading="lazy"
         @error="onImgError"
       />
+      <HomeThumbCanvas
+        v-else-if="hasGridData"
+        class="absolute inset-0 w-full h-full"
+        :gridData="item.gridData"
+        :gridWidth="item.gridWidth"
+        :gridHeight="item.gridHeight"
+      />
       <div v-else class="absolute inset-0 flex items-center justify-center text-2xl text-slate-300">
         🧩
       </div>
@@ -62,13 +69,23 @@
         loading="lazy"
         @error="onImgError"
       />
+      <HomeThumbCanvas
+        v-else-if="hasGridData"
+        class="absolute inset-0 w-full h-full"
+        :gridData="item.gridData"
+        :gridWidth="item.gridWidth"
+        :gridHeight="item.gridHeight"
+      />
       <div v-else class="absolute inset-0 flex items-center justify-center text-2xl text-slate-300">
         🧩
       </div>
     </div>
     <div class="p-2.5">
       <!-- 作者信息 -->
-      <div class="flex items-center gap-1.5 mb-1.5">
+      <div
+        class="flex items-center gap-1.5 mb-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+        @click.stop="$router.push('/user/' + item.author?.id)"
+      >
         <img
           v-if="item.author?.avatar"
           :src="item.author.avatar"
@@ -135,7 +152,6 @@
       </div>
       <div class="flex items-center gap-3 text-[11px] text-slate-400">
         <span>{{ formatNum(item.readCount || 0) }} 阅读</span>
-        <span>{{ formatNum(item.favCount || 0) }} 收藏</span>
       </div>
     </div>
   </div>
@@ -170,12 +186,18 @@
 <script setup>
 import { computed } from 'vue'
 import { UserIcon, HeartIcon, MessageCircleIcon, BookOpenIcon } from 'lucide-vue-next'
+import HomeThumbCanvas from '@/components/home/HomeThumbCanvas.vue'
 
 const props = defineProps({
   item: { type: Object, required: true },
 })
 
 defineEmits(['click', 'like', 'join'])
+
+// 是否有 gridData 可用于 canvas 渲染
+const hasGridData = computed(() => {
+  return !!(props.item.gridData && Array.isArray(props.item.gridData) && props.item.gridData.length)
+})
 
 // 根据图片比例计算 padding-bottom（默认正方形）
 const thumbRatio = computed(() => {
@@ -211,10 +233,18 @@ function onImgError(e) {
 <style scoped>
 .feed-card {
   @apply bg-white rounded-xl overflow-hidden break-inside-avoid mb-3
-         border border-black/[0.04]
-         shadow-[0_1px_3px_rgba(0,0,0,.04)]
-         active:scale-[0.98] transition-transform duration-100 cursor-pointer;
+         shadow-[0_1px_3px_rgba(0,0,0,.06)]
+         active:scale-[0.98] transition-all duration-200 cursor-pointer;
 }
+
+/* PC 端 hover：上浮 + 阴影加深（文档 §3.4.1） */
+@media (hover: hover) {
+  .feed-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
 .pixel-thumb {
   image-rendering: pixelated;
   image-rendering: crisp-edges;

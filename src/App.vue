@@ -9,6 +9,13 @@
     <AppDialog ref="dialogRef" />
   </div>
 
+  <!-- 全屏路由（导出页等）：无侧边栏，无容器 -->
+  <div v-else-if="isFullScreenRoute" class="fullscreen-root">
+    <router-view />
+    <AppToast :message="toastMessage" :visible="toastVisible" />
+    <AppDialog ref="dialogRef" />
+  </div>
+
   <!-- 用户端路由：保持现有侧边栏布局 -->
   <div v-else class="flex h-full bg-slate-50">
     <AppSidebar />
@@ -50,6 +57,9 @@ const route = useRoute()
 
 // 判断是否为管理端路由
 const isAdminRoute = computed(() => route.path.startsWith('/admin'))
+
+// 判断是否为全屏路由（导出页等）
+const isFullScreenRoute = computed(() => route.meta?.fullScreen === true)
 
 const { message: toastMessage, visible: toastVisible } = useToast()
 

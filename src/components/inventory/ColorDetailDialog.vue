@@ -73,81 +73,57 @@
               </div>
 
               <!-- 快捷调整 -->
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-slate-500 flex-shrink-0">快捷调整：</span>
-                <button class="quick-btn" @click="quickAdjust(-100)">−100</button>
-                <button class="quick-btn" @click="quickAdjust(-10)">−10</button>
-                <span class="text-xs font-mono font-bold text-slate-700 w-14 text-center">{{
-                  adjustQty
-                }}</span>
-                <button class="quick-btn" @click="quickAdjust(10)">+10</button>
-                <button class="quick-btn" @click="quickAdjust(100)">+100</button>
-                <button
-                  class="h-7 px-2 rounded-lg text-[10px] font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
-                  @click="doAdjust"
-                  :disabled="adjustQty === (detail.inventory?.quantity || 0)"
-                >
-                  确定
-                </button>
-              </div>
-
-              <!-- 替代色推荐 -->
-              <div v-if="detail.alternatives?.length">
-                <div class="text-xs font-semibold text-slate-600 mb-2">📋 豆仓内近似色</div>
-                <div class="flex gap-2 overflow-x-auto pb-1">
-                  <div
-                    v-for="alt in detail.alternatives"
-                    :key="alt.colorId"
-                    class="flex-shrink-0 w-[72px] bg-slate-50 rounded-lg p-1.5 text-center cursor-pointer hover:bg-slate-100 transition-colors"
-                    @click="$emit('select-substitute', alt)"
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-500 flex-shrink-0">快捷：</span>
+                  <button class="quick-btn" @click="quickAdjust(-100)">−100</button>
+                  <button class="quick-btn" @click="quickAdjust(-10)">−10</button>
+                  <button class="quick-btn" @click="quickAdjust(10)">+10</button>
+                  <button class="quick-btn" @click="quickAdjust(100)">+100</button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-500 flex-shrink-0">设为：</span>
+                  <input
+                    v-model.number="setQty"
+                    type="number"
+                    min="0"
+                    class="w-20 h-7 px-2 rounded-lg border border-slate-200 text-xs text-center font-mono font-bold text-slate-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/10"
+                  />
+                  <button
+                    class="h-7 px-3 rounded-lg text-[10px] font-medium bg-primary text-white hover:opacity-90 transition-colors"
+                    @click="doSet"
+                    :disabled="setQty === invQty"
                   >
-                    <div
-                      class="w-8 h-8 rounded-md ring-1 ring-black/10 mx-auto mb-1"
-                      :style="{ background: alt.hex }"
-                    />
-                    <div class="text-[9px] text-slate-600 truncate">{{ alt.name }}</div>
-                    <div
-                      class="text-[9px] font-mono"
-                      :class="
-                        alt.grade === 'excellent'
-                          ? 'text-green-500'
-                          : alt.grade === 'good'
-                            ? 'text-amber-500'
-                            : 'text-slate-400'
-                      "
-                    >
-                      ΔE{{ alt.deltaE }}
-                    </div>
-                    <div class="text-[9px] text-slate-400">{{ alt.inStock || 0 }}颗</div>
-                  </div>
+                    确定
+                  </button>
                 </div>
               </div>
 
-              <!-- 出入库记录 -->
+
+
+              <!-- 操作记录 -->
               <div v-if="detail.logs?.length">
                 <div class="text-xs font-semibold text-slate-600 mb-2">📜 操作记录</div>
-                <div class="space-y-1.5 max-h-[200px] overflow-y-auto">
+                <!-- 表头 -->
+                <div class="flex items-center gap-2 text-[10px] text-slate-400 border-b border-slate-100 pb-1 mb-1">
+                  <span class="w-[52px] flex-shrink-0">时间</span>
+                  <span class="w-14 flex-shrink-0 text-center">数量</span>
+                  <span class="w-14 flex-shrink-0 text-center">结余</span>
+                </div>
+                <div class="space-y-1 max-h-[200px] overflow-y-auto">
                   <div
                     v-for="log in displayLogs"
                     :key="log.id"
-                    class="flex items-center gap-2 text-[10px]"
+                    class="flex items-center gap-2 text-[11px]"
                   >
-                    <div
-                      class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      :class="log.action === 'inbound' ? 'bg-green-400' : 'bg-red-400'"
-                    />
-                    <span class="text-slate-400 w-14 flex-shrink-0">{{
-                      formatDate(log.created_at)
-                    }}</span>
+                    <span class="text-slate-500 w-[52px] flex-shrink-0">{{ formatDate(log.created_at) }}</span>
                     <span
-                      :class="log.quantity > 0 ? 'text-green-600' : 'text-red-500'"
-                      class="font-mono"
+                      class="font-mono font-bold w-14 flex-shrink-0 text-center"
+                      :class="log.quantity > 0 ? 'text-emerald-500' : log.quantity < 0 ? 'text-red-500' : 'text-slate-400'"
                     >
                       {{ log.quantity > 0 ? '+' : '' }}{{ log.quantity }}
                     </span>
-                    <span class="text-slate-500 truncate flex-1">{{
-                      log.source_name || log.note || log.source_type || ''
-                    }}</span>
+                    <span class="font-mono text-slate-700 w-14 flex-shrink-0 text-center">{{ log.balanceAfter ?? '-' }}</span>
                   </div>
                 </div>
                 <button
@@ -227,6 +203,7 @@ const dialog = useDialog()
 
 const loading = ref(false)
 const detail = ref(null)
+const setQty = ref(0)
 const adjustQty = ref(0)
 const showAllLogs = ref(false)
 
@@ -244,15 +221,10 @@ watch(
     if (!id || !vis) return
     loading.value = true
     adjustQty.value = props.inventoryItem?.quantity || 0
+    setQty.value = props.inventoryItem?.quantity || 0
     try {
-      const [detailRes, altRes] = await Promise.all([
-        API.get(`/api/inventory/color-detail/${id}`, true),
-        API.get(`/api/inventory/substitute/${id}?warehouseOnly=true`, true),
-      ])
-      detail.value = {
-        ...detailRes.data,
-        alternatives: altRes.data?.substitutes || [],
-      }
+      const detailRes = await API.get(`/api/inventory/color-detail/${id}`, true)
+      detail.value = detailRes.data
     } catch (e) {
       toast.show('加载色号详情失败')
     } finally {
@@ -264,17 +236,20 @@ watch(
 function formatDate(d) {
   if (!d) return ''
   const dt = new Date(d + (d.includes('T') ? '' : 'T00:00:00'))
-  if (isNaN(dt.getTime())) return d.slice(0, 10)
-  return `${dt.getMonth() + 1}/${dt.getDate()}`
+  if (isNaN(dt.getTime())) return d.slice(0, 16)
+  const mm = dt.getMonth() + 1, dd = dt.getDate()
+  const hh = dt.getHours().toString().padStart(2, '0')
+  const min = dt.getMinutes().toString().padStart(2, '0')
+  return `${mm}/${dd} ${hh}:${min}`
 }
 
 async function quickAdjust(delta) {
-  adjustQty.value = Math.max(0, adjustQty.value + delta)
+  setQty.value = Math.max(0, setQty.value + delta)
 }
 
-async function doAdjust() {
+async function doSet() {
   try {
-    await API.put(`/api/inventory/${props.colorId}`, { quantity: adjustQty.value }, true)
+    await API.put(`/api/inventory/${props.colorId}`, { quantity: setQty.value }, true)
     toast.show('库存已更新')
     emit('updated')
     emit('close')

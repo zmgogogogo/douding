@@ -35,8 +35,15 @@ export function formatDesign(d) {
     beadCount: d.bead_count || 0,
     colorCount: d.color_count || 0,
     likesCount: d.likes_count || 0,
+    favoritesCount: d.favorites_count || 0,
     viewsCount: d.views_count || 0,
     brand: d.brand || 'Hama',
+    // v11 新增字段
+    copyrightDesc: d.copyright_desc || '',
+    isRemix: !!d.is_remix,
+    difficulty: d.difficulty || 1,
+    costTime: d.cost_time || '',
+    realSize: d.real_size || '',
     createdAt: d.created_at,
     updatedAt: d.updated_at,
   }

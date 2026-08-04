@@ -109,12 +109,22 @@
       </button>
 
       <!-- 镜像切换 -->
-      <button class="topbar-action-btn" @click="$emit('toggleSymmetry')" title="镜像 (K)">
+      <button
+        class="topbar-action-btn"
+        :class="{ 'text-primary': symmetryMode !== 'none' }"
+        @click="$emit('toggleSymmetry')"
+        title="镜像 (K)"
+      >
         <ShuffleIcon :size="16" />
       </button>
 
       <!-- 施工引导 -->
-      <button class="topbar-action-btn" @click="$emit('toggleGuide')" title="施工引导">
+      <button
+        class="topbar-action-btn"
+        :class="{ 'text-primary': guideMode }"
+        @click="$emit('toggleGuide')"
+        title="施工引导"
+      >
         <Wand2Icon :size="16" />
       </button>
 
@@ -129,56 +139,10 @@
         <span style="font-size:11px;font-weight:600">制作</span>
       </button>
 
-      <!-- 导出下拉 -->
-      <div class="relative">
-        <button class="topbar-action-btn" @click="showExport = !showExport" title="导出">
-          <DownloadIcon :size="16" />
-        </button>
-        <div
-          v-if="showExport"
-          class="absolute right-0 top-full mt-1 bg-white rounded-2xl border border-[var(--ui-border-glass)] py-1 w-36 z-[150] animate-scale-in"
-          style="box-shadow: var(--ui-shadow-lg)"
-          @mouseleave="showExport = false"
-        >
-          <button
-            class="export-menu-item"
-            @click="$emit('exportPNG'); showExport = false"
-          >
-            <ImageIcon :size="14" /><span>导出 PNG 图片</span>
-          </button>
-          <button
-            class="export-menu-item"
-            @click="$emit('exportSVG'); showExport = false"
-          >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="2" y="2" width="20" height="20" rx="2" />
-              <path d="M7 7h10l-3 5 3 5H7" />
-            </svg>
-            <span>导出 SVG 矢量</span>
-          </button>
-          <button
-            class="export-menu-item"
-            @click="$emit('exportPDF'); showExport = false"
-          >
-            <FileTextIcon :size="14" /><span>导出 PDF 图纸</span>
-          </button>
-          <button
-            class="export-menu-item"
-            @click="$emit('exportJSON'); showExport = false"
-          >
-            <CodeIcon :size="14" /><span>导出 JSON 数据</span>
-          </button>
-        </div>
-      </div>
+      <!-- 导出 -->
+      <button class="topbar-action-btn" @click="$emit('openExport')" title="导出图纸">
+        <DownloadIcon :size="16" />
+      </button>
 
       <!-- 更多菜单 -->
       <div class="relative">
@@ -231,14 +195,11 @@ import {
   EyeIcon,
   EyeOffIcon,
   DownloadIcon,
-  ImageIcon,
-  FileTextIcon,
   MoreHorizontalIcon,
   SaveIcon,
   InfoIcon,
   MaximizeIcon,
   Trash2Icon,
-  CodeIcon,
   ShuffleIcon,
   Wand2Icon,
   PlayIcon,
@@ -252,6 +213,8 @@ const props = defineProps({
   canRedo: { type: Boolean, default: false },
   showGrid: { type: Boolean, default: true },
   refOpacity: { type: Number, default: 0 },
+  symmetryMode: { type: String, default: 'none' },
+  guideMode: { type: Boolean, default: false },
   designSaved: { type: Boolean, default: false },
   isPublic: { type: Boolean, default: false },
   designId: { type: [Number, String], default: null },
@@ -264,10 +227,7 @@ defineEmits([
   'redo',
   'toggleGrid',
   'toggleRef',
-  'exportPNG',
-  'exportSVG',
-  'exportPDF',
-  'exportJSON',
+  'openExport',
   'save',
   'publish',
   'unpublish',
@@ -278,7 +238,6 @@ defineEmits([
   'toggleGuide',
 ])
 
-const showExport = ref(false)
 const showMore = ref(false)
 const showSaved = ref(false)
 const titleInput = ref(null)

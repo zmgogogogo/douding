@@ -167,8 +167,7 @@
         <button
           class="toolbar-btn"
           :class="{ active: symmetryMode !== 'none' }"
-          @pointerdown.prevent="$emit('cycleSymmetry')"
-          @dblclick.prevent="$emit('cycleSymmetry')"
+          @click="$emit('cycleSymmetry')"
           :title="'镜像 (K): ' + symLabels[symmetryMode]"
         >
           <SymmetryIcon :size="17" />
