@@ -118,7 +118,7 @@ const copied = ref(false)
 
 const shareLink = computed(() => {
   if (!props.designId) return ''
-  return `${location.origin}/#/editor/${props.designId}?collab=1`
+  return `${location.origin}/editor/${props.designId}?collab=1`
 })
 
 function copyLink() {
