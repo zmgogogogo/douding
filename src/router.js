@@ -38,10 +38,7 @@ const routes = [
   { path: '/feedback', name: 'feedback', component: () => import('./views/PlaceholderView.vue') },
   { path: '/about', name: 'about', component: () => import('./views/PlaceholderView.vue') },
   { path: '/messages', name: 'messages', component: () => import('./views/PlaceholderView.vue') },
-  // 404 兜底路由
-  { path: '/:pathMatch(.*)*', name: 'notFound', component: () => import('./views/NotFoundView.vue') },
-
-  // ===== 管理后台路由 =====
+  // ===== 管理后台路由（必须在 404 兜底之前） =====
   {
     path: '/admin/login',
     name: 'adminLogin',
@@ -120,6 +117,9 @@ const routes = [
       },
     ],
   },
+
+  // 404 兜底路由（必须放在所有路由最后）
+  { path: '/:pathMatch(.*)*', name: 'notFound', component: () => import('./views/NotFoundView.vue') },
 ]
 
 const router = createRouter({
