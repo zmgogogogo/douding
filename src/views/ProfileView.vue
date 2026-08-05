@@ -19,9 +19,9 @@
       <p class="text-slate-400 text-sm mt-1">该用户已注销或账号异常</p>
       <button
         class="mt-6 px-10 py-3 bg-primary text-white rounded-full font-bold text-sm active:scale-95 transition-all"
-        @click="$router.push('/')"
+        @click="$router.push('/login')"
       >
-        返回首页
+        注册 / 登录
       </button>
     </div>
 

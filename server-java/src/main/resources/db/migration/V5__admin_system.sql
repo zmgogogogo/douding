@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS sys_roles (
     name VARCHAR(50) NOT NULL UNIQUE,
     slug VARCHAR(50) NOT NULL UNIQUE,
     description VARCHAR(255) DEFAULT '',
-    permissions JSON DEFAULT '[]',
+    permissions JSON,
     status INT DEFAULT 1,
     created_at DATETIME DEFAULT NOW(),
     updated_at DATETIME DEFAULT NOW()
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS sys_operation_logs (
     action VARCHAR(100) NOT NULL,
     target_type VARCHAR(50),
     target_id BIGINT,
-    detail TEXT DEFAULT '',
+    detail TEXT,
     ip VARCHAR(50),
     user_agent VARCHAR(500),
     status INT DEFAULT 1,
@@ -79,4 +79,4 @@ ALTER TABLE users ADD COLUMN banned_at DATETIME;
 ALTER TABLE designs ADD COLUMN status INT DEFAULT 1;
 ALTER TABLE designs ADD COLUMN is_recommended TINYINT DEFAULT 0;
 ALTER TABLE designs ADD COLUMN weight INT DEFAULT 0;
-ALTER TABLE designs ADD COLUMN review_comment TEXT DEFAULT '';
+ALTER TABLE designs ADD COLUMN review_comment TEXT;

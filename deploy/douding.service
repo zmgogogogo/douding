@@ -1,0 +1,45 @@
+[Unit]
+Description=豆丁 Douding Spring Boot 后端服务
+After=network.target mysql.service redis.service
+Wants=mysql.service redis.service
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/server-java
+
+# Java 17 环境
+Environment=JAVA_HOME=/usr/lib/jvm/java-17-openjdk-17.0.19.0.10-1.0.2.1.al8.x86_64
+
+# 启用生产配置
+Environment=SPRING_PROFILES_ACTIVE=prod
+
+# 数据库（MySQL root 无密码，生产环境请设置密码）
+Environment=DB_URL=jdbc:mysql://localhost:3306/douding?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+Environment=DB_USERNAME=root
+Environment=DB_PASSWORD=
+
+# Redis（无密码）
+Environment=REDIS_HOST=localhost
+Environment=REDIS_PORT=6379
+Environment=REDIS_PASSWORD=
+
+# JWT 密钥（生产环境请更换为安全的随机字符串）
+Environment=JWT_SECRET=douding-jwt-secret-change-me-in-production
+Environment=JWT_ADMIN_SECRET=douding-admin-jwt-secret-change-me
+
+# 端口
+Environment=PORT=8080
+
+ExecStart=/usr/lib/jvm/java-17-openjdk-17.0.19.0.10-1.0.2.1.al8.x86_64/bin/java -jar /home/admin/server-java/target/douding-server-1.0.0-SNAPSHOT.jar
+ExecStop=/bin/kill -15 $MAINPID
+
+Restart=always
+RestartSec=10
+
+# 日志
+StandardOutput=append:/home/admin/server-java/logs/stdout.log
+StandardError=append:/home/admin/server-java/logs/stderr.log
+
+[Install]
+WantedBy=multi-user.target

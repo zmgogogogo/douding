@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS make_sessions (
     design_id BIGINT NOT NULL,
     archive_name VARCHAR(100) DEFAULT '默认存档',
     current_step INT DEFAULT 0,
-    finished_steps JSON DEFAULT '[]',
+    finished_steps JSON,
     step_mode VARCHAR(20) DEFAULT 'color',
     total_duration INT DEFAULT 0,
     status VARCHAR(20) DEFAULT 'in_progress',

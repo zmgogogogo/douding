@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS make_records (
 CREATE TABLE IF NOT EXISTS user_make_settings (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    display_settings JSON DEFAULT '{}',
-    operation_settings JSON DEFAULT '{}',
+    display_settings JSON,
+    operation_settings JSON,
     theme VARCHAR(20) DEFAULT 'dark',
     updated_at DATETIME DEFAULT NOW(),
     UNIQUE (user_id),
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS user_make_settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE make_sessions ADD COLUMN archive_order INT DEFAULT 0;
-ALTER TABLE make_sessions ADD COLUMN snapshot_history JSON DEFAULT '[]';
+ALTER TABLE make_sessions ADD COLUMN snapshot_history JSON;
 
 CREATE TABLE IF NOT EXISTS make_progress_snapshots (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS user_custom_colors (
     lab_l DECIMAL(10,4),
     lab_a DECIMAL(10,4),
     lab_b DECIMAL(10,4),
-    remark TEXT DEFAULT '',
+    remark TEXT,
     is_public TINYINT DEFAULT 0,
     created_at DATETIME DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
     color_id BIGINT,
     custom_color_id BIGINT,
     priority INT DEFAULT 0,
-    notes TEXT DEFAULT '',
+    notes TEXT,
     status VARCHAR(20) DEFAULT 'pending',
     created_at DATETIME DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

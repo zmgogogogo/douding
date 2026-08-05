@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
     source_type VARCHAR(50),
     source_id BIGINT,
     source_name VARCHAR(200),
-    note TEXT DEFAULT '',
+    note TEXT,
     created_at DATETIME DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (color_id) REFERENCES bead_colors(id) ON DELETE CASCADE,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS purchase_lists (
     user_id BIGINT NOT NULL,
     title VARCHAR(200) NOT NULL,
     status VARCHAR(20) DEFAULT 'draft',
-    notes TEXT DEFAULT '',
+    notes TEXT,
     created_at DATETIME DEFAULT NOW(),
     updated_at DATETIME DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS purchase_items (
     purchased_quantity INT DEFAULT 0,
     unit_price DECIMAL(10,2) DEFAULT 0,
     status VARCHAR(20) DEFAULT 'pending',
-    notes TEXT DEFAULT '',
+    notes TEXT,
     created_at DATETIME DEFAULT NOW(),
     FOREIGN KEY (list_id) REFERENCES purchase_lists(id) ON DELETE CASCADE,
     FOREIGN KEY (color_id) REFERENCES bead_colors(id) ON DELETE CASCADE

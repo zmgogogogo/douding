@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS designs (
     user_id BIGINT NOT NULL,
     folder_id BIGINT,
     title VARCHAR(200) NOT NULL,
-    description TEXT DEFAULT '',
+    description TEXT,
     grid_width INT NOT NULL DEFAULT 58,
     grid_height INT NOT NULL DEFAULT 58,
     grid_data LONGTEXT NOT NULL,
