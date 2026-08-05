@@ -124,7 +124,7 @@
             :key="item.colorId"
             class="bead-card"
             :class="{ 'card-unowned': item.status === 'unowned' }"
-            @click="openColorDetail(item)"
+            @click="openDetail(item)"
           >
             <!-- 色块区域 -->
             <div
