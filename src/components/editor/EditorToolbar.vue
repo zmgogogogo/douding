@@ -25,6 +25,13 @@
         >
           <ZoomInIcon :size="16" />
         </button>
+        <button
+          class="toolbar-btn"
+          @click="$emit('resetView')"
+          title="定位画布 (Ctrl+0)"
+        >
+          <CrosshairIcon :size="16" />
+        </button>
       </div>
 
       <div class="tool-divider" />
@@ -208,6 +215,7 @@ import {
   PointerIcon,
   Wand2Icon,
   Grid3x3Icon,
+  CrosshairIcon,
   EyeIcon,
   EyeOffIcon,
 } from 'lucide-vue-next'
@@ -261,7 +269,7 @@ defineProps({
   symmetryMode: { type: String, default: 'none' },
 })
 
-defineEmits(['selectTool', 'toggleGrid', 'cycleSymmetry', 'cycleRefOpacity'])
+defineEmits(['selectTool', 'toggleGrid', 'cycleSymmetry', 'cycleRefOpacity', 'resetView'])
 
 const symLabels = { none: '关闭', h: '水平', v: '垂直', quad: '四向' }
 </script>

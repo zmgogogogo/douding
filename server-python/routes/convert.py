@@ -177,7 +177,18 @@ def _image_to_grid(
     if _is_pure_region(all_pixels):
         centers = all_pixels.mean(axis=0, keepdims=True)
     else:
-        centers = _kmeans_cluster(all_pixels, min(color_limit, n_pixels))
+        # 大图采样加速：像素过多时随机采样参与聚类（K-Means 对采样率不敏感）
+        # 颜色数越多需要的样本越多，但设上限防止超时
+        MAX_KMEANS_SAMPLES = 30000
+        k = min(color_limit, n_pixels)
+        if n_pixels > MAX_KMEANS_SAMPLES:
+            rng = np.random.default_rng(42)
+            sample_indices = rng.choice(n_pixels, MAX_KMEANS_SAMPLES, replace=False)
+            kmeans_pixels = all_pixels[sample_indices]
+            print(f"  采样加速: {n_pixels}px → {MAX_KMEANS_SAMPLES}px (K={k})")
+        else:
+            kmeans_pixels = all_pixels
+        centers = _kmeans_cluster(kmeans_pixels, k)
 
     # 聚类中心 → 珠子颜色（CIEDE2000）
     center_beads = match_centers_to_beads(centers, bead_colors)

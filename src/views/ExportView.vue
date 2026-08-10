@@ -803,7 +803,11 @@ function renderCanvas(canvas, width, height) {
 
     // 标题
     const titleSize = Math.round(cardH * 0.22)
-    const blTitle = brandName.value ? `用料清单（${brandName.value}）` : '用料清单'
+    const colorN = beadUsageList.value.length
+    const beadN = totalBeads.value.toLocaleString()
+    const blTitle = brandName.value
+      ? `用料清单（${brandName.value}）· ${colorN} 色 · ${beadN} 颗`
+      : `用料清单 · ${colorN} 色 · ${beadN} 颗`
     ctx.fillStyle = '#475569'
     ctx.font = `700 ${titleSize}px 'PingFang SC', sans-serif`
     ctx.textAlign = 'left'

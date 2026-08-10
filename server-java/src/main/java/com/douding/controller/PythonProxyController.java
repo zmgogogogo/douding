@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Enumeration;
 
@@ -85,6 +86,13 @@ public class PythonProxyController {
                         }
                     }
                 }
+            }
+        } catch (SocketTimeoutException e) {
+            log.error("Python 代理请求超时: {}", e.getMessage());
+            if (!response.isCommitted()) {
+                response.setStatus(504);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"code\":504,\"message\":\"转换超时，请尝试使用更少的颜色数（建议 ≤16）或降低图片尺寸\"}");
             }
         } catch (IOException e) {
             log.error("Python 代理请求失败: {}", e.getMessage());

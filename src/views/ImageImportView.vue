@@ -457,7 +457,7 @@ function onPanEnd() {
 // 参数
 const targetW = ref(58),
   targetH = ref(58)
-const brand = ref('全部')
+const brand = ref('COCO（可可）')
 const warehouseLimited = ref(false)
 const beadBrands = ref([])
 const allColors = ref([])
@@ -777,6 +777,14 @@ function renderOrigPreview(img, tw, th) {
 // 生成图纸 — 上传原始文件 + 裁剪参数，后端完成全部图片处理
 async function generate() {
   if (!originalFile.value || !imgLoaded.value) return
+
+  // 未登录时引导用户先登录
+  if (!auth.isLoggedIn.value) {
+    toast.show('请先登录后再使用图片转换功能')
+    router.push('/login')
+    return
+  }
+
   generating.value = true
   try {
     const oc = cropCtrl.getOriginalCrop()

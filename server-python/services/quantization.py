@@ -90,7 +90,7 @@ def _kmeans_cluster(pixels: np.ndarray, k: int) -> np.ndarray:
 
 def _assign_to_centers(pixels: np.ndarray, centers: np.ndarray) -> np.ndarray:
     """
-    将像素分配给最近聚类中心（向量化距离计算）。
+    将像素分配给最近聚类中心（分块距离计算，避免 O(N*K) 内存爆炸）。
 
     Args:
         pixels: (N, 3) float64
@@ -99,10 +99,22 @@ def _assign_to_centers(pixels: np.ndarray, centers: np.ndarray) -> np.ndarray:
     Returns:
         (N,) int — 每个像素的聚类中心索引
     """
-    # 广播距离: (N, 1, 3) - (1, K, 3) → (N, K, 3) → sum over last axis → (N, K)
-    diff = pixels[:, None, :] - centers[None, :, :]
-    dists = np.sum(diff.astype(np.float64) ** 2, axis=-1)
-    return np.argmin(dists, axis=1)
+    n = len(pixels)
+    k = len(centers)
+    result = np.zeros(n, dtype=np.intp)
+
+    # 分块计算：每批最多 8000 像素，避免 (N, K, 3) 中间数组过大
+    # 内存峰值 = 8000 * K * 3 * 8 bytes，K 再大也不会爆
+    CHUNK = 8000
+    for start in range(0, n, CHUNK):
+        end = min(start + CHUNK, n)
+        chunk = pixels[start:end]  # (C, 3)
+        # 广播距离: (C, 1, 3) - (1, K, 3) → (C, K, 3) → sum → (C, K)
+        diff = chunk[:, None, :] - centers[None, :, :]
+        dists = np.sum(diff.astype(np.float64) ** 2, axis=-1)
+        result[start:end] = np.argmin(dists, axis=1)
+
+    return result
 
 
 def _centers_to_rgb_colors(centers: np.ndarray, center_beads: list) -> np.ndarray:

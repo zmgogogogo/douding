@@ -287,6 +287,7 @@
         @toggleGrid="showGrid = !showGrid"
         @cycleSymmetry="cycleSymmetry"
         @cycleRefOpacity="cycleRefOpacity"
+        @resetView="resetView"
       />
 
       <!-- 中心画布区 -->
@@ -1000,6 +1001,13 @@ function zoomIn() {
 }
 function zoomOut() {
   zoom.value = Math.max(0.5, Math.min(30, zoom.value * 0.8))
+}
+
+/** 定位画布：重置平移偏移 + 自适应缩放，找回跑出视野的画布 */
+function resetView() {
+  panX.value = 0
+  panY.value = 0
+  zoom.value = Math.min(30, Math.floor(Math.min(canvasContainerW.value / gridW.value, canvasContainerH.value / gridH.value) * 0.9))
 }
 
 // ---- 颜色替换 ----

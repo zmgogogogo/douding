@@ -33,6 +33,7 @@ import publicRoutes from './routes/public.js'
 import makeRoutes from './routes/make.js'
 import stockRoutes from './routes/stock.js'
 import { responseMiddleware } from './utils/response.js'
+import { authRequired } from './middleware/auth.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { requestLogger } from './middleware/logger.js'
 
@@ -114,6 +115,8 @@ function proxyToPython(targetPath) {
       headers: { ...req.headers, host: 'localhost:3457' },
     }
 
+    let isTimedOut = false // 防止超时后 destroy 触发的 error 覆盖超时响应
+
     const proxyReq = http.request(options, (proxyRes) => {
       // 转发响应头和状态码
       res.writeHead(proxyRes.statusCode, proxyRes.headers)
@@ -121,18 +124,25 @@ function proxyToPython(targetPath) {
     })
 
     proxyReq.on('error', (err) => {
+      if (isTimedOut) return // 超时已处理，忽略后续连接销毁错误
       console.error(`[代理] Python 后端连接失败: ${err.message}`)
-      res.status(502).json({
-        code: 502,
-        message: 'Python 转换服务未启动，请确保 Python 后端运行在端口 3457',
-      })
+      if (!res.headersSent) {
+        res.status(502).json({
+          code: 502,
+          message: 'Python 转换服务未启动，请确保 Python 后端运行在端口 3457',
+        })
+      }
     })
 
     // 设置超时（图片转换可能需要较长时间）
     proxyReq.setTimeout(120000, () => {
+      isTimedOut = true
       proxyReq.destroy()
       if (!res.headersSent) {
-        res.status(504).json({ code: 504, message: '转换超时，请尝试更小的图片或关闭智能优化' })
+        res.status(504).json({
+          code: 504,
+          message: '转换超时，请尝试使用更少的颜色数（建议 ≤16）或降低图片尺寸',
+        })
       }
     })
 
@@ -141,9 +151,9 @@ function proxyToPython(targetPath) {
   }
 }
 
-// 图像转换相关路由 → 全部代理到 Python
-app.use('/api/image-to-grid', proxyToPython())
-app.use('/api/convert', proxyToPython())
+// 图像转换相关路由 → 需要认证，然后代理到 Python
+app.use('/api/image-to-grid', authRequired, proxyToPython())
+app.use('/api/convert', authRequired, proxyToPython())
 
 // ============================================
 //  路由挂载
