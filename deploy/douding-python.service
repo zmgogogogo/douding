@@ -1,0 +1,25 @@
+[Unit]
+Description=豆丁 Douding Python 图片转像素图引擎
+After=network.target douding.service
+Wants=douding.service
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/server-python
+
+Environment=PORT=3457
+Environment=NODE_ENV=production
+Environment=JWT_SECRET=douding-jwt-secret-change-me-in-production
+
+ExecStart=/home/admin/server-python/venv/bin/python main.py
+ExecStop=/bin/kill -15 $MAINPID
+
+Restart=always
+RestartSec=5
+
+StandardOutput=append:/home/admin/server-python/logs/stdout.log
+StandardError=append:/home/admin/server-python/logs/stderr.log
+
+[Install]
+WantedBy=multi-user.target
