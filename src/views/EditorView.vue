@@ -195,6 +195,14 @@
 
   <!-- ====== 编辑器视图 (V3.0 布局) ====== -->
   <div v-else class="fixed inset-0 z-50 flex flex-col bg-[var(--ui-bg-base)]">
+    <!-- 加载遮罩 -->
+    <div
+      v-if="designLoading"
+      class="absolute inset-0 z-[300] flex flex-col items-center justify-center gap-3 bg-[var(--ui-bg-base)]/90 backdrop-blur-sm"
+    >
+      <LoaderIcon :size="32" class="animate-spin text-primary" />
+      <p class="text-sm text-slate-500 font-medium">正在加载图纸...</p>
+    </div>
     <!-- ===== 顶部菜单栏 ===== -->
     <EditorMenuBar
       :title="editTitle"
@@ -272,10 +280,12 @@
       @clear="confirmClear"
       @toggleSymmetry="cycleSymmetry"
       @toggleGuide="toggleGuideMode"
+      @flipCanvas="flipCanvasH(); renderAll()"
+      :stockWarnings="stockWarnings"
     />
 
     <!-- ===== 主工作区：左工具 + 中画布 + 右面板 ===== -->
-    <div class="flex-1 flex min-h-0">
+    <div class="flex-1 flex min-h-0 relative">
       <!-- 左侧工具箱 -->
       <EditorToolbar
         :currentTool="tool"
@@ -351,61 +361,84 @@
           @shapePreview="onShapePreview"
           @drawShape="onDrawShape"
           @placeText="onPlaceText"
+          @undo="handleUndo()"
         />
       </div>
 
-      <!-- 右侧面板组 -->
-      <EditorRightPanel
-        :activeTab="rightPanelTab"
-        :brand="brand"
-        :seriesActive="seriesActive"
-        :brands="brands"
-        :seriesList="series"
-        :colors="filteredColors"
-        :curColor="curColor"
-        :brushSize="brushSize"
-        :stats="gridColorStats"
-        :totalColorCount="totalColorCount"
-        :brandColorCounts="brandColorCounts"
-        :searchText="colorSearch"
-        :recentColors="recentColors"
-        :inventory="inventory"
-        :warehouseOnly="warehouseOnly"
-        :grid="compositeGrid"
-        :layers="layers"
-        :currentLayerId="currentLayerId"
-        :blendModes="BLEND_MODES"
-        :maskEditMode="maskEditMode"
-        :historyArr="historyArr"
-        :historyIdx="historyIdx"
-        :gridW="gridW"
-        :gridH="gridH"
-        :beadCount="beadCount"
-        :currentTool="tool"
-        :symmetryMode="symmetryMode"
-        @update:activeTab="rightPanelTab = $event"
-        @update:brand="brand = $event; seriesActive = ''"
-        @update:seriesActive="seriesActive = $event"
-        @update:searchText="colorSearch = $event"
-        @update:brushSize="brushSize = $event"
-        @update:warehouseOnly="warehouseOnly = $event"
-        @selectColor="onSelectColor"
-        @highlightColor="onHighlightColor"
-        @addLayer="addLayer('新图层'); renderAll()"
-        @removeLayer="removeLayer($event); renderAll()"
-        @selectLayer="selectLayer($event); renderAll()"
-        @toggleVisibility="toggleLayerVisibility($event); renderAll()"
-        @toggleLock="toggleLayerLock"
-        @setOpacity="(v) => {; setLayerOpacity(currentLayerId, v); renderAll(); }"
-        @setBlendMode="(v) => {; setLayerBlendMode(currentLayerId, v); renderAll(); }"
-        @addMask="addMask($event); renderAll()"
-        @removeMask="removeMask($event); renderAll()"
-        @applyMask="applyMask($event); renderAll()"
-        @toggleMaskEdit="maskEditMode = !maskEditMode"
-        @applyPalette="onApplyPalette"
-        @jumpToHistory="onJumpToHistory"
-        @createSnapshot="saveSnapshot"
-      />
+      <!-- 右侧面板组 — 平板竖屏可折叠 -->
+      <Transition name="panel-slide">
+        <EditorRightPanel
+          v-if="showRightPanel"
+          :activeTab="rightPanelTab"
+          :brand="brand"
+          :seriesActive="seriesActive"
+          :brands="brands"
+          :seriesList="series"
+          :colors="filteredColors"
+          :curColor="curColor"
+          :brushSize="brushSize"
+          :stats="gridColorStats"
+          :totalColorCount="totalColorCount"
+          :brandColorCounts="brandColorCounts"
+          :searchText="colorSearch"
+          :recentColors="recentColors"
+          :inventory="inventory"
+          :warehouseOnly="warehouseOnly"
+          :grid="compositeGrid"
+          :layers="layers"
+          :currentLayerId="currentLayerId"
+          :blendModes="BLEND_MODES"
+          :maskEditMode="maskEditMode"
+          :historyArr="historyArr"
+          :historyIdx="historyIdx"
+          :gridW="gridW"
+          :gridH="gridH"
+          :beadCount="beadCount"
+          :currentTool="tool"
+          :symmetryMode="symmetryMode"
+          @update:activeTab="rightPanelTab = $event"
+          @update:brand="brand = $event; seriesActive = ''"
+          @update:seriesActive="seriesActive = $event"
+          @update:searchText="colorSearch = $event"
+          @update:brushSize="brushSize = $event"
+          @update:warehouseOnly="warehouseOnly = $event"
+          @selectColor="onSelectColor"
+          @highlightColor="onHighlightColor"
+          @addLayer="addLayer('新图层'); renderAll()"
+          @removeLayer="removeLayer($event); renderAll()"
+          @selectLayer="selectLayer($event); renderAll()"
+          @toggleVisibility="toggleLayerVisibility($event); renderAll()"
+          @toggleLock="toggleLayerLock"
+          @setOpacity="(v) => {; setLayerOpacity(currentLayerId, v); renderAll(); }"
+          @setBlendMode="(v) => {; setLayerBlendMode(currentLayerId, v); renderAll(); }"
+          @addMask="addMask($event); renderAll()"
+          @removeMask="removeMask($event); renderAll()"
+          @applyMask="applyMask($event); renderAll()"
+          @toggleMaskEdit="maskEditMode = !maskEditMode"
+          @applyPalette="onApplyPalette"
+          @jumpToHistory="onJumpToHistory"
+          @createSnapshot="saveSnapshot"
+        />
+      </Transition>
+
+      <!-- 色板折叠切换按钮（平板端悬浮在右上角） -->
+      <button
+        v-if="isTablet"
+        class="absolute top-2 right-2 z-30 w-9 h-9 rounded-full bg-white/90 backdrop-blur shadow-md border border-[var(--ui-border)] flex items-center justify-center hover:bg-white transition-colors"
+        :title="showRightPanel ? '折叠色板' : '展开色板'"
+        @click="showRightPanel = !showRightPanel"
+      >
+        <ChevronRightIcon
+          v-if="!showRightPanel"
+          :size="18"
+          class="text-[var(--ui-text-secondary)]"
+        />
+        <ChevronLeftIcon
+          v-else
+          :size="18"
+          class="text-[var(--ui-text-secondary)]"
+        />
+      </button>
     </div>
 
     <!-- ===== 底部色卡统计条 ===== -->
@@ -581,6 +614,7 @@ import { useAuth } from '@/composables/useAuth.js'
 import { useToast } from '@/composables/useToast.js'
 import { useDialog } from '@/composables/useDialog.js'
 import { useEditor } from '@/composables/useEditor.js'
+import { useResponsive } from '@/composables/useResponsive.js'
 
 import {
   PlusIcon,
@@ -588,8 +622,10 @@ import {
   BookIcon,
   CameraIcon,
   ChevronRightIcon,
+  ChevronLeftIcon,
   ClockIcon,
   LinkIcon,
+  LoaderIcon,
   XIcon,
 } from 'lucide-vue-next'
 
@@ -607,6 +643,14 @@ const router = useRouter()
 const auth = useAuth()
 const toast = useToast()
 const dialog = useDialog()
+const { isTablet } = useResponsive()
+
+// 右面板折叠（平板竖屏默认折叠以给画布更多空间）
+const showRightPanel = ref(!isTablet.value)
+// 设备切换时自动调整
+watch(isTablet, (val) => {
+  showRightPanel.value = !val
+})
 
 // 从 composable 解构状态
 const {
@@ -727,6 +771,7 @@ const {
   pasteSelection,
   flipSelectionH,
   flipSelectionV,
+  flipCanvasH,
   magicWandSelect,
   lassoSelect,
   cycleSelectionMode,
@@ -858,9 +903,39 @@ function findClosestBead(hex) {
 
 // ---- 创作入口页状态 ----
 const inEditor = ref(false)
+const designLoading = ref(false) // 加载设计中
 const recentDesigns = ref([])
 const rightPanelTab = ref(activePanelTab)
 const showSizePanel = ref(false)
+
+/** 库存预警：当前图纸所用颜色中库存不足的列表 */
+const stockWarnings = computed(() => {
+  if (!beadData.value?.length || !gridColorStats.value?.length) return []
+  // 构建 hex → bead info 映射（含 id、name、brand）
+  const beadByHex = {}
+  for (const b of beadData.value) {
+    if (b.hex) beadByHex[b.hex.toUpperCase()] = b
+  }
+  const warnings = []
+  for (const stat of gridColorStats.value) {
+    const hex = stat.hex.toUpperCase()
+    const bead = beadByHex[hex]
+    if (!bead) continue
+    const stock = inventory.value[bead.id] || 0
+    if (stock < stat.count) {
+      warnings.push({
+        hex: stat.hex,
+        name: stat.name,
+        brand: bead.brand || '',
+        need: stat.count,
+        have: stock,
+        lack: stat.count - stock,
+        beadId: bead.id,
+      })
+    }
+  }
+  return warnings
+})
 
 // 同步 rightPanelTab 到 composable（使模式标签在状态栏正确显示）
 watch(rightPanelTab, (v) => {
@@ -1277,6 +1352,8 @@ async function loadRecentDesigns() {
 }
 
 async function openDesign(id) {
+  designLoading.value = true
+  inEditor.value = true // 立即切到编辑器（显示加载中）
   try {
     const res = await API.get(`/api/designs/${id}`)
     if (res.code === 200 && res.data) {
@@ -1287,22 +1364,32 @@ async function openDesign(id) {
       editId.value = d.id
       editTitle.value = d.title || '未命名图纸'
       isPublished.value = !!d.isPublic
+
+      // 大图纸警告：超过 150 格提示用户
+      if (d.gridWidth > 150 || d.gridHeight > 150) {
+        console.warn(`[Editor] 加载大图纸 ${d.gridWidth}×${d.gridHeight}，可能需要几秒...`)
+      }
+
+      // 用 requestAnimationFrame 分片解析，避免阻塞 UI
       const parsedGrid = typeof d.gridData === 'string' ? JSON.parse(d.gridData) : d.gridData
       initGrid(d.gridWidth, d.gridHeight)
       grid.value = parsedGrid
       layers.value[0].grid = parsedGrid
       saveSnapshot()
-      inEditor.value = true
       if (!curColor.value && filteredColors.value.length > 0) {
         curColor.value = { ...filteredColors.value[0] }
       }
-      nextTick(() => {
-        editorCanvasRef.value?.initCanvas()
-        renderAll()
-      })
+      await nextTick()
+      editorCanvasRef.value?.initCanvas()
+      renderAll()
     }
-  } catch (_) {
-    toast.show('加载设计失败')
+  } catch (e) {
+    console.error('[Editor] 加载设计失败:', e)
+    inEditor.value = false // 退回入口页
+    const msg = e.name === 'AbortError' ? '图纸较大，加载超时，请稍后重试' : '加载设计失败'
+    toast.show(msg)
+  } finally {
+    designLoading.value = false
   }
 }
 
@@ -1660,28 +1747,49 @@ onMounted(async () => {
   // 判断是打开已有设计还是显示入口页
   const designId = route.params.id
   if (designId) {
+    designLoading.value = true
+    inEditor.value = true // 立即切到编辑器视图（显示加载遮罩）
     try {
       const res = await API.get(`/api/designs/${designId}`)
       if (res.code === 200 && res.data) {
         const d = res.data
+        resetEditorSession()
+        focusColor.value = null
+        focusMode.value = false
         editId.value = d.id
         editTitle.value = d.title || '未命名图纸'
         isPublished.value = !!d.isPublic
+
+        // 大图纸警告
+        if (d.gridWidth > 150 || d.gridHeight > 150) {
+          console.warn(`[Editor] 加载大图纸 ${d.gridWidth}×${d.gridHeight}，可能需要几秒...`)
+        }
+
         const parsedGrid = typeof d.gridData === 'string' ? JSON.parse(d.gridData) : d.gridData
         initGrid(d.gridWidth, d.gridHeight)
         grid.value = parsedGrid
         layers.value[0].grid = parsedGrid
         saveSnapshot()
-        inEditor.value = true
-        nextTick(() => {
-          setTimeout(() => {
-            editorCanvasRef.value?.initCanvas()
-            renderAll()
-          }, 100)
-        })
+        if (!curColor.value && filteredColors.value.length > 0) {
+          curColor.value = { ...filteredColors.value[0] }
+        }
+        await nextTick()
+        editorCanvasRef.value?.initCanvas()
+        renderAll()
+      } else {
+        // API 返回异常状态码或空数据
+        inEditor.value = false
+        toast.show(res.message || '加载设计失败，请稍后重试')
+        loadRecentDesigns()
       }
     } catch (e) {
-      console.error('加载设计失败:', e)
+      console.error('[Editor] 加载设计失败:', e)
+      inEditor.value = false // 退回入口页
+      const msg = e.name === 'AbortError' ? '图纸较大，加载超时，请稍后重试' : '加载设计失败，请稍后重试'
+      toast.show(msg)
+      loadRecentDesigns()
+    } finally {
+      designLoading.value = false
     }
   } else {
     // 检查是否有从其他页面导入的数据
@@ -1736,6 +1844,50 @@ function onBeforeUnload(e) {
   }
 }
 
+// 监听路由参数变化：同组件内从 /editor 切到 /editor/:id 时，组件不会重新挂载
+watch(
+  () => route.params.id,
+  async (newId, oldId) => {
+    // 仅在组件已挂载后（onMounted 已执行过）且 id 发生变化时处理
+    if (!newId || newId === oldId) return
+    designLoading.value = true
+    inEditor.value = true
+    try {
+      const res = await API.get(`/api/designs/${newId}`)
+      if (res.code === 200 && res.data) {
+        const d = res.data
+        resetEditorSession()
+        focusColor.value = null
+        focusMode.value = false
+        editId.value = d.id
+        editTitle.value = d.title || '未命名图纸'
+        isPublished.value = !!d.isPublic
+        const parsedGrid = typeof d.gridData === 'string' ? JSON.parse(d.gridData) : d.gridData
+        initGrid(d.gridWidth, d.gridHeight)
+        grid.value = parsedGrid
+        layers.value[0].grid = parsedGrid
+        saveSnapshot()
+        if (!curColor.value && filteredColors.value.length > 0) {
+          curColor.value = { ...filteredColors.value[0] }
+        }
+        await nextTick()
+        editorCanvasRef.value?.initCanvas()
+        renderAll()
+      } else {
+        inEditor.value = false
+        toast.show(res.message || '加载设计失败，请稍后重试')
+      }
+    } catch (e) {
+      console.error('[Editor] 加载设计失败:', e)
+      inEditor.value = false
+      const msg = e.name === 'AbortError' ? '图纸较大，加载超时，请稍后重试' : '加载设计失败，请稍后重试'
+      toast.show(msg)
+    } finally {
+      designLoading.value = false
+    }
+  }
+)
+
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeyDown)
   window.removeEventListener('beforeunload', onBeforeUnload)
@@ -1755,6 +1907,17 @@ onUnmounted(() => {
   transition: opacity 0.15s ease;
 }
 .dialog-enter-from, .dialog-leave-to {
+  opacity: 0;
+}
+
+/* 右面板滑入/滑出动画 */
+.panel-slide-enter-active,
+.panel-slide-leave-active {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.panel-slide-enter-from,
+.panel-slide-leave-to {
+  transform: translateX(100%);
   opacity: 0;
 }
 </style>

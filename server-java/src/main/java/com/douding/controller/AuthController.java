@@ -9,8 +9,10 @@ import com.douding.security.AuthRequired;
 import com.douding.security.CurrentUser;
 import com.douding.security.JwtTokenProvider;
 import com.douding.service.AuthService;
+import com.douding.service.SmsService;
 import com.douding.vo.UserVO;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -31,16 +34,17 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final SmsService smsService;
 
     /** 注册 */
     @PostMapping("/register")
-    public Result<AuthService.AuthResult> register(@Valid @RequestBody RegisterDTO dto) {
+    public Result<AuthService.AuthResult> register(@RequestBody RegisterDTO dto) {
         return Result.success(authService.register(dto));
     }
 
     /** 登录 */
     @PostMapping("/login")
-    public Result<AuthService.AuthResult> login(@Valid @RequestBody LoginDTO dto) {
+    public Result<AuthService.AuthResult> login(@RequestBody LoginDTO dto) {
         return Result.success(authService.login(dto));
     }
 
@@ -75,6 +79,45 @@ public class AuthController {
         }
 
         return Result.success(authService.updateProfile(claims.id(), dto, avatarPath));
+    }
+
+    /** 发送短信验证码（scene: register=注册需手机号未注册, reset=重置密码需手机号已注册） */
+    @PostMapping("/send-code")
+    public Result<Void> sendCode(@RequestBody Map<String, String> body, HttpServletRequest req) {
+        String phone = body.get("phone");
+        String scene = body.get("scene");
+        authService.checkPhoneForScene(phone, scene);
+        smsService.sendCode(phone, getClientIp(req));
+        return Result.success();
+    }
+
+    /** 忘记密码 — 短信验证码重置密码 */
+    @PutMapping("/reset-password")
+    public Result<Void> resetPassword(@RequestBody Map<String, String> body) {
+        authService.resetPasswordByPhone(
+                body.get("phone"), body.get("code"),
+                body.get("password"), body.get("confirmPassword"));
+        return Result.success();
+    }
+
+    /** 绑定手机号（需登录） */
+    @PostMapping("/bind-phone")
+    @AuthRequired
+    public Result<Void> bindPhone(@CurrentUser JwtTokenProvider.TokenClaims claims,
+                                   @RequestBody Map<String, String> body) {
+        String phone = body.get("phone");
+        String code = body.get("code");
+        if (!smsService.verifyCode(phone, code)) throw AppException.badRequest("验证码错误或已过期");
+        authService.bindPhone(claims.id(), phone);
+        return Result.success();
+    }
+
+    private String getClientIp(HttpServletRequest req) {
+        String ip = req.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isBlank()) return ip.split(",")[0].trim();
+        ip = req.getHeader("X-Real-IP");
+        if (ip != null && !ip.isBlank()) return ip;
+        return req.getRemoteAddr();
     }
 
     /** 保存头像文件 */

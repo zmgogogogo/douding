@@ -477,7 +477,11 @@ const difficultyColor = computed(() => {
 
 // 完整时间字符串（用于 hover）
 const isOwnWork = computed(() => {
-  return auth.user?.value?.id && work.value?.userId && auth.user.value.id === work.value.userId
+  const uid = auth.user?.value?.id
+  const wid = work.value?.userId
+  if (!uid || !wid) return false
+  // 使用宽松比较，兼容 localStorage 字符串和 API 数字
+  return uid == wid || String(uid) === String(wid)
 })
 
 const fullTimeStr = computed(() => {

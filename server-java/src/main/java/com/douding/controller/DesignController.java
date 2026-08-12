@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -34,6 +35,7 @@ public class DesignController {
 
     private final DesignMapper designMapper;
     private final UserMapper userMapper;
+    private final ObjectMapper objectMapper; // Spring 自动配置的 ObjectMapper（含 JavaTimeModule）
 
     /** 创建设计 */
     @PostMapping
@@ -221,23 +223,24 @@ public class DesignController {
         return new int[]{beadCount, colors.size()};
     }
 
-    /** 简单 JSON 序列化（不依赖 Jackson 复杂类型） */
+    /** 简单 JSON 序列化 */
     private String toJson(Object obj) {
         try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(obj);
+            return objectMapper.writeValueAsString(obj);
         } catch (Exception e) {
+            log.error("JSON 序列化失败: {}", e.getMessage(), e);
             return "[]";
         }
     }
 
-    /** 将 VO 转为 Map */
+    /** 将 VO 转为 Map（使用 Spring 自动配置的 ObjectMapper，支持 LocalDateTime 等 Java 8 时间类型） */
     private Map<String, Object> toMap(Object vo) {
         try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             @SuppressWarnings("unchecked")
-            Map<String, Object> map = mapper.convertValue(vo, Map.class);
+            Map<String, Object> map = objectMapper.convertValue(vo, Map.class);
             return map;
         } catch (Exception e) {
+            log.error("VO 转 Map 失败: {}", e.getMessage(), e);
             return new LinkedHashMap<>();
         }
     }
