@@ -5,14 +5,14 @@
   ============================================ -->
 <template>
   <aside
-    class="w-60 bg-[var(--ui-bg-surface)] border-l border-[var(--ui-border-glass)] flex flex-col flex-shrink-0 overflow-hidden select-none max-md:hidden"
+    class="w-64 lg:w-60 bg-[var(--ui-bg-surface)] border-l border-[var(--ui-border-glass)] flex flex-col flex-shrink-0 overflow-hidden select-none max-md:hidden"
   >
-    <!-- 标签页头部 -->
+    <!-- 标签页头部 — 平板端 40px 触控高度 -->
     <div class="flex border-b border-[var(--ui-border)]">
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        class="flex-1 py-2 text-[10px] font-medium transition-colors relative"
+        class="flex-1 py-2.5 lg:py-2 text-[11px] lg:text-[10px] font-medium transition-colors relative"
         :class="
           activeTab === tab.id
             ? 'text-[var(--ui-accent)]'
@@ -59,7 +59,7 @@
         <select
           :value="brand"
           @change="$emit('update:brand', $event.target.value)"
-          class="w-full h-7 border border-[var(--ui-border)] rounded-md text-[10px] px-1.5 bg-[var(--ui-bg-base)] text-[var(--ui-text-primary)] outline-none focus:border-[var(--ui-accent)] cursor-pointer"
+          class="w-full h-8 lg:h-7 border border-[var(--ui-border)] rounded-md text-[11px] lg:text-[10px] px-2 bg-[var(--ui-bg-base)] text-[var(--ui-text-primary)] outline-none focus:border-[var(--ui-accent)] cursor-pointer"
         >
           <option v-for="b in brands" :key="b" :value="b">
             {{
@@ -76,7 +76,7 @@
         <button
           v-for="s in seriesList"
           :key="s"
-          class="px-2 py-0.5 rounded-md text-[9px] font-medium whitespace-nowrap transition-colors flex-shrink-0"
+          class="px-2.5 lg:px-2 py-1 lg:py-0.5 rounded-md text-[10px] lg:text-[9px] font-medium whitespace-nowrap transition-colors flex-shrink-0"
           :class="
             seriesActive === s
               ? 'bg-[var(--ui-accent)]/10 text-[var(--ui-accent)]'
@@ -92,22 +92,22 @@
       <div class="px-2 py-1.5 space-y-1.5 border-b border-[var(--ui-border)]">
         <div class="relative">
           <SearchIcon
-            :size="11"
-            class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[var(--ui-text-tertiary)]"
+            :size="12"
+            class="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--ui-text-tertiary)]"
           />
           <input
             :value="searchText"
             type="text"
             placeholder="搜索颜色或色号..."
-            class="w-full h-7 pl-5 pr-2 border border-[var(--ui-border)] rounded-md text-[10px] bg-[var(--ui-bg-base)] outline-none focus:border-[var(--ui-accent)]"
+            class="w-full h-8 lg:h-7 pl-6 pr-2 border border-[var(--ui-border)] rounded-md text-[11px] lg:text-[10px] bg-[var(--ui-bg-base)] outline-none focus:border-[var(--ui-accent)]"
             @input="$emit('update:searchText', $event.target.value)"
           />
         </div>
-        <div v-if="recentColors.length" class="flex flex-wrap gap-1">
+        <div v-if="recentColors.length" class="flex flex-wrap gap-1 lg:gap-1">
           <button
             v-for="c in recentColors"
             :key="c.id ?? c.hex"
-            class="w-5 h-5 rounded-md ring-1 ring-black/10 hover:scale-125 hover:z-10 transition-all"
+            class="w-6 h-6 lg:w-5 lg:h-5 rounded-md ring-1 ring-black/10 hover:scale-125 hover:z-10 transition-all"
             :style="{ background: c.hex }"
             :title="c.name"
             @click="$emit('selectColor', c)"
@@ -130,9 +130,9 @@
         </label>
       </div>
 
-      <!-- 颜色网格 -->
-      <div class="flex-1 overflow-y-auto p-1.5">
-        <div class="grid grid-cols-7 gap-1">
+      <!-- 颜色网格 — 平板端 6 列 / 桌面端 7 列，确保触控区 ≥36px -->
+      <div class="flex-1 overflow-y-auto p-1.5 lg:p-1.5">
+        <div class="grid grid-cols-6 lg:grid-cols-7 gap-1.5 lg:gap-1">
           <button
             v-for="c in colors"
             :key="c.id"
@@ -151,14 +151,14 @@
             <div class="checkerboard-bg absolute inset-0 rounded-lg" />
             <div class="absolute inset-0 rounded-lg" :style="{ background: c.hex }" />
             <span
-              class="relative text-[7px] font-semibold text-white/90 bg-black/25 rounded-sm px-0.5 leading-tight mb-0.5 select-none"
+              class="relative text-[8px] lg:text-[7px] font-semibold text-white/90 bg-black/25 rounded-sm px-0.5 leading-tight mb-0.5 select-none"
               style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4)"
               >{{ c.name.length > 4 ? c.name.slice(0, 4) : c.name }}</span
             >
             <!-- 库存徽标 -->
             <span
               v-if="getStock(c.id) != null && getStock(c.id) > 0"
-              class="absolute top-0.5 right-0.5 text-[7px] font-bold bg-white/90 text-green-600 rounded-full w-3.5 h-3.5 flex items-center justify-center shadow-sm select-none"
+              class="absolute top-0.5 right-0.5 text-[8px] lg:text-[7px] font-bold bg-white/90 text-green-600 rounded-full w-4 h-4 lg:w-3.5 lg:h-3.5 flex items-center justify-center shadow-sm select-none"
               :class="getStock(c.id) <= 50 ? 'text-amber-600' : ''"
             >
               {{ getStock(c.id) >= 100 ? '✓' : '' }}
@@ -167,10 +167,10 @@
         </div>
       </div>
 
-      <!-- 画笔大小 -->
-      <div class="px-3 py-2 border-t border-[var(--ui-border)]">
+      <!-- 画笔大小 — 平板端 40px 间距 -->
+      <div class="px-3 py-2.5 lg:py-2 border-t border-[var(--ui-border)]">
         <div
-          class="flex items-center justify-between text-[10px] text-[var(--ui-text-tertiary)] mb-0.5"
+          class="flex items-center justify-between text-[11px] lg:text-[10px] text-[var(--ui-text-tertiary)] mb-1"
         >
           <span>画笔大小</span
           ><span class="font-semibold text-[var(--ui-text-secondary)]">{{ brushSize }}</span>
@@ -180,7 +180,7 @@
           type="range"
           min="1"
           max="8"
-          class="w-full h-1.5 accent-[var(--ui-accent)] cursor-pointer rounded-full"
+          class="w-full h-2 lg:h-1.5 accent-[var(--ui-accent)] cursor-pointer rounded-full"
           @input="$emit('update:brushSize', parseInt($event.target.value))"
         />
       </div>

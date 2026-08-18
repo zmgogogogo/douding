@@ -12,6 +12,13 @@ Environment=PORT=3457
 Environment=NODE_ENV=production
 Environment=JWT_SECRET=douding-jwt-secret-change-me-in-production
 
+# 直连 MySQL（与 Java 后端同库，读取珠子色板数据）
+Environment=DB_HOST=localhost
+Environment=DB_PORT=3306
+Environment=DB_USERNAME=root
+Environment=DB_PASSWORD=
+Environment=DB_NAME=douding
+
 ExecStart=/home/admin/server-python/venv/bin/python main.py
 ExecStop=/bin/kill -15 $MAINPID
 

@@ -13,13 +13,13 @@ def get_beads():
     result = []
     for b in brands:
         series = db.execute(
-            "SELECT id, name FROM bead_series WHERE brand_id=? ORDER BY sort_order",
+            "SELECT id, name FROM bead_series WHERE brand_id=%s ORDER BY sort_order",
             (b['id'],)
         ).fetchall()
         series_list = []
         for s in series:
             colors = db.execute(
-                "SELECT id, name, hex FROM bead_colors WHERE series_id=? ORDER BY sort_order",
+                "SELECT id, name, hex FROM bead_colors WHERE series_id=%s ORDER BY sort_order",
                 (s['id'],)
             ).fetchall()
             series_list.append({

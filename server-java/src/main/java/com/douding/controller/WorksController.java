@@ -62,9 +62,9 @@ public class WorksController {
             Long total = jdbc.queryForObject("SELECT COUNT(*) FROM design_likes WHERE user_id = ?", Long.class, claims.id());
             return buildLikesResponse(rows, total, claims);
         } else if ("recommend".equals(tab)) {
-            qw.eq(Design::getIsPublic, 1).orderByDesc(Design::getPublishedAt).orderByDesc(Design::getUpdatedAt);
+            qw.eq(Design::getIsPublic, 1).ne(Design::getStatus, -2).orderByDesc(Design::getPublishedAt).orderByDesc(Design::getUpdatedAt);
         } else {
-            qw.eq(Design::getIsPublic, 1).orderByDesc(Design::getLikesCount).orderByDesc(Design::getUpdatedAt);
+            qw.eq(Design::getIsPublic, 1).ne(Design::getStatus, -2).orderByDesc(Design::getLikesCount).orderByDesc(Design::getUpdatedAt);
         }
 
         designMapper.selectPage(mpPage, qw);

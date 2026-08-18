@@ -1,121 +1,77 @@
 """
-数据库连接 — SQLite（与 Node.js 版本共享 douding.db）
+数据库连接 — MySQL（直连 Java 后端同库，读取珠子色板数据）
+
+之前使用独立 SQLite，与 MySQL 是两套数据，容易出现「调色板为空」。
+现改为 PyMySQL 直连 MySQL，读取 Java 后端（Flyway 迁移）维护的
+bead_brands / bead_series / bead_colors 表，保证色板数据始终一致。
 """
-import sqlite3
 import os
-from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent.parent / "douding.db"
+import pymysql
+from pymysql.cursors import DictCursor
 
 
-def get_db() -> sqlite3.Connection:
-    """获取数据库连接（自动创建）"""
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
+# MySQL 连接配置（与 Java application-prod.yml 的 DB_* 保持一致）
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", "3306"))
+DB_USER = os.getenv("DB_USERNAME", "root")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_NAME = os.getenv("DB_NAME", "douding")
+
+
+def _connect() -> pymysql.Connection:
+    """创建 MySQL 连接"""
+    return pymysql.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset="utf8mb4",
+        cursorclass=DictCursor,
+        autocommit=True,
+    )
+
+
+class DbWrapper:
+    """
+    MySQL 连接包装器，暴露与 sqlite3.Connection 兼容的 execute 接口。
+
+    兼容旧代码的调用方式：
+        db.execute(sql, params).fetchall()   # 返回 dict 列表，可按列名访问 r['hex']
+        db.execute(sql).fetchone()
+        db.close()
+    """
+
+    def __init__(self):
+        self._conn = _connect()
+        self._cursor = self._conn.cursor()
+
+    def execute(self, sql, params=()):
+        """执行 SQL，返回游标（可继续 .fetchall() / .fetchone()）"""
+        self._cursor.execute(sql, params)
+        return self._cursor
+
+    def close(self):
+        """关闭底层 MySQL 连接"""
+        self._conn.close()
+
+
+def get_db() -> DbWrapper:
+    """获取数据库连接（直连 MySQL）"""
+    return DbWrapper()
 
 
 def init_db():
-    """初始化数据库表（如果不存在）"""
-    conn = get_db()
-    conn.executescript(SCHEMA_SQL)
-    # 检查是否需要导入种子数据
-    count = conn.execute("SELECT COUNT(*) FROM bead_brands").fetchone()[0]
-    if count == 0:
-        from .seed import seed_beads
-        seed_beads(conn)
-    conn.commit()
-    conn.close()
+    """验证 MySQL 连接与珠子色板数据可用。
 
-
-SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    nickname TEXT DEFAULT '',
-    avatar TEXT DEFAULT '',
-    bio TEXT DEFAULT '',
-    is_vip INTEGER DEFAULT 0,
-    vip_expire_at TEXT,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS folders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    sort_order INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
-CREATE TABLE IF NOT EXISTS designs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    folder_id INTEGER,
-    title TEXT DEFAULT '未命名',
-    description TEXT DEFAULT '',
-    grid_width INTEGER DEFAULT 0,
-    grid_height INTEGER DEFAULT 0,
-    grid_data TEXT DEFAULT '[]',
-    thumbnail TEXT DEFAULT '',
-    is_public INTEGER DEFAULT 0,
-    bead_count INTEGER DEFAULT 0,
-    color_count INTEGER DEFAULT 0,
-    likes_count INTEGER DEFAULT 0,
-    views_count INTEGER DEFAULT 0,
-    brand TEXT DEFAULT '',
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (folder_id) REFERENCES folders(id)
-);
-
-CREATE TABLE IF NOT EXISTS design_likes (
-    user_id INTEGER NOT NULL,
-    design_id INTEGER NOT NULL,
-    created_at TEXT DEFAULT (datetime('now')),
-    PRIMARY KEY (user_id, design_id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (design_id) REFERENCES designs(id)
-);
-
-CREATE TABLE IF NOT EXISTS bead_brands (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS bead_series (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    brand_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    sort_order INTEGER DEFAULT 0,
-    FOREIGN KEY (brand_id) REFERENCES bead_brands(id)
-);
-
-CREATE TABLE IF NOT EXISTS bead_colors (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    series_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    hex TEXT NOT NULL,
-    sort_order INTEGER DEFAULT 0,
-    lab_l REAL DEFAULT 0,
-    lab_a REAL DEFAULT 0,
-    lab_b REAL DEFAULT 0,
-    FOREIGN KEY (series_id) REFERENCES bead_series(id)
-);
-
-CREATE TABLE IF NOT EXISTS user_bead_inventory (
-    user_id INTEGER NOT NULL,
-    color_id INTEGER NOT NULL,
-    quantity INTEGER DEFAULT 0,
-    PRIMARY KEY (user_id, color_id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (color_id) REFERENCES bead_colors(id)
-);
-"""
+    表结构由 Java 后端 Flyway 迁移维护，这里只做连接自检。
+    """
+    db = get_db()
+    try:
+        count = db.execute("SELECT COUNT(*) AS n FROM bead_brands").fetchone()['n']
+        print(f"[db] MySQL 连接正常，bead_brands={count} 个品牌")
+        if count == 0:
+            print("⚠️  [db] bead_brands 为空，请确认 Java 后端已完成种子数据迁移")
+    finally:
+        db.close()

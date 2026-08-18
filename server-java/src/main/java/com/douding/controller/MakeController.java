@@ -5,6 +5,7 @@ import com.douding.common.Result;
 import com.douding.security.AuthRequired;
 import com.douding.security.CurrentUser;
 import com.douding.security.JwtTokenProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,14 +74,127 @@ public class MakeController {
         Long designId = toLong(body.get("designId"));
         if (designId == null) throw AppException.badRequest("缺少图纸 ID");
 
-        Map<String, Object> design = jdbc.queryForMap("SELECT * FROM designs WHERE id = ?", designId);
+        Map<String, Object> design = jdbc.queryForMap(
+                "SELECT id, title, grid_data, grid_width, grid_height, bead_count, color_count FROM designs WHERE id = ?", designId);
 
         jdbc.update("UPDATE make_sessions SET status='completed', total_duration=?, updated_at=NOW() " +
                 "WHERE user_id=? AND design_id=? AND status='in_progress'",
                 body.getOrDefault("totalDuration", 0), claims.id(), designId);
 
-        return Result.success(Map.of("finished", true, "designTitle", design.get("title"),
-                "beadCount", design.get("bead_count"), "colorCount", design.get("color_count")));
+        // ---- 自动扣除豆仓库存 ----
+        double lossRate = body.get("lossRate") != null ? ((Number) body.get("lossRate")).doubleValue() : 5;
+        Map<String, Object> deductResult = deductFromGrid(claims.id(), designId,
+                (String) design.get("title"), lossRate, (String) design.get("grid_data"));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("finished", true);
+        result.put("designTitle", design.get("title"));
+        result.put("beadCount", design.get("bead_count"));
+        result.put("colorCount", design.get("color_count"));
+        result.put("deduct", deductResult);
+        return Result.success(result);
+    }
+
+    /** 从 grid_data 解析豆色并扣除库存 */
+    private Map<String, Object> deductFromGrid(Long userId, Long designId, String designTitle,
+                                                double lossRate, String gridData) {
+        List<Map<String, Object>> beads = parseGridToBeads(gridData);
+        if (beads.isEmpty()) return Map.of("totalDeducted", 0, "colorCount", 0, "warnings", List.of());
+
+        double lossMultiplier = 1 + lossRate / 100;
+        List<Map<String, Object>> warnings = new ArrayList<>();
+        int totalDeducted = 0, totalShortage = 0;
+        Set<String> affectedColors = new LinkedHashSet<>();
+
+        for (var b : beads) {
+            Long colorId = toLong(b.get("colorId"));
+            int baseQty = b.get("quantity") != null ? ((Number) b.get("quantity")).intValue() : 0;
+            int actualQty = (int) Math.ceil(baseQty * lossMultiplier);
+
+            Integer before = queryForIntegerOrNull(
+                    "SELECT quantity FROM user_bead_inventory WHERE user_id = ? AND color_id = ?",
+                    userId, colorId);
+            int beforeStock = before != null ? before : 0;
+            int deducted = Math.min(beforeStock, actualQty);
+            int afterStock = beforeStock - deducted;
+
+            if (beforeStock < actualQty) {
+                Map<String, Object> w = new LinkedHashMap<>();
+                w.put("colorId", colorId);
+                w.put("colorName", b.getOrDefault("name", ""));
+                w.put("colorHex", b.getOrDefault("hex", ""));
+                w.put("need", actualQty);
+                w.put("available", beforeStock);
+                w.put("shortage", actualQty - beforeStock);
+                warnings.add(w);
+                totalShortage += actualQty - beforeStock;
+            }
+
+            if (deducted > 0) {
+                jdbc.update("INSERT INTO user_bead_inventory (user_id, color_id, quantity, min_threshold, updated_at) " +
+                        "VALUES (?,?,?,COALESCE((SELECT min_threshold FROM user_bead_inventory WHERE user_id=? AND color_id=?),50),NOW()) " +
+                        "ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), updated_at = NOW()",
+                        userId, colorId, afterStock, userId, colorId);
+
+                jdbc.update("INSERT INTO inventory_logs (user_id, color_id, action, quantity, balance_after, " +
+                        "source_type, source_id, source_name, note, created_at) " +
+                        "VALUES (?,?,'outbound',?,?,'deduct',?,?,?,NOW())",
+                        userId, colorId, -deducted, afterStock, designId, designTitle,
+                        "制作消耗 · 损耗率" + lossRate + "%");
+
+                jdbc.update("INSERT INTO design_bead_usage (user_id, design_id, color_id, quantity) " +
+                        "VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)",
+                        userId, designId, colorId, deducted);
+
+                affectedColors.add(String.valueOf(colorId));
+                totalDeducted += deducted;
+            }
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("totalDeducted", totalDeducted);
+        result.put("totalShortage", totalShortage);
+        result.put("colorCount", affectedColors.size());
+        result.put("lossRate", lossRate);
+        result.put("warnings", warnings);
+        return result;
+    }
+
+    /** 解析 grid_data JSON 为颜色统计列表 [{colorId, hex, name, quantity}, ...] */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> parseGridToBeads(String gridData) {
+        if (gridData == null || gridData.isBlank()) return List.of();
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            List<List<Map<String, Object>>> grid = mapper.readValue(gridData, List.class);
+            Map<String, Map<String, Object>> colorMap = new LinkedHashMap<>();
+            for (var row : grid) {
+                if (row == null) continue;
+                for (var cell : row) {
+                    if (cell != null && cell.get("hex") != null) {
+                        String hex = ((String) cell.get("hex")).toUpperCase();
+                        colorMap.computeIfAbsent(hex, k -> {
+                            Map<String, Object> m = new LinkedHashMap<>();
+                            m.put("hex", hex);
+                            m.put("name", cell.getOrDefault("name", "?"));
+                            m.put("quantity", 0);
+                            return m;
+                        });
+                        colorMap.get(hex).put("quantity",
+                                ((Number) colorMap.get(hex).get("quantity")).intValue() + 1);
+                    }
+                }
+            }
+            // 映射 hex → color_id
+            for (var entry : colorMap.entrySet()) {
+                Map<String, Object> bc = queryForMapOrNull(
+                        "SELECT id FROM bead_colors WHERE UPPER(hex) = ? LIMIT 1", entry.getKey());
+                if (bc != null) entry.getValue().put("colorId", bc.get("id"));
+            }
+            return new ArrayList<>(colorMap.values());
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     @GetMapping("/make/records")
@@ -158,6 +272,10 @@ public class MakeController {
 
     private Map<String, Object> queryForMapOrNull(String sql, Object... params) {
         try { return jdbc.queryForMap(sql, params); } catch (Exception e) { return null; }
+    }
+
+    private Integer queryForIntegerOrNull(String sql, Object... params) {
+        try { return jdbc.queryForObject(sql, Integer.class, params); } catch (Exception e) { return null; }
     }
 
     private String toJson(Object obj) {

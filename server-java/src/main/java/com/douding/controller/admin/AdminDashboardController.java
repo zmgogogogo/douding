@@ -1,31 +1,53 @@
 package com.douding.controller.admin;
 
 import com.douding.common.Result;
+import com.douding.service.admin.AdminDashboardService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.Map;
 
-/** 管理后台仪表盘 */
+/** 管理后台仪表盘 — 替代 Express routes/admin/dashboard.js */
 @RestController
 @RequestMapping("/api/admin/dashboard")
 @RequiredArgsConstructor
 public class AdminDashboardController {
 
-    private final JdbcTemplate jdbc;
+    private final AdminDashboardService dashboardService;
 
+    /** 综合统计 */
     @GetMapping("/stats")
     public Result<Map<String, Object>> stats() {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("totalUsers", jdbc.queryForObject("SELECT COUNT(*) FROM users", Long.class));
-        data.put("totalDesigns", jdbc.queryForObject("SELECT COUNT(*) FROM designs", Long.class));
-        data.put("publicDesigns", jdbc.queryForObject("SELECT COUNT(*) FROM designs WHERE is_public = 1", Long.class));
-        data.put("todayDesigns", jdbc.queryForObject("SELECT COUNT(*) FROM designs WHERE DATE(created_at) = CURDATE()", Long.class));
-        data.put("totalLikes", jdbc.queryForObject("SELECT COUNT(*) FROM design_likes", Long.class));
-        data.put("totalComments", jdbc.queryForObject("SELECT COUNT(*) FROM design_comments WHERE deleted = 0", Long.class));
-        return Result.success(data);
+        return Result.success(dashboardService.getStats());
+    }
+
+    /** 趋势数据（近N天新增用户和设计） */
+    @GetMapping("/trends")
+    public Result<Map<String, Object>> trends(@RequestParam(defaultValue = "30") int days) {
+        return Result.success(dashboardService.getTrends(Math.min(days, 365)));
+    }
+
+    /** 热门设计排行 */
+    @GetMapping("/top-designs")
+    public Result<?> topDesigns(@RequestParam(defaultValue = "10") int limit) {
+        return Result.success(dashboardService.getTopDesigns(limit));
+    }
+
+    /** 品牌分布 */
+    @GetMapping("/brand-distribution")
+    public Result<?> brandDistribution() {
+        return Result.success(dashboardService.getBrandDistribution());
+    }
+
+    /** 内容状态分布 */
+    @GetMapping("/content-status")
+    public Result<Map<String, Object>> contentStatus() {
+        return Result.success(dashboardService.getContentStatusDistribution());
+    }
+
+    /** 最近操作日志 */
+    @GetMapping("/recent-logs")
+    public Result<?> recentLogs(@RequestParam(defaultValue = "10") int limit) {
+        return Result.success(dashboardService.getRecentLogs(limit));
     }
 }

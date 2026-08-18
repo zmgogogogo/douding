@@ -47,6 +47,9 @@ spring:
     multipart:
       max-file-size: 30MB
       max-request-size: 50MB
+      # 🔑 关键：延迟解析 multipart，保留原始 InputStream
+      # 否则 PythonProxyController 转发给 Python 时请求体已被消费
+      resolve-lazily: true
 
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss

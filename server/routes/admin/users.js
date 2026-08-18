@@ -2,8 +2,10 @@
 //  用户管理路由 — C端用户列表/详情/封禁/编辑
 // ============================================
 import { Router } from 'express'
+import bcrypt from 'bcryptjs'
 import db from '../../db/connection.js'
 import { adminRequired } from '../../middleware/adminAuth.js'
+import { BCRYPT_ROUNDS } from '../../config.js'
 import { success, fail, paginated } from '../../utils/response.js'
 import { userPublic } from '../../utils/helpers.js'
 import { logAction } from '../../services/admin/logService.js'
@@ -128,8 +130,11 @@ router.put('/:id', adminRequired, (req, res) => {
   }
 })
 
-// 封禁/解封用户
-router.patch('/:id/status', adminRequired, (req, res) => {
+// 封禁/解封用户（支持 PUT 和 PATCH）
+router.put('/:id/status', adminRequired, (req, res) => toggleUserStatus(req, res))
+router.patch('/:id/status', adminRequired, (req, res) => toggleUserStatus(req, res))
+
+function toggleUserStatus(req, res) {
   try {
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id)
     if (!user) return res.status(404).json(fail(404, '用户不存在'))
@@ -160,6 +165,34 @@ router.patch('/:id/status', adminRequired, (req, res) => {
   } catch (err) {
     console.error('封禁/解封用户错误:', err)
     res.status(500).json(fail(500, '操作失败'))
+  }
+}
+
+// 重置用户密码
+router.put('/:id/reset-password', adminRequired, (req, res) => {
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id)
+    if (!user) return res.status(404).json(fail(404, '用户不存在'))
+
+    const { newPassword } = req.body || {}
+    if (!newPassword || newPassword.length < 6)
+      return res.status(400).json(fail(400, '新密码长度不能少于6位'))
+
+    const hash = bcrypt.hashSync(newPassword, BCRYPT_ROUNDS)
+    db.prepare("UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?")
+      .run(hash, user.id)
+
+    logAction(db, {
+      adminId: req.admin.id, adminName: req.admin.username,
+      module: '用户管理', action: '重置密码', targetType: 'user', targetId: user.id,
+      detail: `重置用户 ${user.username} 的密码`,
+      ip: req.ip, userAgent: req.headers?.['user-agent'] || '',
+    })
+
+    res.json(success({ id: user.id, newPassword }))
+  } catch (err) {
+    console.error('重置密码错误:', err)
+    res.status(500).json(fail(500, '重置密码失败'))
   }
 })
 

@@ -1,49 +1,58 @@
 package com.douding.controller.admin;
 
+import com.douding.common.AppException;
 import com.douding.common.Result;
+import com.douding.entity.Banner;
+import com.douding.security.AdminOperationLog;
+import com.douding.service.admin.AdminBannerService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.Map;
 
-/** 管理后台：Banner 管理 */
+/** 管理后台：Banner 管理 — 替代 Express routes/admin/banners.js */
 @RestController
 @RequestMapping("/api/admin/banners")
 @RequiredArgsConstructor
 public class AdminBannersController {
 
-    private final JdbcTemplate jdbc;
+    private final AdminBannerService bannerService;
 
     @GetMapping
-    public Result<List<Map<String, Object>>> list() {
-        return Result.success(jdbc.queryForList("SELECT * FROM banners ORDER BY sort_order"));
+    public Result<?> list(@RequestParam(defaultValue = "1") int page,
+                          @RequestParam(defaultValue = "20") int limit,
+                          @RequestParam(required = false) Integer status) {
+        var result = bannerService.listBanners(page, limit, status);
+        return Result.paginated(result.getRecords(), result.getTotal(), page, limit);
+    }
+
+    @GetMapping("/{id}")
+    public Result<Banner> detail(@PathVariable Long id) {
+        Banner banner = bannerService.getBanner(id);
+        if (banner == null) throw AppException.notFound("Banner不存在");
+        return Result.success(banner);
     }
 
     @PostMapping
-    public Result<Map<String, Object>> create(@RequestBody Map<String, Object> body) {
-        jdbc.update("INSERT INTO banners (title, subtitle, image_url, bg_color, link_type, link_value, sort_order) " +
-                "VALUES (?,?,?,?,?,?,?)",
-                body.get("title"), body.getOrDefault("subtitle", ""), body.getOrDefault("image_url", ""),
-                body.getOrDefault("bg_color", "#22c55e"), body.getOrDefault("link_type", "route"),
-                body.getOrDefault("link_value", ""), body.getOrDefault("sort_order", 0));
-        Long id = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
-        return Result.success(Map.of("id", id));
+    @AdminOperationLog(module = "运营管理", action = "create", targetType = "banner")
+    public Result<Banner> create(@RequestBody Banner banner) {
+        bannerService.createBanner(banner);
+        return Result.success(banner);
     }
 
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        jdbc.update("UPDATE banners SET title=?, subtitle=?, image_url=?, bg_color=?, link_type=?, link_value=?, " +
-                "sort_order=?, updated_at=NOW() WHERE id=?",
-                body.get("title"), body.getOrDefault("subtitle", ""), body.getOrDefault("image_url", ""),
-                body.getOrDefault("bg_color", "#22c55e"), body.getOrDefault("link_type", "route"),
-                body.getOrDefault("link_value", ""), body.getOrDefault("sort_order", 0), id);
-        return Result.success();
+    @AdminOperationLog(module = "运营管理", action = "update", targetType = "banner")
+    public Result<Banner> update(@PathVariable Long id, @RequestBody Banner updates) {
+        Banner banner = bannerService.updateBanner(id, updates);
+        if (banner == null) throw AppException.notFound("Banner不存在");
+        return Result.success(banner);
     }
 
     @DeleteMapping("/{id}")
+    @AdminOperationLog(module = "运营管理", action = "delete", targetType = "banner")
     public Result<Void> delete(@PathVariable Long id) {
-        jdbc.update("DELETE FROM banners WHERE id = ?", id);
+        bannerService.deleteBanner(id);
         return Result.success();
     }
 }

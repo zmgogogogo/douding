@@ -15,7 +15,7 @@ def load_bead_colors(db, brand: Optional[str] = None) -> list[dict]:
             FROM bead_colors c
             JOIN bead_series s ON c.series_id = s.id
             JOIN bead_brands b ON s.brand_id = b.id
-            WHERE b.name = ?
+            WHERE b.name = %s
             ORDER BY c.id
         """, (brand,)).fetchall()
     else:

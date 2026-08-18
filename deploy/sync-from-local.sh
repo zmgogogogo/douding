@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # 从本机同步代码到阿里云服务器（适合本地有未推送改动时使用）
-# 用法：bash deploy/sync-from-local.sh admin@YOUR_SERVER_IP
+# 用法：bash deploy/sync-from-local.sh root@YOUR_SERVER_IP
 set -euo pipefail
 
-TARGET="${1:-admin@47.109.29.158}"
+TARGET="${1:-root@47.108.201.48}"
 
 APP_DIR="/var/www/douding"
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"

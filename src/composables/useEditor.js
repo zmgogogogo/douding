@@ -916,6 +916,20 @@ function flipSelectionH() {
   saveSnapshot()
 }
 
+/** 全画布水平镜像（烫豆时 ABC → CBA，翻面后恢复正常） */
+function flipCanvasH() {
+  const gw = gridW.value, gh = gridH.value
+  for (let r = 0; r < gh; r++) {
+    for (let c = 0; c < Math.floor(gw / 2); c++) {
+      const left = getCell(r, c)
+      const right = getCell(r, gw - 1 - c)
+      setCell(r, c, right)
+      setCell(r, gw - 1 - c, left)
+    }
+  }
+  saveSnapshot()
+}
+
 function flipSelectionV() {
   if (!selectionRect.value) return
   const { r1, c1, r2, c2 } = getOrderedRect(selectionRect.value)
@@ -1174,6 +1188,7 @@ export function useEditor() {
     pasteSelection,
     flipSelectionH,
     flipSelectionV,
+    flipCanvasH,
     magicWandSelect,
     lassoSelect,
     cycleSelectionMode,

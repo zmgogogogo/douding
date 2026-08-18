@@ -29,6 +29,7 @@
               <el-descriptions-item label="用户ID">{{ user.id }}</el-descriptions-item>
               <el-descriptions-item label="用户名">{{ user.username }}</el-descriptions-item>
               <el-descriptions-item label="昵称">{{ user.nickname }}</el-descriptions-item>
+              <el-descriptions-item label="手机号">{{ user.phone || '-' }}</el-descriptions-item>
               <el-descriptions-item label="个人简介">{{ user.bio || '-' }}</el-descriptions-item>
               <el-descriptions-item label="会员状态">{{ user.isVip ? 'VIP' : '普通用户' }}</el-descriptions-item>
               <el-descriptions-item label="到期时间">{{ user.vipExpireAt || '-' }}</el-descriptions-item>
@@ -41,6 +42,7 @@
 
             <div class="mt-4">
               <el-button @click="showEdit = true">编辑资料</el-button>
+              <el-button @click="showResetPwd = true">重置密码</el-button>
               <el-button v-if="user.status === 1" type="danger" @click="handleBan">封禁用户</el-button>
               <el-button v-if="user.status === 0" type="success" @click="handleUnban">解封用户</el-button>
             </div>
@@ -79,6 +81,28 @@
       <template #footer>
         <el-button @click="showEdit = false">取消</el-button>
         <el-button type="primary" @click="saveEdit">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 重置密码弹窗 -->
+    <el-dialog v-model="showResetPwd" title="重置用户密码" width="460px" destroy-on-close>
+      <p class="reset-info">用户：<strong>{{ user?.nickname || user?.username }}</strong></p>
+      <el-radio-group v-model="resetMode" class="mb-4">
+        <el-radio value="auto">自动生成随机密码</el-radio>
+        <el-radio value="manual">手动输入新密码</el-radio>
+      </el-radio-group>
+      <el-input v-if="resetMode === 'manual'" v-model="resetNewPwd" placeholder="输入新密码（≥6位）" minlength="6" show-password />
+      <div v-if="resetDone" class="mt-4">
+        <el-alert type="success" :closable="false" show-icon>
+          <template #title>
+            新密码：<code class="new-pwd">{{ resetDone }}</code>
+            <el-button size="small" text @click="copyResetPwd">📋 复制</el-button>
+          </template>
+        </el-alert>
+      </div>
+      <template #footer>
+        <el-button @click="showResetPwd = false">{{ resetDone ? '关闭' : '取消' }}</el-button>
+        <el-button v-if="!resetDone" type="primary" @click="doResetPwd" :disabled="resetMode === 'manual' && (!resetNewPwd || resetNewPwd.length < 6)">确认重置</el-button>
       </template>
     </el-dialog>
   </div>
@@ -151,6 +175,32 @@ async function handleUnban() {
   }
 }
 
+// 重置密码
+const showResetPwd = ref(false)
+const resetMode = ref('auto')
+const resetNewPwd = ref('')
+const resetDone = ref('')
+
+function genPwd() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let p = ''; for (let i = 0; i < 8; i++) p += chars[Math.floor(Math.random() * chars.length)]
+  return p
+}
+
+async function doResetPwd() {
+  const pwd = resetMode.value === 'auto' ? genPwd() : resetNewPwd.value
+  try {
+    const res = await adminAPI.put(`/api/admin/users/${user.value.id}/reset-password`, { newPassword: pwd })
+    resetDone.value = res.data.newPassword || pwd
+  } catch (err) {
+    ElMessage.error(err.message || '重置失败')
+  }
+}
+
+function copyResetPwd() {
+  navigator.clipboard.writeText(resetDone.value).then(() => ElMessage.success('已复制'))
+}
+
 function statusTag(s) { return s === 1 ? 'success' : s === 0 ? 'danger' : 'info' }
 function statusText(s) { return s === 1 ? '正常' : s === 0 ? '封禁' : '注销' }
 
@@ -165,4 +215,7 @@ onMounted(loadUser)
 .user-header h3 { margin: 0; font-size: 20px; }
 .mt-4 { margin-top: 16px; }
 .ml-2 { margin-left: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.reset-info { margin-bottom: 16px; padding: 12px; background: #f8f9fa; border-radius: 8px; }
+.new-pwd { font-size: 18px; font-weight: 700; letter-spacing: 2px; background: #e8f5e9; padding: 2px 8px; border-radius: 4px; }
 </style>

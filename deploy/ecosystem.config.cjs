@@ -9,7 +9,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3456,
-        JWT_SECRET: process.env.JWT_SECRET || '',
+        JWT_SECRET: 'douding-jwt-secret-change-me-in-production',
+        JWT_ADMIN_SECRET: 'douding-admin-jwt-secret-change-me',
       },
       max_memory_restart: '512M',
       error_file: '/var/log/douding/error.log',

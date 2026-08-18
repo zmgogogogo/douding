@@ -39,6 +39,11 @@ douding:
     expiration: 30d
     admin-secret: ${JWT_ADMIN_SECRET}
     admin-expiration: 12h
+  sms:
+    access-key-id: ${DOUDING_SMS_ACCESS_KEY_ID:}
+    access-key-secret: ${DOUDING_SMS_ACCESS_KEY_SECRET:}
+    sign-name: ${DOUDING_SMS_SIGN_NAME:恒创联众}
+    template-code: ${DOUDING_SMS_TEMPLATE_CODE:100001}
 
 logging:
   level:

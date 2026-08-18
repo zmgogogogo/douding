@@ -29,6 +29,9 @@ router.get('/', adminRequired, (req, res) => {
     if (status !== undefined && status !== '') {
       where += ' AND status = ?'
       params.push(parseInt(status))
+    } else {
+      // 默认只显示待审核(0)和已发布(1)
+      where += ' AND status IN (0, 1)'
     }
     if (isPublic !== undefined && isPublic !== '') {
       where += ' AND is_public = ?'
@@ -141,8 +144,47 @@ router.put('/:id', adminRequired, (req, res) => {
   }
 })
 
-// 审核/修改设计状态
+// 物理删除设计（彻底删除 + 级联清理所有关联数据）
+router.delete('/:id', adminRequired, (req, res) => {
+  try {
+    const design = db.prepare('SELECT * FROM designs WHERE id = ?').get(req.params.id)
+    if (!design) return res.status(404).json(fail(404, '设计不存在'))
+
+    const id = design.id
+    db.prepare('DELETE FROM comment_likes WHERE comment_id IN (SELECT id FROM design_comments WHERE design_id = ?)').run(id)
+    db.prepare('DELETE FROM design_comments WHERE design_id = ?').run(id)
+    db.prepare('DELETE FROM design_likes WHERE design_id = ?').run(id)
+    db.prepare('DELETE FROM design_favorites WHERE design_id = ?').run(id)
+    db.prepare('DELETE FROM make_progress_snapshots WHERE session_id IN (SELECT id FROM make_sessions WHERE design_id = ?)').run(id)
+    db.prepare('DELETE FROM make_records WHERE design_id = ?').run(id)
+    db.prepare('DELETE FROM make_sessions WHERE design_id = ?').run(id)
+    db.prepare('DELETE FROM download_logs WHERE design_id = ?').run(id)
+    db.prepare('DELETE FROM design_bead_usage WHERE design_id = ?').run(id)
+    db.prepare('DELETE FROM designs WHERE id = ?').run(id)
+
+    logAction(db, {
+      adminId: req.admin.id, adminName: req.admin.username,
+      module: '内容管理', action: '物理删除', targetType: 'design', targetId: id,
+      detail: JSON.stringify({ title: design.title }),
+      ip: req.ip, userAgent: req.headers?.['user-agent'] || '',
+    })
+
+    res.json(success({ id }))
+  } catch (err) {
+    console.error('物理删除设计错误:', err)
+    res.status(500).json(fail(500, '删除失败'))
+  }
+})
+
+// 审核/修改设计状态（支持 PUT 和 PATCH）
+router.put('/:id/status', adminRequired, (req, res) => {
+  return updateStatus(req, res)
+})
 router.patch('/:id/status', adminRequired, (req, res) => {
+  return updateStatus(req, res)
+})
+
+function updateStatus(req, res) {
   try {
     const design = db.prepare('SELECT * FROM designs WHERE id = ?').get(req.params.id)
     if (!design) return res.status(404).json(fail(404, '设计不存在'))
@@ -169,7 +211,7 @@ router.patch('/:id/status', adminRequired, (req, res) => {
     console.error('修改设计状态错误:', err)
     res.status(500).json(fail(500, '操作失败'))
   }
-})
+}
 
 // 批量操作
 router.post('/batch-status', adminRequired, (req, res) => {

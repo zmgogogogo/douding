@@ -2,10 +2,13 @@ package com.douding.controller.admin;
 
 import com.douding.common.AppException;
 import com.douding.common.Result;
-import com.douding.security.JwtTokenProvider;
+import com.douding.security.AdminAuthenticationToken;
+import com.douding.security.AdminOperationLog;
+import com.douding.service.admin.AdminAuthService;
+import com.douding.vo.AdminVO;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -16,40 +19,72 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminAuthController {
 
-    private final JdbcTemplate jdbc;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final AdminAuthService authService;
 
+    /** 管理员登录 */
     @PostMapping("/login")
-    public Result<Map<String, Object>> login(@RequestBody Map<String, String> body) {
+    @AdminOperationLog(module = "认证", action = "login")
+    public Result<Map<String, Object>> login(@RequestBody Map<String, String> body,
+                                              HttpServletRequest request) {
         String username = body.get("username");
         String password = body.get("password");
-        if (username == null || password == null) throw AppException.badRequest("请输入用户名和密码");
+        if (username == null || password == null) throw AppException.badRequest("请输入账号和密码");
 
-        Map<String, Object> admin = queryForMapOrNull(
-                "SELECT * FROM sys_admins WHERE username = ? AND status = 1", username);
-        if (admin == null) throw AppException.unauthorized("用户名或密码错误");
+        AdminVO vo = authService.login(username, password,
+                getClientIp(request), request.getHeader("User-Agent"));
 
-        String hash = (String) admin.get("password_hash");
-        if (!passwordEncoder.matches(password, hash)) throw AppException.unauthorized("用户名或密码错误");
-
-        String token = jwtTokenProvider.generateAdminToken(
-                ((Number) admin.get("id")).longValue(), username);
-
-        jdbc.update("UPDATE sys_admins SET last_login_at = NOW() WHERE id = ?", admin.get("id"));
-
-        return Result.success(Map.of("token", token, "admin", Map.of(
-                "id", admin.get("id"), "username", admin.get("username"),
-                "nickname", admin.getOrDefault("nickname", ""), "roleId", admin.getOrDefault("role_id", 0))));
+        return Result.success(Map.of(
+                "token", vo.getToken(),
+                "admin", Map.of(
+                        "id", vo.getId(),
+                        "username", vo.getUsername(),
+                        "nickname", vo.getNickname() != null ? vo.getNickname() : "",
+                        "avatar", vo.getAvatar() != null ? vo.getAvatar() : "",
+                        "roleId", vo.getRoleId() != null ? vo.getRoleId() : 0,
+                        "permissions", vo.getPermissions() != null ? vo.getPermissions() : java.util.Collections.emptyList()
+                )));
     }
 
+    /** 获取当前管理员信息 */
     @GetMapping("/me")
     public Result<Map<String, Object>> me() {
-        // 简化实现：由 JWT Filter 处理
-        return Result.success(Map.of("ok", true));
+        AdminAuthenticationToken auth = (AdminAuthenticationToken)
+                SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) throw AppException.unauthorized("请先登录管理后台");
+
+        AdminVO vo = authService.getMe(auth.getAdminId());
+        return Result.success(Map.of(
+                "id", vo.getId(),
+                "username", vo.getUsername(),
+                "nickname", vo.getNickname() != null ? vo.getNickname() : "",
+                "avatar", vo.getAvatar() != null ? vo.getAvatar() : "",
+                "roleId", vo.getRoleId() != null ? vo.getRoleId() : 0,
+                "permissions", vo.getPermissions() != null ? vo.getPermissions() : java.util.Collections.emptyList(),
+                "createdAt", vo.getCreatedAt() != null ? vo.getCreatedAt().toString() : null
+        ));
     }
 
-    private Map<String, Object> queryForMapOrNull(String sql, Object... params) {
-        try { return jdbc.queryForMap(sql, params); } catch (Exception e) { return null; }
+    /** 修改密码 */
+    @PutMapping("/password")
+    @AdminOperationLog(module = "认证", action = "update_password")
+    public Result<Void> changePassword(@RequestBody Map<String, String> body) {
+        AdminAuthenticationToken auth = (AdminAuthenticationToken)
+                SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) throw AppException.unauthorized("请先登录管理后台");
+
+        String oldPassword = body.get("oldPassword");
+        String newPassword = body.get("newPassword");
+        if (oldPassword == null || newPassword == null) throw AppException.badRequest("请输入旧密码和新密码");
+
+        authService.changePassword(auth.getAdminId(), oldPassword, newPassword);
+        return Result.success();
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) return ip.split(",")[0].trim();
+        ip = request.getHeader("X-Real-IP");
+        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) return ip;
+        return request.getRemoteAddr();
     }
 }

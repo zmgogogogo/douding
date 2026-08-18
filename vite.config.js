@@ -10,8 +10,8 @@ export default defineConfig({
   server: {
     proxy: {
       // 图片转换 → Node.js（正确 pipe multipart 流到 Python）
-      '/api/image-to-grid': 'http://localhost:3456',
-      '/api/convert': 'http://localhost:3456',
+      '/api/image-to-grid': 'http://localhost:8080',
+      '/api/convert': 'http://localhost:8080',
       // 其他 API 请求 → SpringBoot (8080)
       '/api': 'http://localhost:8080',
     },

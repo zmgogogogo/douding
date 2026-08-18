@@ -126,35 +126,12 @@
             :class="{ 'card-unowned': item.status === 'unowned' }"
             @click="openDetail(item)"
           >
-            <!-- 色块区域 -->
+            <!-- 色块区域 — 点击打开详情弹窗调整数量 -->
             <div
               class="card-swatch"
               :class="{ 'swatch-unowned': item.status === 'unowned' }"
               :style="{ background: item.colorHex }"
-            >
-              <!-- hover +/- 快捷操作 -->
-              <div class="card-swatch-actions">
-                <button
-                  v-if="item.status !== 'unowned'"
-                  class="swatch-btn"
-                  @mousedown.stop="startContinuous(item, -1)"
-                  @mouseup.stop="stopContinuous"
-                  @mouseleave.stop="stopContinuous"
-                  @touchstart.stop.prevent="startContinuous(item, -1)"
-                  @touchend.stop.prevent="stopContinuous"
-                  @touchcancel.stop="stopContinuous"
-                >−</button>
-                <button
-                  class="swatch-btn"
-                  @mousedown.stop="startContinuous(item, 1)"
-                  @mouseup.stop="stopContinuous"
-                  @mouseleave.stop="stopContinuous"
-                  @touchstart.stop.prevent="startContinuous(item, 1)"
-                  @touchend.stop.prevent="stopContinuous"
-                  @touchcancel.stop="stopContinuous"
-                >+</button>
-              </div>
-            </div>
+            ></div>
 
             <!-- 信息区域 -->
             <div class="card-info">
@@ -205,7 +182,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search as SearchIcon, ChevronLeft as ChevronLeftIcon, X as XIcon, Settings as SettingsIcon } from 'lucide-vue-next'
 import API from '@/api/index.js'
@@ -247,44 +224,6 @@ const showBatchAdd = ref(false)
 const showDetail = ref(false)
 const detailColorId = ref(null)
 const detailItem = ref(null)
-
-// ====== 长按连续加减 ======
-let longPressTimer = null
-let repeatTimer = null
-
-function startContinuous(item, delta) {
-  // 未拥有颜色禁止减号
-  if (delta < 0 && item.status === 'unowned') return
-  // 库存为0时禁止减号
-  if (delta < 0 && item.stockNum <= 0) return
-
-  // 立即执行一次
-  adjustStock(item, delta)
-
-  // 400ms 后开始连续
-  longPressTimer = setTimeout(() => {
-    repeatTimer = setInterval(() => {
-      // 检查是否已到边界
-      if (delta < 0 && item.stockNum <= 0) {
-        stopContinuous()
-        return
-      }
-      adjustStock(item, delta)
-    }, 80)
-  }, 400)
-}
-
-function stopContinuous() {
-  clearTimeout(longPressTimer)
-  clearInterval(repeatTimer)
-  longPressTimer = null
-  repeatTimer = null
-}
-
-// 组件卸载时清理
-onUnmounted(() => {
-  stopContinuous()
-})
 
 // ====== 实时搜索防抖 ======
 watch(searchInput, (val) => {
@@ -369,53 +308,6 @@ async function loadStockList() {
   } finally {
     loading.value = false
   }
-}
-
-// ====== 库存调整（乐观更新 + 失败回滚） ======
-async function adjustStock(item, delta) {
-  const prevStock = item.stockNum
-  const prevStatus = item.status
-
-  // 边界检查
-  const newStock = Math.max(0, prevStock + delta)
-  if (newStock === prevStock) return
-
-  // 乐观更新
-  item.stockNum = newStock
-  item.isNewRecord = false
-  item.status = computeStatusLocal(item)
-
-  try {
-    const res = await API.post('/api/stock/update', { colorId: item.colorId, delta }, true)
-    if (res.code === 200 && res.data) {
-      // 成功后用服务端数据校准
-      item.stockNum = res.data.afterStock
-      item.status = res.data.status
-      // 更新总览
-      await refreshOverview()
-    }
-  } catch (e) {
-    // 失败回滚
-    item.stockNum = prevStock
-    item.status = prevStatus
-    toast.show('调整失败，请稍后重试')
-  }
-}
-
-function computeStatusLocal(item) {
-  if (item.isNewRecord && item.stockNum === 0) return 'unowned'
-  if (item.stockNum === 0) return 'out'
-  if (item.stockNum <= item.warnNum) return 'low'
-  return 'sufficient'
-}
-
-async function refreshOverview() {
-  try {
-    const res = await API.get('/api/stock/overview', true)
-    if (res.code === 200) {
-      overview.value = res.data
-    }
-  } catch (_) {}
 }
 
 // ====== 卡片详情 ======
@@ -506,23 +398,6 @@ async function refreshAll() {
 .swatch-unowned-icon {
   @apply absolute inset-0 flex items-center justify-center text-2xl text-slate-400 font-light;
 }
-.card-swatch-actions {
-  @apply absolute inset-0 flex items-end justify-center pb-1.5 gap-1
-         opacity-0 transition-opacity duration-150;
-}
-.card-swatch:hover .card-swatch-actions,
-.card-swatch:active .card-swatch-actions {
-  @apply opacity-100;
-}
-.swatch-btn {
-  @apply w-7 h-7 rounded-full bg-white/90 text-xs font-bold text-slate-600
-         flex items-center justify-center shadow-sm
-         hover:bg-white hover:text-primary transition-colors
-         active:scale-90 select-none;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
 /* 信息 */
 .card-info {
   @apply px-2.5 py-2;

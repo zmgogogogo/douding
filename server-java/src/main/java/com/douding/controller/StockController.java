@@ -102,9 +102,9 @@ public class StockController {
         if (colorId == null || delta == null) throw AppException.badRequest("缺少参数");
 
         Long userId = claims.id();
-        Integer before = jdbc.queryForObject(
+        Integer before = queryForIntegerOrNull(
                 "SELECT quantity FROM user_bead_inventory WHERE user_id = ? AND color_id = ?",
-                Integer.class, userId, colorId);
+                userId, colorId);
         int beforeStock = before != null ? before : 0;
         int afterStock = Math.max(0, beforeStock + delta);
 
@@ -138,9 +138,9 @@ public class StockController {
             Integer num = item.get("num") != null ? ((Number) item.get("num")).intValue() : null;
             if (colorId == null || num == null || num <= 0) { failed++; continue; }
 
-            Integer before = jdbc.queryForObject(
+            Integer before = queryForIntegerOrNull(
                     "SELECT quantity FROM user_bead_inventory WHERE user_id = ? AND color_id = ?",
-                    Integer.class, userId, colorId);
+                    userId, colorId);
             int after = (before != null ? before : 0) + num;
 
             jdbc.update("INSERT INTO user_bead_inventory (user_id, color_id, quantity, min_threshold, updated_at) " +
@@ -272,9 +272,9 @@ public class StockController {
             int baseQty = b.get("quantity") != null ? ((Number) b.get("quantity")).intValue() : 0;
             int actualQty = (int) Math.ceil(baseQty * copies * lossMultiplier);
 
-            Integer before = jdbc.queryForObject(
+            Integer before = queryForIntegerOrNull(
                     "SELECT quantity FROM user_bead_inventory WHERE user_id = ? AND color_id = ?",
-                    Integer.class, userId, colorId);
+                    userId, colorId);
             int beforeStock = before != null ? before : 0;
             int deducted = Math.min(beforeStock, actualQty);
             int afterStock = beforeStock - deducted;
@@ -334,9 +334,9 @@ public class StockController {
             Long cid = toLong(u.get("color_id"));
             int stock = 0;
             if (cid != null) {
-                Integer s = jdbc.queryForObject(
+                Integer s = queryForIntegerOrNull(
                         "SELECT quantity FROM user_bead_inventory WHERE user_id = ? AND color_id = ?",
-                        Integer.class, userId, cid);
+                        userId, cid);
                 stock = s != null ? s : 0;
             }
             int lack = Math.max(0, need - stock);
@@ -432,6 +432,88 @@ public class StockController {
                 "name", target.get("name"), "hex", target.get("hex")), "substitutes", substitutes));
     }
 
+    /** GET /api/inventory/color-detail/{colorId} — 色号详情（含库存/日志/相关图纸） */
+    @GetMapping("/inventory/color-detail/{colorId}")
+    @AuthRequired
+    public Result<Map<String, Object>> colorDetail(@PathVariable Long colorId,
+                                                   @CurrentUser JwtTokenProvider.TokenClaims claims) {
+        Long userId = claims.id();
+
+        Map<String, Object> color = queryForMapOrNull(
+                "SELECT c.id, c.name, c.hex, c.lab_l, c.lab_a, c.lab_b, c.color_type, " +
+                "s.name as series, b.name as brand " +
+                "FROM bead_colors c JOIN bead_series s ON c.series_id = s.id " +
+                "JOIN bead_brands b ON s.brand_id = b.id WHERE c.id = ?", colorId);
+        if (color == null) throw AppException.notFound("颜色不存在");
+
+        Map<String, Object> inventory = queryForMapOrNull(
+                "SELECT COALESCE(quantity,0) as quantity, " +
+                "COALESCE(min_threshold,50) as minThreshold, " +
+                "COALESCE(transit_quantity,0) as transitQuantity, " +
+                "updated_at as updatedAt " +
+                "FROM user_bead_inventory WHERE user_id = ? AND color_id = ?", userId, colorId);
+        if (inventory == null) {
+            inventory = new LinkedHashMap<>();
+            inventory.put("quantity", 0);
+            inventory.put("minThreshold", 50);
+            inventory.put("transitQuantity", 0);
+            inventory.put("updatedAt", null);
+        }
+
+        List<Map<String, Object>> logs = jdbc.queryForList(
+                "SELECT id, action, quantity, balance_after as balanceAfter, " +
+                "source_type as sourceType, source_id as sourceId, " +
+                "source_name as sourceName, note, created_at " +
+                "FROM inventory_logs WHERE user_id = ? AND color_id = ? " +
+                "ORDER BY created_at DESC LIMIT 50", userId, colorId);
+
+        List<Map<String, Object>> relatedDesigns = jdbc.queryForList(
+                "SELECT d.id, d.title, d.thumbnail, u.quantity as usedCount " +
+                "FROM design_bead_usage u JOIN designs d ON u.design_id = d.id " +
+                "WHERE u.user_id = ? AND u.color_id = ? " +
+                "ORDER BY u.quantity DESC LIMIT 8", userId, colorId);
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("color", color);
+        data.put("inventory", inventory);
+        data.put("logs", logs);
+        data.put("relatedDesigns", relatedDesigns);
+        return Result.success(data);
+    }
+
+    /** PUT /api/inventory/{colorId} — 设置库存数量（兼容旧前端 ColorDetailDialog） */
+    @PutMapping("/inventory/{colorId}")
+    @AuthRequired
+    @Transactional
+    public Result<Map<String, Object>> inventoryUpdate(@PathVariable Long colorId,
+                                                       @RequestBody Map<String, Object> body,
+                                                       @CurrentUser JwtTokenProvider.TokenClaims claims) {
+        Long userId = claims.id();
+        Integer quantity = body.get("quantity") != null ? ((Number) body.get("quantity")).intValue() : null;
+        if (quantity == null) throw AppException.badRequest("缺少 quantity");
+
+        Integer before = queryForIntegerOrNull(
+                "SELECT quantity FROM user_bead_inventory WHERE user_id = ? AND color_id = ?",
+                userId, colorId);
+        int beforeStock = before != null ? before : 0;
+        int delta = quantity - beforeStock;
+
+        if (delta != 0) {
+            jdbc.update("INSERT INTO user_bead_inventory (user_id, color_id, quantity, min_threshold, updated_at) " +
+                    "VALUES (?,?,?,COALESCE((SELECT min_threshold FROM user_bead_inventory WHERE user_id=? AND color_id=?),50),NOW()) " +
+                    "ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), updated_at = NOW()",
+                    userId, colorId, quantity, userId, colorId);
+
+            jdbc.update("INSERT INTO inventory_logs (user_id, color_id, action, quantity, balance_after, source_type, created_at) " +
+                    "VALUES (?,?,?,?,?,'manual',NOW())",
+                    userId, colorId, delta >= 0 ? "inbound" : "outbound", delta, quantity);
+        }
+
+        Map<String, Object> color = jdbc.queryForMap("SELECT name, hex FROM bead_colors WHERE id = ?", colorId);
+        return Result.success(Map.of("colorId", colorId, "beforeStock", beforeStock, "afterStock", quantity,
+                "delta", delta), "库存已更新");
+    }
+
     // ====== 工具方法 ======
 
     private Long toLong(Object v) {
@@ -448,6 +530,15 @@ public class StockController {
 
     private Map<String, Object> queryForMapOrNull(String sql, Object... params) {
         try { return jdbc.queryForMap(sql, params); } catch (Exception e) { return null; }
+    }
+
+    /** queryForObject 安全版：无记录时返回 null 而非抛异常 */
+    private Integer queryForIntegerOrNull(String sql, Object... params) {
+        try {
+            return jdbc.queryForObject(sql, Integer.class, params);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @SuppressWarnings("unchecked")

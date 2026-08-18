@@ -1,12 +1,13 @@
 <!-- ============================================
   EditorToolbar.vue — 左侧工具箱
-  V3.0 文档第4节：6大类工具，垂直排列
+  触摸适配：平板端 (<lg) 宽度 56px / 按钮 44px / 图标 20px
+            桌面端 (≥lg) 保持 48px / 36px / 16px
   ============================================ -->
 <template>
   <aside
-    class="flex flex-col items-center w-12 bg-[var(--ui-bg-surface)] border-r border-[var(--ui-border-glass)] flex-shrink-0 select-none z-20 overflow-visible"
+    class="flex flex-col items-center w-14 lg:w-12 bg-[var(--ui-bg-surface)] border-r border-[var(--ui-border-glass)] flex-shrink-0 select-none z-20 overflow-visible"
   >
-    <div class="flex flex-col items-center py-2 overflow-y-auto scrollbar-hide w-full h-full">
+    <div class="flex flex-col items-center py-2 lg:py-2 overflow-y-auto scrollbar-hide w-full h-full">
       <!-- 第一组：导航工具 -->
       <div class="tool-group">
         <button
@@ -15,7 +16,7 @@
           @click="$emit('selectTool', 'move')"
           title="移动 (V)"
         >
-          <HandIcon :size="16" />
+          <HandIcon :size="iconSize" />
         </button>
         <button
           class="toolbar-btn"
@@ -23,14 +24,14 @@
           @click="$emit('selectTool', 'zoom')"
           title="缩放 (Z)"
         >
-          <ZoomInIcon :size="16" />
+          <ZoomInIcon :size="iconSize" />
         </button>
         <button
           class="toolbar-btn"
           @click="$emit('resetView')"
           title="定位画布 (Ctrl+0)"
         >
-          <CrosshairIcon :size="16" />
+          <CrosshairIcon :size="iconSize" />
         </button>
       </div>
 
@@ -44,7 +45,7 @@
           @click="$emit('selectTool', 'brush')"
           title="画笔 (B)"
         >
-          <PencilIcon :size="17" />
+          <PencilIcon :size="iconSize + 1" />
         </button>
         <button
           class="toolbar-btn"
@@ -52,7 +53,7 @@
           @click="$emit('selectTool', 'eraser')"
           title="橡皮 (E)"
         >
-          <EraserIcon :size="17" />
+          <EraserIcon :size="iconSize + 1" />
         </button>
         <button
           class="toolbar-btn"
@@ -60,7 +61,7 @@
           @click="$emit('selectTool', 'fill')"
           title="填充 (G)"
         >
-          <PaintBucketIcon :size="17" />
+          <PaintBucketIcon :size="iconSize + 1" />
         </button>
         <button
           class="toolbar-btn"
@@ -68,7 +69,7 @@
           @click="$emit('selectTool', 'picker')"
           title="吸色 (I)"
         >
-          <PipetteIcon :size="17" />
+          <PipetteIcon :size="iconSize + 1" />
         </button>
         <button
           class="toolbar-btn"
@@ -76,7 +77,7 @@
           @click="$emit('selectTool', 'replace')"
           title="颜色替换 (R)"
         >
-          <ReplaceIcon :size="15" />
+          <ReplaceIcon />
         </button>
         <button
           class="toolbar-btn"
@@ -85,15 +86,15 @@
           title="渐变 (J)"
         >
           <svg
-            width="17"
-            height="17"
+            :width="iconSize + 1"
+            :height="iconSize + 1"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             stroke-width="1.5"
             stroke-linecap="round"
           >
-            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <rect x="3" y="3" :width="18" :height="18" rx="3" />
             <line x1="3" y1="12" x2="21" y2="12" />
           </svg>
         </button>
@@ -109,7 +110,7 @@
           @click="$emit('selectTool', 'line')"
           title="直线 (L)"
         >
-          <MinusIcon :size="17" />
+          <MinusIcon :size="iconSize + 1" />
         </button>
         <button
           class="toolbar-btn"
@@ -117,7 +118,7 @@
           @click="$emit('selectTool', 'rect')"
           title="矩形 (U)"
         >
-          <SquareIcon :size="15" />
+          <SquareIcon :size="iconSize" />
         </button>
         <button
           class="toolbar-btn"
@@ -125,7 +126,7 @@
           @click="$emit('selectTool', 'circle')"
           title="圆形 (O)"
         >
-          <CircleIcon :size="17" />
+          <CircleIcon :size="iconSize + 1" />
         </button>
         <button
           class="toolbar-btn"
@@ -133,7 +134,7 @@
           @click="$emit('selectTool', 'text')"
           title="文字 (T)"
         >
-          <TypeIcon :size="17" />
+          <TypeIcon :size="iconSize + 1" />
         </button>
       </div>
 
@@ -147,7 +148,7 @@
           @click="$emit('selectTool', 'select')"
           title="矩形选区 (M)"
         >
-          <PointerIcon :size="17" />
+          <PointerIcon :size="iconSize + 1" />
         </button>
         <button
           class="toolbar-btn"
@@ -155,7 +156,7 @@
           @click="$emit('selectTool', 'wand')"
           title="魔棒 (W)"
         >
-          <Wand2Icon :size="15" />
+          <Wand2Icon :size="iconSize" />
         </button>
       </div>
 
@@ -169,7 +170,7 @@
           @click="$emit('toggleGrid')"
           title="网格 (H)"
         >
-          <Grid3x3Icon :size="16" />
+          <Grid3x3Icon :size="iconSize" />
         </button>
         <button
           class="toolbar-btn"
@@ -177,7 +178,7 @@
           @click="$emit('cycleSymmetry')"
           :title="'镜像 (K): ' + symLabels[symmetryMode]"
         >
-          <SymmetryIcon :size="17" />
+          <SymmetryIcon />
         </button>
       </div>
 
@@ -191,8 +192,8 @@
           @click="$emit('cycleRefOpacity')"
           title="参考图透明度 (R)"
         >
-          <EyeIcon v-if="refOpacity > 0" :size="16" />
-          <EyeOffIcon v-else :size="16" />
+          <EyeIcon v-if="refOpacity > 0" :size="iconSize" />
+          <EyeOffIcon v-else :size="iconSize" />
         </button>
       </div>
     </div>
@@ -200,7 +201,7 @@
 </template>
 
 <script setup>
-import { h } from 'vue'
+import { computed, h } from 'vue'
 import {
   HandIcon,
   ZoomInIcon,
@@ -219,14 +220,22 @@ import {
   EyeIcon,
   EyeOffIcon,
 } from 'lucide-vue-next'
+import { useResponsive } from '@/composables/useResponsive.js'
 
+const { isCompact } = useResponsive()
+
+/** 图标大小：平板端 20px，桌面端 16px */
+const iconSize = computed(() => isCompact.value ? 20 : 16)
+
+// 颜色替换图标（尺寸跟随响应式）
 const ReplaceIcon = {
   render() {
+    const sz = iconSize.value
     return h(
       'svg',
       {
-        width: 15,
-        height: 15,
+        width: sz,
+        height: sz,
         viewBox: '0 0 24 24',
         fill: 'none',
         stroke: 'currentColor',
@@ -239,13 +248,15 @@ const ReplaceIcon = {
   },
 }
 
+// 镜像图标（尺寸跟随响应式）
 const SymmetryIcon = {
   render() {
+    const sz = iconSize.value + 1
     return h(
       'svg',
       {
-        width: 17,
-        height: 17,
+        width: sz,
+        height: sz,
         viewBox: '0 0 24 24',
         fill: 'none',
         stroke: 'currentColor',
@@ -275,8 +286,9 @@ const symLabels = { none: '关闭', h: '水平', v: '垂直', quad: '四向' }
 </script>
 
 <style scoped>
+/* 工具栏按钮 — 平板端 44px 触控区，桌面端 36px */
 .toolbar-btn {
-  @apply relative w-9 h-9 flex items-center justify-center rounded-xl
+  @apply relative w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center rounded-xl
          text-[var(--ui-text-tertiary)] hover:text-[var(--ui-text-primary)]
          hover:bg-[var(--ui-bg-tertiary)] transition-all duration-150;
 }
@@ -293,10 +305,10 @@ const symLabels = { none: '关闭', h: '水平', v: '垂直', quad: '四向' }
 }
 
 .tool-group {
-  @apply flex flex-col items-center gap-0.5;
+  @apply flex flex-col items-center gap-1 lg:gap-0.5;
 }
 
 .tool-divider {
-  @apply w-6 border-t border-[var(--ui-border-glass)] my-1.5;
+  @apply w-8 lg:w-6 border-t border-[var(--ui-border-glass)] my-1.5;
 }
 </style>

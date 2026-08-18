@@ -31,7 +31,8 @@ public class ExploreController {
 
         Page<Design> result = new Page<>(page, limit);
         LambdaQueryWrapper<Design> qw = new LambdaQueryWrapper<Design>()
-                .eq(Design::getIsPublic, 1);
+                .eq(Design::getIsPublic, 1)
+                .ne(Design::getStatus, -2); // 排除已删除的作品
 
         switch (sort) {
             case "popular" -> qw.orderByDesc(Design::getLikesCount);
@@ -55,6 +56,7 @@ public class ExploreController {
         String like = "%" + q + "%";
         LambdaQueryWrapper<Design> qw = new LambdaQueryWrapper<Design>()
                 .eq(Design::getIsPublic, 1)
+                .ne(Design::getStatus, -2) // 排除已删除的作品
                 .and(w -> w.like(Design::getTitle, like).or().like(Design::getDescription, like))
                 .orderByDesc(Design::getUpdatedAt);
 

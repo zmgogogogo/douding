@@ -211,6 +211,8 @@ const emit = defineEmits([
   'update:mouseCol',
   'update:mouseRow',
   'update:mouseColor',
+  'update:zoom',
+  'undo',
   'pickColor',
   'floodFill',
   'magicWand',
@@ -287,6 +289,31 @@ function posToGridFromMouse() {
 let longPressTimer = null
 let crossTimer = null
 
+// 慢双击检测（触摸端撤销操作）
+let lastTapTime = 0
+let lastTapPos = null
+
+const activePointers = new Map() // pointerId → { x, y }
+let gestureMode = false // 是否进入多点手势模式
+let gestureStartDist = 0 // 双指初始距离
+let gestureStartZoom = 1
+let gestureStartPanX = 0
+let gestureStartPanY = 0
+let gestureStartMidX = 0
+let gestureStartMidY = 0
+
+/** 计算两点之间的距离 */
+function getPointerDistance(p1, p2) {
+  return Math.hypot(p1.x - p2.x, p1.y - p2.y)
+}
+
+/** 计算多点的中心位置 */
+function getPointerCenter(pointers) {
+  let cx = 0, cy = 0
+  for (const p of pointers) { cx += p.x; cy += p.y }
+  return { x: cx / pointers.length, y: cy / pointers.length }
+}
+
 // 检测画笔是否超出边界，若超出则触发画布动态扩展
 // 返回调整后的 {row, col}（扩展后需重新计算坐标）
 function ensureBrushInBounds(row, col, e) {
@@ -302,7 +329,43 @@ function ensureBrushInBounds(row, col, e) {
 
 function onPointerDown(e) {
   canvasWrap.value.focus()
+
+  // ---- 多点触控追踪 ----
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+  if (activePointers.size >= 2) {
+    // 进入手势模式（双指平移+缩放）
+    gestureMode = true
+    isDrawing.value = false
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null }
+    const pts = [...activePointers.values()]
+    const p1 = pts[pts.length - 2], p2 = pts[pts.length - 1]
+    gestureStartDist = getPointerDistance(p1, p2)
+    gestureStartZoom = props.zoom
+    gestureStartPanX = props.panX
+    gestureStartPanY = props.panY
+    const center = getPointerCenter(pts)
+    gestureStartMidX = center.x
+    gestureStartMidY = center.y
+    return
+  }
+
+  // 手势模式下收到的额外 pointerdown 忽略
+  if (gestureMode) return
+
   const { row, col, x, y } = posToGrid(e)
+
+  // —— 慢双击检测（触摸端撤销） ——
+  const now = Date.now()
+  const tapKey = `${row},${col}`
+  if (now - lastTapTime < 400 && lastTapPos === tapKey && row >= 0 && col >= 0) {
+    emit('undo')
+    lastTapTime = 0
+    lastTapPos = null
+    return
+  }
+  lastTapTime = now
+  lastTapPos = tapKey
 
   // —— 空格键 + 拖拽 = 始终平移（最高优先级） ——
   if (spaceHeld.value || e.button === 1) {
@@ -385,16 +448,42 @@ function onPointerDown(e) {
     if (shiftHeld.value) lineStartCell.value = { row: adjusted.row, col: adjusted.col }
     drawAt(adjusted.row, adjusted.col)
     lastCell.value = { row: adjusted.row, col: adjusted.col }
+    // 长按删除（平板端替代右键删除）
     longPressTimer = setTimeout(() => {
       if (row >= 0 && row < props.gridH && col >= 0 && col < props.gridW) {
-        emit('pickColor', row, col)
+        emit('setCell', row, col, null)
+        emit('saveSnapshot')
+        emit('scheduleRender')
       }
-    }, 800)
+    }, 600)
     return
   }
 }
 
 function onPointerMove(e) {
+  // ---- 多点手势模式：双指缩放+平移 ----
+  if (gestureMode && activePointers.size >= 2) {
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const pts = [...activePointers.values()]
+    const p1 = pts[pts.length - 2], p2 = pts[pts.length - 1]
+    const newDist = getPointerDistance(p1, p2)
+    const center = getPointerCenter(pts)
+
+    // 缩放：以手势中心为锚点
+    if (gestureStartDist > 10 && newDist > 10) {
+      const scale = newDist / gestureStartDist
+      const newZoom = Math.max(0.5, Math.min(30, gestureStartZoom * scale))
+      emit('update:zoom', newZoom)
+    }
+
+    // 平移：跟踪中心点移动
+    const dx = center.x - gestureStartMidX
+    const dy = center.y - gestureStartMidY
+    emit('update:panX', gestureStartPanX + dx)
+    emit('update:panY', gestureStartPanY + dy)
+    return
+  }
+
   const { row, col } = posToGrid(e)
   const rect = canvasWrap.value.getBoundingClientRect()
   mousePos.value = { x: e.clientX - rect.left, y: e.clientY - rect.top }
@@ -469,6 +558,26 @@ function onPointerUp(e) {
     clearTimeout(longPressTimer)
     longPressTimer = null
   }
+
+  // ---- 多点手势退出 ----
+  activePointers.delete(e.pointerId)
+  if (gestureMode && activePointers.size < 2) {
+    // 手势结束，恢复到单指模式
+    gestureMode = false
+    if (activePointers.size === 0) {
+      gestureStartDist = 0
+    }
+    // 如果还有一根手指，更新手势起始点为该手指（用于可能恢复的双指）
+    if (activePointers.size === 1) {
+      const remaining = activePointers.values().next().value
+      gestureStartMidX = remaining.x
+      gestureStartMidY = remaining.y
+      gestureStartPanX = props.panX
+      gestureStartPanY = props.panY
+      gestureStartZoom = props.zoom
+    }
+  }
+
   if (isDrawing.value) {
     // 形状工具：结束拖拽，绘制形状
     if (['line', 'rect', 'circle'].includes(props.tool) && shapeStart.value) {

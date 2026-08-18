@@ -21,6 +21,9 @@ public class User {
     private Integer isVip;
     private LocalDateTime vipExpireAt;
 
+    private String phone;
+    private LocalDateTime phoneVerifiedAt;
+
     private Integer status;
     private String banReason;
     private LocalDateTime bannedAt;

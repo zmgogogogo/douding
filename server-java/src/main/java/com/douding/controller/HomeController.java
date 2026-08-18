@@ -73,12 +73,12 @@ public class HomeController {
         // 首屏内容
         List<Design> designs = designMapper.selectList(
                 new LambdaQueryWrapper<Design>()
-                        .eq(Design::getIsPublic, 1)
+                        .eq(Design::getIsPublic, 1).ne(Design::getStatus, -2)
                         .orderByDesc(Design::getLikesCount)
                         .last("LIMIT 20"));
 
         Long total = designMapper.selectCount(
-                new LambdaQueryWrapper<Design>().eq(Design::getIsPublic, 1));
+                new LambdaQueryWrapper<Design>().eq(Design::getIsPublic, 1).ne(Design::getStatus, -2));
 
         // 批量获取作者信息
         Set<Long> userIds = designs.stream().map(Design::getUserId).collect(Collectors.toSet());
@@ -132,12 +132,12 @@ public class HomeController {
         // 使用自定义查询
         List<Design> designs = designMapper.selectList(
                 new LambdaQueryWrapper<Design>()
-                        .eq(Design::getIsPublic, 1)
+                        .eq(Design::getIsPublic, 1).ne(Design::getStatus, -2)
                         .orderByDesc(Design::getLikesCount)
                         .last("LIMIT " + limit + " OFFSET " + offset));
 
         Long total = designMapper.selectCount(
-                new LambdaQueryWrapper<Design>().eq(Design::getIsPublic, 1));
+                new LambdaQueryWrapper<Design>().eq(Design::getIsPublic, 1).ne(Design::getStatus, -2));
 
         List<Map<String, Object>> list = designs.stream().map(d -> {
             Map<String, Object> item = new LinkedHashMap<>(designToMap(d));

@@ -26,6 +26,9 @@ onnxruntime>=1.17.0
 # --- OCR 文字检测（可选：需要下载模型） ---
 # paddleocr  # 需要 PaddlePaddle 环境
 
+# --- 数据库（直连 MySQL 读取色板数据） ---
+PyMySQL>=1.1.0
+
 # --- 工具 ---
 python-dotenv>=1.0.0
 aiofiles>=23.0.0

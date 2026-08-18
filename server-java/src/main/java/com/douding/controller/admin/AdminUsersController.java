@@ -2,70 +2,66 @@ package com.douding.controller.admin;
 
 import com.douding.common.AppException;
 import com.douding.common.Result;
+import com.douding.security.AdminOperationLog;
+import com.douding.service.admin.AdminUserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.Map;
 
-/** 管理后台：用户管理 */
+/** 管理后台：用户管理 — 替代 Express routes/admin/users.js */
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
 public class AdminUsersController {
 
-    private final JdbcTemplate jdbc;
+    private final AdminUserService userService;
 
     @GetMapping
-    public Result<Map<String, Object>> list(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int limit,
-            @RequestParam(required = false) String keyword) {
-
-        int offset = (Math.max(1, page) - 1) * limit;
-        String where = "";
-        List<Object> params = new ArrayList<>();
-
-        if (keyword != null && !keyword.isBlank()) {
-            where = " WHERE username LIKE ? OR nickname LIKE ?";
-            params.add("%" + keyword + "%");
-            params.add("%" + keyword + "%");
-        }
-
-        List<Map<String, Object>> rows = jdbc.queryForList(
-                "SELECT id, username, nickname, avatar, status, created_at FROM users" + where +
-                " ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                Stream.concat(params.stream(), Stream.of(limit, offset)).toArray());
-
-        Object[] countParams = params.toArray();
-        Long total = jdbc.queryForObject("SELECT COUNT(*) FROM users" + where, Long.class, countParams);
-
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("list", rows);
-        data.put("total", total);
-        data.put("page", page);
-        return Result.success(data);
+    public Result<?> list(@RequestParam(defaultValue = "1") int page,
+                          @RequestParam(defaultValue = "20") int limit,
+                          @RequestParam(required = false) String keyword,
+                          @RequestParam(required = false) Integer status,
+                          @RequestParam(defaultValue = "created_at_desc") String sort) {
+        var result = userService.listUsers(page, limit, keyword, status, sort);
+        return Result.paginated(result.getRecords(), result.getTotal(), page, limit);
     }
 
     @GetMapping("/{id}")
     public Result<Map<String, Object>> detail(@PathVariable Long id) {
-        Map<String, Object> user = queryForMapOrNull("SELECT * FROM users WHERE id = ?", id);
-        if (user == null) throw AppException.notFound("用户不存在");
-
-        Long designsCount = jdbc.queryForObject("SELECT COUNT(*) FROM designs WHERE user_id = ?", Long.class, id);
-        Map<String, Object> data = new LinkedHashMap<>(user);
-        data.put("designsCount", designsCount);
+        Map<String, Object> data = userService.getUserDetail(id);
+        if (data == null) throw AppException.notFound("用户不存在");
         return Result.success(data);
     }
 
-    @PutMapping("/{id}/status")
-    public Result<Void> toggleStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
-        jdbc.update("UPDATE users SET status = ? WHERE id = ?", body.get("status"), id);
-        return Result.success();
+    @PutMapping("/{id}")
+    @AdminOperationLog(module = "用户管理", action = "update", targetType = "user")
+    public Result<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        userService.updateUser(id,
+                (String) body.get("nickname"),
+                (String) body.get("bio"),
+                body.get("isVip") instanceof Boolean b ? b : null,
+                body.get("vipExpireAt") != null
+                        ? java.time.LocalDateTime.parse(body.get("vipExpireAt").toString().replace("T", " ").substring(0, 19)) : null);
+        return Result.success(Map.of("id", id));
     }
 
-    private Map<String, Object> queryForMapOrNull(String sql, Object... params) {
-        try { return jdbc.queryForMap(sql, params); } catch (Exception e) { return null; }
+    @PutMapping("/{id}/status")
+    @PatchMapping("/{id}/status")
+    @AdminOperationLog(module = "用户管理", action = "封禁", targetType = "user")
+    public Result<?> toggleStatus(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        int status = ((Number) body.get("status")).intValue();
+        String reason = (String) body.getOrDefault("reason", "");
+        userService.toggleUserStatus(id, status, reason);
+        return Result.success(Map.of("id", id, "status", status, "reason", reason));
+    }
+
+    /** 重置用户密码 */
+    @PutMapping("/{id}/reset-password")
+    @com.douding.security.AdminOperationLog(module = "用户管理", action = "重置密码", targetType = "user")
+    public Result<?> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String newPassword = body.get("newPassword");
+        String pwd = userService.resetPassword(id, newPassword);
+        return Result.success(Map.of("id", id, "newPassword", pwd));
     }
 }

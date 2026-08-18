@@ -100,8 +100,8 @@ async function handleLogin() {
     })
     setAuth(res.data.token, res.data.admin)
 
-    // 跳转到登录前页面或默认看板
-    const redirect = route.query.redirect || '/admin/dashboard'
+    // 跳转到登录前页面或默认看板（route 通过 useRoute() 注入，理论上不会为 undefined）
+    const redirect = route?.query?.redirect || '/admin/dashboard'
     router.push(redirect)
   } catch (err) {
     errorMsg.value = err.message || '登录失败'
