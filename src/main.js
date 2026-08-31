@@ -10,6 +10,35 @@ import router from './router'
 import './style.css'
 
 // ============================================
+//  禁用 iPad/iPhone Safari 缩放（让页面像原生 App 一样固定）
+//  iOS 10+ 会忽略 viewport 的 user-scalable=no / maximum-scale=1，
+//  因此必须用 JS 兜底：
+//    1. gesture 事件 —— 阻止双指捏合缩放
+//    2. touchend —— 阻止「同一位置快速双击」触发的双击缩放
+//  画布自带缩放（按钮/滚轮），浏览器的缩放会与之冲突导致错位。
+// ============================================
+document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false })
+document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false })
+
+// 双击缩放：仅拦截「同一位置 + 300ms 内」的第二次触摸，不影响不同位置的连续点击
+let _lastTap = { time: 0, x: 0, y: 0 }
+document.addEventListener(
+  'touchend',
+  (e) => {
+    const now = Date.now()
+    const t = e.changedTouches && e.changedTouches[0]
+    if (!t) return
+    const isDoubleTap =
+      now - _lastTap.time <= 300 &&
+      Math.abs(t.clientX - _lastTap.x) < 30 &&
+      Math.abs(t.clientY - _lastTap.y) < 30
+    if (isDoubleTap) e.preventDefault()
+    _lastTap = { time: now, x: t.clientX, y: t.clientY }
+  },
+  { passive: false }
+)
+
+// ============================================
 //  全局 JS 异常捕获
 //  文档参考: .claude/作品详情.md §6.1
 // ============================================

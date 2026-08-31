@@ -284,6 +284,17 @@
       :stockWarnings="stockWarnings"
     />
 
+    <!-- ===== 强制横屏遮罩（平板竖屏时盖住页面，旋转横屏后消失） ===== -->
+    <div
+      v-if="isTablet"
+      class="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-3 bg-slate-900/95 text-white text-center p-8 select-none"
+    >
+      <div class="text-5xl">📱</div>
+      <p class="text-lg font-semibold">请旋转设备到横屏</p>
+      <p class="text-sm text-slate-300">豆丁编辑器在横屏下体验最佳，竖屏暂不可操作</p>
+      <div class="mt-1 text-3xl animate-bounce">↻</div>
+    </div>
+
     <!-- ===== 主工作区：左工具 + 中画布 + 右面板 ===== -->
     <div class="flex-1 flex min-h-0 relative">
       <!-- 左侧工具箱 -->
@@ -1045,7 +1056,8 @@ function onSelectColor(c) {
     focusMode.value = false
   }
   highlightHex.value = highlightHex.value === c.hex ? null : c.hex
-  renderAll()
+  // 不在此显式 renderAll：highlightHex/focusDimHex 变化已通过 EditorCanvas 的 watch 触发 scheduleRender，
+  // 避免选色时重复全量重绘画布（iPad 上尤为明显）
 }
 
 function onHighlightColor(hex) {
