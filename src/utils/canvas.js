@@ -10,10 +10,20 @@ export class CanvasRenderer {
     this.gridW = opts.gridW || 58
     this.gridH = opts.gridH || 58
     this.zoom = opts.zoom || 10
-    this.ctx = canvas.getContext('2d', { willReadFrequently: true })
+    // 注意：不传 willReadFrequently，走 GPU 加速路径（本渲染器不使用 getImageData）
+    this.ctx = canvas.getContext('2d')
     if (!this.ctx) {
       throw new Error('CanvasRenderer: 无法获取 2D 上下文')
     }
+    // 参考图叠加层缓存（offscreen）：选色高亮时不重绘，直接贴缓存
+    this.refCache = document.createElement('canvas')
+    this.refCacheCtx = this.refCache.getContext('2d')
+    this._refPixelsRef = null
+    this._refCacheKey = null
+    // 色号文字层缓存（offscreen）：zoom≥12 时文字渲染很重，仅图纸内容变化才重绘
+    this.labelCache = document.createElement('canvas')
+    this.labelCacheCtx = this.labelCache.getContext('2d')
+    this._labelCacheKey = null
   }
 
   /** 重设尺寸：内部分辨率 = gridW*zoom × gridH*zoom，与 CSS 显示 1:1 */
@@ -25,6 +35,9 @@ export class CanvasRenderer {
     this.canvas.height = Math.round(h * this.zoom)
     // 无缩放变换，1:1 像素
     this.ctx.setTransform(1, 0, 0, 1, 0, 0)
+    // 尺寸变化 → 缓存层失效
+    this._refCacheKey = null
+    this._labelCacheKey = null
   }
 
   /** CSS 定位：尺寸与内部分辨率一致 */
@@ -164,8 +177,23 @@ export class CanvasRenderer {
     const z = this.zoom
     const w = this.gridW,
       h = this.gridH
-    const ctx = this.ctx
     const alpha = Math.max(0, Math.min(1, opacity))
+
+    // 参考图层缓存：仅在参考图内容或参数变化时重绘，否则直接贴缓存（选色时避免逐格 fillRect）
+    const cacheKey = `${refW}|${refH}|${alpha}|${offsetX}|${offsetY}|${scale}|${z}|${w}|${h}`
+    if (this._refPixelsRef === refPixels && this._refCacheKey === cacheKey) {
+      this.ctx.drawImage(this.refCache, 0, 0)
+      return
+    }
+    this._refPixelsRef = refPixels
+    this._refCacheKey = cacheKey
+
+    // 渲染到缓存画布
+    this.refCache.width = Math.round(w * z)
+    this.refCache.height = Math.round(h * z)
+    const cctx = this.refCacheCtx
+    cctx.setTransform(1, 0, 0, 1, 0, 0)
+    cctx.clearRect(0, 0, w * z, h * z)
 
     // 用半透明 fillRect 逐珠覆盖
     for (let r = 0; r < h; r++) {
@@ -182,14 +210,15 @@ export class CanvasRenderer {
         }
         if (!hex) continue
 
-        ctx.fillStyle =
+        cctx.fillStyle =
           hex +
           Math.round(alpha * 255)
             .toString(16)
             .padStart(2, '0')
-        ctx.fillRect(c * z, r * z, z, z)
+        cctx.fillRect(c * z, r * z, z, z)
       }
     }
+    this.ctx.drawImage(this.refCache, 0, 0)
   }
 
   // ========== 3. 网格线（1:1 像素，锐利对齐） ==========
@@ -223,13 +252,26 @@ export class CanvasRenderer {
   }
 
   // ========== 4. 色号标签（缩放够大时才显示） ==========
-  renderLabels(grid, zoom) {
+  renderLabels(grid, zoom, gridVersion = 0) {
     // 缩放到 12 以上才显示字号
     if (zoom < 12) return
     const z = zoom
     const w = this.gridW,
       h = this.gridH
-    const ctx = this.ctx
+
+    // 文字层缓存：仅在图纸内容（gridVersion）或缩放变化时重绘，选色高亮时直接贴缓存
+    const cacheKey = `${gridVersion}|${z}|${w}|${h}`
+    if (this._labelCacheKey === cacheKey) {
+      this.ctx.drawImage(this.labelCache, 0, 0)
+      return
+    }
+    this._labelCacheKey = cacheKey
+
+    this.labelCache.width = Math.round(w * z)
+    this.labelCache.height = Math.round(h * z)
+    const ctx = this.labelCacheCtx
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, w * z, h * z)
 
     // 字号跟随缩放线性增长
     const fontSize = Math.round(z * 0.38)
@@ -256,6 +298,7 @@ export class CanvasRenderer {
         ctx.fillText(label, cx, cy)
       }
     }
+    this.ctx.drawImage(this.labelCache, 0, 0)
   }
 
   // ========== 一次调用渲染全部 ==========
@@ -274,6 +317,7 @@ export class CanvasRenderer {
       showGrid,
       zoom,
       showLabels,
+      gridVersion,
     } = opts
     try {
       if (!grid || !grid.length) {
@@ -294,7 +338,7 @@ export class CanvasRenderer {
           refScale || 1
         )
       this.renderGridLines(showGrid)
-      if (showLabels !== false) this.renderLabels(grid, zoom || 10)
+      if (showLabels !== false) this.renderLabels(grid, zoom || 10, gridVersion || 0)
     } catch (e) {
       console.error('Canvas renderAll error:', e)
     }

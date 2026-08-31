@@ -134,12 +134,12 @@
       <div class="flex-1 overflow-y-auto p-1.5 lg:p-1.5">
         <div class="grid grid-cols-6 lg:grid-cols-7 gap-1.5 lg:gap-1">
           <button
-            v-for="c in colors"
+            v-for="c in pagedColors"
             :key="c.id"
-            class="aspect-square rounded-lg transition-all duration-150 relative hover:scale-115 hover:z-10 hover:shadow-md flex items-end justify-center overflow-hidden"
+            class="aspect-square rounded-lg relative flex items-end justify-center overflow-hidden"
             :class="[
               curColor?.id === c.id
-                ? 'ring-2 ring-[var(--ui-accent)] ring-offset-1 scale-110 z-10'
+                ? 'ring-2 ring-[var(--ui-accent)] ring-offset-1'
                 : 'ring-1 ring-black/5',
               getStock(c.id) === 0 ? 'opacity-50 ring-red-400' : '',
             ]"
@@ -165,6 +165,30 @@
             </span>
           </button>
         </div>
+      </div>
+
+      <!-- 色板分页控件 — 固定底部，不随色块滚动 -->
+      <div
+        v-if="totalPages > 1"
+        class="flex items-center justify-center gap-2 px-2 py-1.5 border-t border-[var(--ui-border)]"
+      >
+        <button
+          class="h-7 px-3 rounded-lg text-[11px] font-medium bg-[var(--ui-bg-tertiary)] hover:bg-[var(--ui-border)] disabled:opacity-40 transition-colors text-[var(--ui-text-secondary)]"
+          :disabled="page === 0"
+          @click="page--"
+        >
+          ‹ 上一页
+        </button>
+        <span class="text-[11px] text-[var(--ui-text-tertiary)] tabular-nums">
+          {{ page + 1 }} / {{ totalPages }}
+        </span>
+        <button
+          class="h-7 px-3 rounded-lg text-[11px] font-medium bg-[var(--ui-bg-tertiary)] hover:bg-[var(--ui-border)] disabled:opacity-40 transition-colors text-[var(--ui-text-secondary)]"
+          :disabled="page >= totalPages - 1"
+          @click="page++"
+        >
+          下一页 ›
+        </button>
       </div>
 
       <!-- 画笔大小 — 平板端 40px 间距 -->
@@ -530,7 +554,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   SearchIcon,
   ChevronRightIcon,
@@ -612,6 +636,24 @@ function getStock(colorId) {
   const qty = props.inventory[colorId]
   return qty != null ? qty : null
 }
+
+// ---- 色板分页：iPad 上一次渲染 2000+ 色块会直接冻结，改为每页 ~120 个 ----
+const PAGE_SIZE = 120
+const page = ref(0)
+const totalPages = computed(() => Math.ceil(props.colors.length / PAGE_SIZE) || 1)
+const pagedColors = computed(() =>
+  props.colors.slice(page.value * PAGE_SIZE, (page.value + 1) * PAGE_SIZE)
+)
+
+// 搜索/筛选导致颜色数变少时，页码可能越界，自动回退到最后一页
+watch(
+  () => props.colors.length,
+  () => {
+    if (page.value >= totalPages.value) {
+      page.value = Math.max(0, totalPages.value - 1)
+    }
+  }
+)
 
 const selectedLayer = computed(
   () => props.layers.find((l) => l.id === props.currentLayerId) || null

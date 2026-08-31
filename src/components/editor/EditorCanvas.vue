@@ -696,6 +696,8 @@ function onKeyUp(e) {
 }
 
 // ---- 渲染调度 ----
+// 图纸内容版本号：setCell 原地修改 grid（引用不变），用版本号驱动 labelCache 失效
+let gridVersion = 0
 let rafId = null
 function scheduleRender() {
   if (rafId) return
@@ -725,6 +727,7 @@ function renderAll() {
       refScale: props.refScale || 1,
       showGrid: props.showGrid,
       zoom: props.zoom,
+      gridVersion,
     })
   } catch (e) {
     console.error('Canvas renderAll 失败:', e)
@@ -817,10 +820,20 @@ watch(
   }
 )
 
+// 图纸内容变化时递增版本号，驱动 labelCache 失效重绘色号文字
+watch(
+  () => props.grid,
+  () => {
+    gridVersion++
+  },
+  { deep: true }
+)
+
 watch(
   [
     () => props.grid,
     () => props.highlightHex,
+    () => props.focusDimHex,
     () => props.showGrid,
     () => props.refOpacity,
     () => props.refPixels,
